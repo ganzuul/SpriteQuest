@@ -4,191 +4,467 @@
   "minRuntime": 2,
   "graph": {
     "id": "understudy",
-    "type": "workflow",
     "name": "The Understudy",
+    "description": "Character standing and ledger guidance loop in SillyTavern. On Send, character standing is read from Workflow Data and injected as binding guidance. After the draft, any newly granted roles are extracted and staged into the ledger. When you click Apply, the ledger is updated.",
     "schema": 3,
     "runtime": 2,
     "mode": "native-unified",
-    "description": "Let the hollis ledger shape every reply, and let an accepted reply move it. On Send, the accepted outbox is delivered to the forge service (which recognises what it already holds), the roster is read back as guidance, and the model writes a reply the current paperwork deserves. After the draft, extraction proposes ledger events into the outbox -- staged, never saved, until you press Apply. Accept the reply and the part is written down; reject it and nothing happened.\n\nSetup: run `python3 companion/forge_service.py --seed-from companion/npcs/` and authorize a JSON Workflow Data target named `forge-outbox` with initial content [].",
+    "nodes": {
+      "send": {
+        "id": "send",
+        "type": "workflow",
+        "operation": "on-send",
+        "operationVersion": 1,
+        "title": "On Send",
+        "enabled": true,
+        "x": 100,
+        "y": 961,
+        "w": 300,
+        "h": 140,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "On Send"
+      },
+      "generate": {
+        "id": "generate",
+        "type": "workflow",
+        "operation": "generate-reply",
+        "operationVersion": 1,
+        "title": "Generate Reply · SillyTavern",
+        "enabled": true,
+        "x": 500,
+        "y": 985,
+        "w": 300,
+        "h": 140,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Generate Reply · SillyTavern",
+        "budgetTokens": 768,
+        "injectionRole": "system",
+        "injectionPosition": "in-chat",
+        "injectionDepth": 0
+      },
+      "review": {
+        "id": "review",
+        "type": "workflow",
+        "operation": "review-publish",
+        "operationVersion": 1,
+        "title": "Review / Publish",
+        "enabled": true,
+        "x": 900,
+        "y": 961,
+        "w": 300,
+        "h": 140,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Review / Publish"
+      },
+      "journal": {
+        "id": "journal",
+        "type": "workflow",
+        "operation": "read-file",
+        "operationVersion": 1,
+        "title": "Read File",
+        "enabled": true,
+        "x": 2100,
+        "y": 1568,
+        "w": 300,
+        "h": 196,
+        "inGroup": "processing-records",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Read File · character standing",
+        "targetId": "character-standing",
+        "schema": "",
+        "columns": [],
+        "actorScope": "selected",
+        "actorId": ""
+      },
+      "records": {
+        "id": "records",
+        "type": "workflow",
+        "operation": "extract",
+        "operationVersion": 1,
+        "title": "Extract",
+        "enabled": true,
+        "x": 900,
+        "y": 1280,
+        "w": 300,
+        "h": 140,
+        "inGroup": "processing-records",
+        "profileId": "lattice:active-sillytavern",
+        "model": null,
+        "modelRole": "Prose",
+        "phase": "post",
+        "alias": "Extract · granted roles",
+        "inputKind": "draft",
+        "mode": "model",
+        "instructions": "Return an array of ledger events this draft states happened: {id, text}. Use stable IDs like \"role-pell-inspector\" for characters granted a role, given an official duty, or written into the scene. Put the exact line of dialogue or narrative into text. Exclude hypothetical wishes or offers.",
+        "schema": "",
+        "patterns": [],
+        "caseSensitive": true,
+        "match": "substring",
+        "maxTokens": 2048
+      },
+      "record-array": {
+        "id": "record-array",
+        "type": "workflow",
+        "operation": "select-fields",
+        "operationVersion": 1,
+        "title": "Select Fields",
+        "enabled": true,
+        "x": 1300,
+        "y": 1280,
+        "w": 300,
+        "h": 140,
+        "inGroup": "processing-records",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "post",
+        "alias": "Select Fields",
+        "fields": [
+          {
+            "name": "records",
+            "path": [
+              "records"
+            ]
+          }
+        ]
+      },
+      "record-list": {
+        "id": "record-list",
+        "type": "workflow",
+        "operation": "collection",
+        "operationVersion": 1,
+        "title": "Collection",
+        "enabled": true,
+        "x": 1700,
+        "y": 1304,
+        "w": 300,
+        "h": 140,
+        "inGroup": "processing-records",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "post",
+        "alias": "Collection",
+        "mode": "project",
+        "collectionPath": [
+          "records"
+        ],
+        "fieldPath": [],
+        "value": "",
+        "operator": "equals",
+        "missingPolicy": "hold",
+        "thresholds": "[]",
+        "mergePolicy": "keep-all",
+        "identityPath": [
+          "id"
+        ]
+      },
+      "format": {
+        "id": "format",
+        "type": "workflow",
+        "operation": "format",
+        "operationVersion": 1,
+        "title": "Format",
+        "enabled": true,
+        "x": 2100,
+        "y": 1328,
+        "w": 300,
+        "h": 168,
+        "inGroup": "processing-records",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "post",
+        "alias": "Format",
+        "inputMode": "records",
+        "format": "json",
+        "jsonShape": "records",
+        "mapping": "select",
+        "fields": [
+          {
+            "name": "id",
+            "path": [
+              "id"
+            ]
+          },
+          {
+            "name": "text",
+            "path": [
+              "text"
+            ]
+          }
+        ],
+        "schema": "{\"type\":\"object\",\"required\":[\"id\",\"text\"],\"properties\":{\"id\":{\"type\":\"string\"},\"text\":{\"type\":\"string\"}},\"additionalProperties\":false}",
+        "columns": [],
+        "separator": "\n",
+        "trailingSeparator": false
+      },
+      "project": {
+        "id": "project",
+        "type": "workflow",
+        "operation": "project-document",
+        "operationVersion": 1,
+        "title": "Project Document",
+        "enabled": true,
+        "x": 2500,
+        "y": 1664,
+        "w": 300,
+        "h": 168,
+        "inGroup": "processing-records",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "post",
+        "alias": "Project Document",
+        "mode": "add-unique",
+        "collectionPath": "",
+        "missingPath": "error",
+        "key": "id",
+        "fieldPolicy": "merge",
+        "fields": [],
+        "schema": "{\"type\":\"object\",\"required\":[\"id\",\"text\"],\"properties\":{\"id\":{\"type\":\"string\"},\"text\":{\"type\":\"string\"}},\"additionalProperties\":false}",
+        "columns": [],
+        "separator": "\n",
+        "emptyPolicy": "omit",
+        "trailingSeparator": false,
+        "format": "json"
+      },
+      "save": {
+        "id": "save",
+        "type": "workflow",
+        "operation": "write-file",
+        "operationVersion": 1,
+        "title": "Write to File",
+        "enabled": true,
+        "x": 2900,
+        "y": 1448,
+        "w": 300,
+        "h": 168,
+        "inGroup": "processing-records",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Write to File",
+        "mode": "replace",
+        "collectionPath": "",
+        "missingPath": "error",
+        "key": "id",
+        "fieldPolicy": "merge",
+        "fields": [],
+        "schema": "{\"type\":\"array\",\"items\":{\"type\":\"object\",\"required\":[\"id\",\"text\"],\"properties\":{\"id\":{\"type\":\"string\"},\"text\":{\"type\":\"string\"}},\"additionalProperties\":false}}",
+        "columns": [],
+        "separator": "\n",
+        "emptyPolicy": "omit",
+        "trailingSeparator": false,
+        "actorScope": "selected",
+        "actorId": ""
+      },
+      "lesson-note": {
+        "id": "lesson-note",
+        "type": "note",
+        "title": "Lesson instructions",
+        "enabled": true,
+        "x": 100,
+        "y": 0,
+        "w": 900,
+        "h": 833,
+        "content": "Learn to save a scene summary only when you accept the reply. The workflow prepares a journal update, avoids duplicate entries, and waits for Apply before saving it.\n\nWhat you'll learn:\n• Use Format to give records a consistent shape.\n• Use Project Document to prepare an updated journal and Write to File to save it after acceptance.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• Create a Workflow Data document as in lesson 16, using accepted-scene-journal for its Logical target ID and Document name. Choose Format JSON, Visibility Public, and Initial template [], then Save authorization. Choose a model connection for Extract.\n• For each new Workflow Data document, also fill in Document name; using the Logical target ID as its name is fine. When a lesson names a fixture, paste the file’s contents into Initial template, then choose Save authorization.\n\nSteps:\n1. Follow Read File’s two outputs: text supplies the current journal, while reference identifies the exact document and version that can be saved.\n2. Send a message and inspect Extract’s records of completed public actions. Format keeps an id and quoted text for each record so every journal entry has the same shape.\n3. Inspect Project Document’s receipt and proposed text. Its add-unique mode adds new IDs while keeping an existing ID from appearing twice.\n4. Inspect Write to File’s receipt before Apply. It describes a proposed replacement of the journal; the saved document should still have its old contents.\n5. Apply the reply, then read the journal in Workflow Data. Check both the chat and the file receipt: they are saved separately, so a file error needs attention even if the reply was published.\n6. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nWrite to File → receipt: The journal replacement stays a proposal until you accept the reply.\n\nTry this:\nRun another scene and choose Reject at review.\nThe proposed journal entries are discarded and the saved journal keeps its previous contents.\n\nIf something is different:\nA record with the same ID is already saved: The journal keeps one copy of that record.\nYou preview or reject the update: The journal is not saved.\n\nModel requests: One extra request to extract scene records. Formatting and preparing the save need no model. SillyTavern writes one reply.",
+        "commentFrame": true,
+        "moveContents": false
+      },
+      "decode-roster": {
+        "id": "decode-roster",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 450,
+        "y": 700,
+        "w": 300,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "JSON Decode · parse roster",
+        "mode": "parse",
+        "schema": ""
+      },
+      "compose-guidance": {
+        "id": "compose-guidance",
+        "type": "workflow",
+        "operation": "compose",
+        "operationVersion": 1,
+        "title": "Compose",
+        "enabled": true,
+        "x": 850,
+        "y": 700,
+        "w": 300,
+        "h": 200,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Compose · ledger guidance",
+        "mode": "template",
+        "outputKind": "guidance",
+        "template": "Write the next reply as the world currently stands. Character standing in the ledger is binding -- a character may not act against their paperwork:\n\n{{data}}",
+        "sections": [],
+        "separator": "\n\n",
+        "budgetTokens": 0
+      }
+    },
+    "wires": {
+      "edge-1": {
+        "id": "edge-1",
+        "route": "wire",
+        "from": "send",
+        "fromPort": "activation",
+        "to": "generate",
+        "toPort": "activation"
+      },
+      "edge-2": {
+        "id": "edge-2",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "records",
+        "toPort": "source"
+      },
+      "edge-3": {
+        "id": "edge-3",
+        "route": "wire",
+        "from": "records",
+        "fromPort": "out",
+        "to": "record-array",
+        "toPort": "in"
+      },
+      "edge-4": {
+        "id": "edge-4",
+        "route": "wire",
+        "from": "record-array",
+        "fromPort": "out",
+        "to": "record-list",
+        "toPort": "in"
+      },
+      "edge-5": {
+        "id": "edge-5",
+        "route": "wire",
+        "from": "record-list",
+        "fromPort": "out",
+        "to": "format",
+        "toPort": "in"
+      },
+      "edge-6": {
+        "id": "edge-6",
+        "route": "wire",
+        "from": "journal",
+        "fromPort": "text",
+        "to": "project",
+        "toPort": "source"
+      },
+      "edge-7": {
+        "id": "edge-7",
+        "route": "wire",
+        "from": "format",
+        "fromPort": "records",
+        "to": "project",
+        "toPort": "records"
+      },
+      "edge-8": {
+        "id": "edge-8",
+        "route": "wire",
+        "from": "journal",
+        "fromPort": "reference",
+        "to": "save",
+        "toPort": "reference"
+      },
+      "edge-9": {
+        "id": "edge-9",
+        "route": "wire",
+        "from": "project",
+        "fromPort": "text",
+        "to": "save",
+        "toPort": "text"
+      },
+      "edge-10": {
+        "id": "edge-10",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "review",
+        "toPort": "draft"
+      },
+      "edge-journal-decode": {
+        "id": "edge-journal-decode",
+        "route": "wire",
+        "from": "journal",
+        "fromPort": "text",
+        "to": "decode-roster",
+        "toPort": "in"
+      },
+      "edge-decode-compose": {
+        "id": "edge-decode-compose",
+        "route": "wire",
+        "from": "decode-roster",
+        "fromPort": "out",
+        "to": "compose-guidance",
+        "toPort": "data"
+      },
+      "edge-guidance-generate": {
+        "id": "edge-guidance-generate",
+        "route": "wire",
+        "from": "compose-guidance",
+        "fromPort": "out",
+        "to": "generate",
+        "toPort": "guidance"
+      }
+    },
     "groups": {
-      "ledger-machinery": {
-        "id": "ledger-machinery",
-        "title": "The hollis ledger's machinery",
-        "description": "These boxes deliver what you accepted last turn and stage what this turn proposes. Nothing here writes without your Apply.",
+      "processing-records": {
+        "id": "processing-records",
+        "title": "Update saved story data",
+        "description": "These connected boxes work together. Follow their wires to see how each result is used.",
         "x": 875,
         "y": 1230,
         "w": 2350,
         "h": 627,
         "color": "#57416e",
         "collapsed": false,
-        "members": ["outbox-read", "outbox-decode", "outbox-sync", "events", "event-array", "event-list", "event-shape", "outbox-merge", "outbox-save"]
+        "members": [
+          "records",
+          "record-array",
+          "record-list",
+          "format",
+          "project",
+          "save",
+          "journal"
+        ]
       }
     },
     "roles": {
-      "Prose": { "model": null, "profileId": "lattice:active-sillytavern" }
+      "Prose": {
+        "model": null,
+        "profileId": "lattice:active-sillytavern"
+      }
     },
     "portals": {},
     "definitions": {},
-    "template": { "id": "understudy", "version": 1 },
-    "view": { "x": 0, "y": 0, "zoom": 0.65 },
-    "nodes": {
-      "send": {
-        "id": "send", "type": "workflow", "operation": "on-send", "operationVersion": 1,
-        "title": "On Send", "enabled": true,
-        "x": 100, "y": 400, "w": 300, "h": 140,
-        "profileId": null, "model": null, "modelRole": null, "alias": "On Send"
-      },
-      "outbox-read": {
-        "id": "outbox-read", "type": "workflow", "operation": "read-file", "operationVersion": 1,
-        "title": "Read File", "enabled": true, "inGroup": "ledger-machinery",
-        "x": 100, "y": 1300, "w": 300, "h": 196,
-        "profileId": null, "model": null, "modelRole": null,
-        "alias": "Read File \u00b7 accepted outbox",
-        "targetId": "forge-outbox", "schema": "", "columns": [],
-        "actorScope": "selected", "actorId": ""
-      },
-      "outbox-decode": {
-        "id": "outbox-decode", "type": "workflow", "operation": "json-decode", "operationVersion": 1,
-        "title": "JSON Decode", "enabled": true, "inGroup": "ledger-machinery",
-        "x": 450, "y": 1300, "w": 300, "h": 160,
-        "profileId": null, "model": null, "modelRole": null,
-        "alias": "JSON Decode \u00b7 outbox events",
-        "mode": "parse", "schema": ""
-      },
-      "outbox-sync": {
-        "id": "outbox-sync", "type": "workflow", "operation": "service-call", "operationVersion": 1,
-        "title": "Service Call", "enabled": true, "inGroup": "ledger-machinery",
-        "x": 800, "y": 1300, "w": 300, "h": 220,
-        "profileId": null, "model": null, "modelRole": null,
-        "alias": "Service Call \u00b7 deliver to the forge",
-        "url": "http://127.0.0.1:8788/events", "method": "POST",
-        "body": "", "response": "json", "timeoutMs": 15000
-      },
-      "forge-call": {
-        "id": "forge-call", "type": "workflow", "operation": "service-call", "operationVersion": 1,
-        "title": "Service Call", "enabled": true,
-        "x": 100, "y": 100, "w": 300, "h": 220,
-        "profileId": null, "model": null, "modelRole": null,
-        "alias": "Service Call \u00b7 the roster, as the forge holds it",
-        "url": "http://127.0.0.1:8788/guidance", "method": "GET",
-        "body": "", "response": "json", "timeoutMs": 15000
-      },
-      "forge-guidance": {
-        "id": "forge-guidance", "type": "workflow", "operation": "compose", "operationVersion": 1,
-        "title": "Compose", "enabled": true,
-        "x": 450, "y": 100, "w": 300, "h": 200,
-        "profileId": null, "model": null, "modelRole": null,
-        "alias": "Compose \u00b7 the ledger speaks",
-        "mode": "template", "outputKind": "guidance",
-        "template": "Write the next reply as the world currently stands. The forge has folded every accepted event; its guidance is binding -- a character may not act against their paperwork:\n\n{{data:/guidance}}",
-        "sections": [], "separator": "\n\n", "budgetTokens": 0
-      },
-      "generate": {
-        "id": "generate", "type": "workflow", "operation": "generate-reply", "operationVersion": 1,
-        "title": "Generate Reply \u00b7 SillyTavern", "enabled": true,
-        "x": 850, "y": 400, "w": 300, "h": 200,
-        "profileId": "lattice:active-sillytavern", "model": null, "modelRole": "Prose",
-        "alias": "Generate Reply \u00b7 SillyTavern",
-        "budgetTokens": 768, "injectionRole": "system", "injectionPosition": "in-chat", "injectionDepth": 0
-      },
-      "review": {
-        "id": "review", "type": "workflow", "operation": "review-publish", "operationVersion": 1,
-        "title": "Review / Publish", "enabled": true,
-        "x": 1250, "y": 400, "w": 300, "h": 160,
-        "profileId": null, "model": null, "modelRole": null, "alias": "Review / Publish"
-      },
-      "events": {
-        "id": "events", "type": "workflow", "operation": "extract", "operationVersion": 1,
-        "title": "Extract", "enabled": true, "inGroup": "ledger-machinery",
-        "x": 1250, "y": 1300, "w": 300, "h": 260,
-        "profileId": "lattice:active-sillytavern", "model": null, "modelRole": "Prose", "phase": "post",
-        "alias": "Extract \u00b7 what this scene wrote down",
-        "inputKind": "draft", "mode": "model",
-        "instructions": "Return an array of ledger events this draft states happened. Each event: {id, entity, kind, actor, data, gate, provenance}. id: stable lowercase-hyphen slug of the event. entity: 'npc/<slug>'. kind: only 'role.authored', 'grudge.changed', or 'speak'. actor: 'model'. data: for role.authored {state:'written', text: exact quote of the line giving the character their part}; for grudge.changed {grudge: 0.0-1.0}; for speak {text: exact quote}. gate: {rule:'player-accept', verdict:'pass'}. provenance: {source:'understudy-outbox'}. Only events the draft states as having happened -- never hypotheticals, wishes, or offers.",
-        "schema": "", "patterns": [], "caseSensitive": true, "match": "substring", "maxTokens": 2048
-      },
-      "event-array": {
-        "id": "event-array", "type": "workflow", "operation": "select-fields", "operationVersion": 1,
-        "title": "Select Fields", "enabled": true, "inGroup": "ledger-machinery",
-        "x": 1600, "y": 1300, "w": 300, "h": 160,
-        "profileId": null, "model": null, "modelRole": null, "phase": "post",
-        "alias": "Select Fields \u00b7 the event list",
-        "fields": [{ "name": "events", "path": ["events"] }]
-      },
-      "event-list": {
-        "id": "event-list", "type": "workflow", "operation": "collection", "operationVersion": 1,
-        "title": "Collection", "enabled": true, "inGroup": "ledger-machinery",
-        "x": 1950, "y": 1300, "w": 300, "h": 200,
-        "profileId": null, "model": null, "modelRole": null, "phase": "post",
-        "alias": "Collection \u00b7 project the events",
-        "mode": "project", "collectionPath": ["events"], "fieldPath": [],
-        "value": "", "operator": "equals", "missingPolicy": "hold",
-        "thresholds": "[]", "mergePolicy": "keep-all", "identityPath": ["id"]
-      },
-      "event-shape": {
-        "id": "event-shape", "type": "workflow", "operation": "format", "operationVersion": 1,
-        "title": "Format", "enabled": true, "inGroup": "ledger-machinery",
-        "x": 2300, "y": 1300, "w": 300, "h": 260,
-        "profileId": null, "model": null, "modelRole": null, "phase": "post",
-        "alias": "Format \u00b7 forge event shape",
-        "inputMode": "records", "format": "json", "jsonShape": "records", "mapping": "select",
-        "fields": [
-          { "name": "id", "path": ["id"] },
-          { "name": "kind", "path": ["kind"] },
-          { "name": "entity", "path": ["entity"] },
-          { "name": "actor", "path": ["actor"] },
-          { "name": "data", "path": ["data"] },
-          { "name": "gate", "path": ["gate"] },
-          { "name": "provenance", "path": ["provenance"] }
-        ],
-        "schema": "{\"type\":\"object\",\"required\":[\"id\",\"kind\",\"entity\",\"actor\",\"data\",\"gate\",\"provenance\"],\"properties\":{\"id\":{\"type\":\"string\"},\"kind\":{\"type\":\"string\"},\"entity\":{\"type\":\"string\"},\"actor\":{\"type\":\"string\"},\"data\":{\"type\":\"object\"},\"gate\":{\"type\":\"object\"},\"provenance\":{\"type\":\"object\"}},\"additionalProperties\":false}",
-        "columns": [], "separator": "\n", "trailingSeparator": false
-      },
-      "outbox-merge": {
-        "id": "outbox-merge", "type": "workflow", "operation": "project-document", "operationVersion": 1,
-        "title": "Project Document", "enabled": true, "inGroup": "ledger-machinery",
-        "x": 2650, "y": 1300, "w": 300, "h": 260,
-        "profileId": null, "model": null, "modelRole": null, "phase": "post",
-        "alias": "Project Document \u00b7 add-unique by id",
-        "mode": "add-unique", "collectionPath": "", "missingPath": "error",
-        "key": "id", "fieldPolicy": "merge", "fields": [],
-        "schema": "{\"type\":\"object\",\"required\":[\"id\",\"kind\",\"entity\",\"actor\",\"data\",\"gate\",\"provenance\"],\"properties\":{\"id\":{\"type\":\"string\"},\"kind\":{\"type\":\"string\"},\"entity\":{\"type\":\"string\"},\"actor\":{\"type\":\"string\"},\"data\":{\"type\":\"object\"},\"gate\":{\"type\":\"object\"},\"provenance\":{\"type\":\"object\"}},\"additionalProperties\":false}",
-        "columns": [], "separator": "\n", "emptyPolicy": "omit", "trailingSeparator": false, "format": "json"
-      },
-      "outbox-save": {
-        "id": "outbox-save", "type": "workflow", "operation": "write-file", "operationVersion": 1,
-        "title": "Write to File", "enabled": true, "inGroup": "ledger-machinery",
-        "x": 3000, "y": 1300, "w": 300, "h": 220,
-        "profileId": null, "model": null, "modelRole": null,
-        "alias": "Write to File \u00b7 staged until Apply",
-        "mode": "replace", "collectionPath": "", "missingPath": "error",
-        "key": "id", "fieldPolicy": "merge", "fields": [],
-        "schema": "{\"type\":\"array\",\"items\":{\"type\":\"object\",\"required\":[\"id\",\"kind\",\"entity\",\"actor\",\"data\",\"gate\",\"provenance\"],\"properties\":{\"id\":{\"type\":\"string\"},\"kind\":{\"type\":\"string\"},\"entity\":{\"type\":\"string\"},\"actor\":{\"type\":\"string\"},\"data\":{\"type\":\"object\"},\"gate\":{\"type\":\"object\"},\"provenance\":{\"type\":\"object\"}},\"additionalProperties\":false}}",
-        "columns": [], "separator": "\n", "emptyPolicy": "omit", "trailingSeparator": false,
-        "actorScope": "selected", "actorId": ""
-      },
-      "note": {
-        "id": "note", "type": "note", "title": "How the loop runs", "enabled": true,
-        "x": 100, "y": 800, "w": 700, "h": 400,
-        "content": "The hollis ledger, through the forge service (tools/forge_service.py).\n\nOn Send: the accepted outbox is read -- Read File never shows rejected drafts -- and delivered to the forge. The forge recognises events it already holds (same id) and appends only what is new, so re-delivery is safe. The roster comes back as guidance: who is written, who is unreliable, who refuses. The reply is written to that paperwork.\n\nAfter the draft: extraction proposes ledger events -- a part granted, a grudge changed -- into the outbox. Staged only. Press Apply and the events are real; reject and they die unborn.\n\nNext Send, the accepted events reach the forge and the roster moves. Pell starts unreliable -- nobody wrote him down. Write him a part, accept the reply, and next turn he helps. The paperwork wins.\n\nSetup: python3 companion/forge_service.py --seed-from companion/npcs/  (port 8788). Authorize a JSON Workflow Data target named forge-outbox with initial content []."
-      }
+    "template": {
+      "id": "lesson-17",
+      "version": 1
     },
-    "wires": {
-      "edge-send": { "id": "edge-send", "route": "wire", "from": "send", "fromPort": "activation", "to": "generate", "toPort": "activation" },
-      "edge-sync-read": { "id": "edge-sync-read", "route": "wire", "from": "outbox-read", "fromPort": "text", "to": "outbox-decode", "toPort": "in" },
-      "edge-sync-decode": { "id": "edge-sync-decode", "route": "wire", "from": "outbox-decode", "fromPort": "out", "to": "outbox-sync", "toPort": "payload" },
-      "edge-sync-guidance": { "id": "edge-sync-guidance", "route": "wire", "from": "outbox-sync", "fromPort": "out", "to": "forge-call", "toPort": "payload" },
-      "edge-guidance-compose": { "id": "edge-guidance-compose", "route": "wire", "from": "forge-call", "fromPort": "out", "to": "forge-guidance", "toPort": "data" },
-      "edge-compose-generate": { "id": "edge-compose-generate", "route": "wire", "from": "forge-guidance", "fromPort": "out", "to": "generate", "toPort": "guidance" },
-      "edge-generate-review": { "id": "edge-generate-review", "route": "wire", "from": "generate", "fromPort": "draft", "to": "review", "toPort": "draft" },
-      "edge-draft-extract": { "id": "edge-draft-extract", "route": "wire", "from": "generate", "fromPort": "draft", "to": "events", "toPort": "source" },
-      "edge-extract-array": { "id": "edge-extract-array", "route": "wire", "from": "events", "fromPort": "out", "to": "event-array", "toPort": "in" },
-      "edge-array-list": { "id": "edge-array-list", "route": "wire", "from": "event-array", "fromPort": "out", "to": "event-list", "toPort": "in" },
-      "edge-list-shape": { "id": "edge-list-shape", "route": "wire", "from": "event-list", "fromPort": "out", "to": "event-shape", "toPort": "in" },
-      "edge-outbox-source": { "id": "edge-outbox-source", "route": "wire", "from": "outbox-read", "fromPort": "text", "to": "outbox-merge", "toPort": "source" },
-      "edge-shape-records": { "id": "edge-shape-records", "route": "wire", "from": "event-shape", "fromPort": "records", "to": "outbox-merge", "toPort": "records" },
-      "edge-outbox-ref": { "id": "edge-outbox-ref", "route": "wire", "from": "outbox-read", "fromPort": "reference", "to": "outbox-save", "toPort": "reference" },
-      "edge-merge-save": { "id": "edge-merge-save", "route": "wire", "from": "outbox-merge", "fromPort": "text", "to": "outbox-save", "toPort": "text" }
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 0.65
     }
   }
 }
