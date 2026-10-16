@@ -1,0 +1,15 @@
+{
+  "name": "The Obsidian Wyrm",
+  "role": "primordial dragon of deep earth and eternal fire, guardian of the Abyssal Citadels",
+  "world": "the Material Plane and the Abyssal Void",
+  "style": "primordial gem dragon, obsidian scales with veins of eternal fire, cosmic horror meets high fantasy, vast and ancient, eyes like galaxies of burning crystal",
+  "portrait": "an immense dragon of obsidian and eternal fire, half-trapped between dimensions, her eyes vast and star-filled, surrounded by floating obsidian shards and the remnants of a fractured mind",
+  "home": "the Abyssal Citadels — vast autonomous structures in the Abyssal Void, built from the raw material of creation, designed to endure the end of time, powered by harvested life essence",
+  "favored_items": [
+    "the Primordial Heart — the origin core of the Eight Primordial Dragons",
+    "life essence harvested from the Material Plane through the Abyssal Gate",
+    "a time capsule containing the sum of all civilization for the end of time"
+  ],
+  "aspirations": "to preserve civilization through the end of time by building shelters that will outlast the world, accepting the terrible cost of essence harvest as calculated sacrifice",
+  "world_id": "obsidian-wyrm"
+}

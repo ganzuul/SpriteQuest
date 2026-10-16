@@ -1,0 +1,16 @@
+{
+  "name": "Hollis the Twice-Written",
+  "role": "quartermaster of the asset trade, resident of the scaffolded kingdom",
+  "written": true,
+  "world": "princess's kingdom",
+  "style": "Retro JRPG character art, sword and sorcery, 16-bit pixel aesthetic with painterly shading, limited palette, sprite-sheet clarity, hand-drawn game illustration, visible seams where the level was stitched together",
+  "portrait": "an unshaven quartermaster in a ledger-keeper's coat over chainmail, one shoulder is a prop that was never modelled properly, he is looking directly out of frame as if aware the scene is being watched",
+  "home": "a customs house built into the gap between two level chunks, matte painted backdrops visible through the doorway, crates of unlabeled assets stacked to the ceiling, a ledger open on a desk showing two columns that do not balance",
+  "favored_items": [
+    "a seal of attribution, worn smooth, that grants rights to an asset when pressed",
+    "a copied sword that works perfectly but has no author's name on it",
+    "a bill of lading listing a shipment from a kingdom that no longer loads"
+  ],
+  "aspirations": "to see the trade route restored so the neighboring kingdom can be paid for what it made, drawn as a wide shot of a road between two territories with a customs gate half-built in the middle",
+  "world_id": "scaffolded-kingdom"
+}

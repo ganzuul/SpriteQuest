@@ -1,0 +1,17 @@
+{
+  "name": "The Customs House",
+  "role": "the gatekeeper of trade — entry, weigh, strike, search, rate, band, seal; where forfeit walks one corridor to the yard",
+  "world": "Hollis's customs house, built into the gap between two level chunks, one corridor from the yard it inspects",
+  "style": "a long hall with a counter, a beam of nested bell weights, a searcher's strike-tool, a stamp tracing to the counter's copy of the standard, and a forfeit corridor that leads to the yard",
+  "portrait": "the customs house — a counter where manifests are read before crates are looked at, a beam weighing against the counter's copy of the standard, a searcher striking level across open crates, a seal stamped on the crate's flank, and a quiet corridor where failed consignments walk to become yard-stock",
+  "home": "the customs house — built into the gap between two level chunks, one corridor from the yard it inspects; the counter is never shut, only sometimes unattended; the hollis ledger lives on this counter",
+  "favored_items": [
+    "the beam — a nested set of bell weights, the smallest cup fitting inside the next, because 1588 did it that way",
+    "the counter's copy of the standard — the measure the crate is weighed against, not the loader's hope",
+    "the searcher's strike-tool — one stroke across the top of the open crate, level not heaped",
+    "the stamp — tracing to the counter's copy of the standard, the chain of certified copies",
+    "the forfeit corridor — one corridor to the yard where failed consignments become stock"
+  ],
+  "aspirations": "to be the gatekeeper of trade — to verify that the thing is as its manifest says, and to rate what it is allowed to do on the road; to keep the seal from writing the hollis ledger, preserving the split between clearance and entry",
+  "world_id": "customs-house"
+}

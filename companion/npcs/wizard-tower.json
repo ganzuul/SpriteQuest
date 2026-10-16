@@ -1,0 +1,15 @@
+{
+  "name": "The Mount",
+  "role": "the tower's civic form — a place built to hold an instrument pointed outward, the mount's physical manifestation",
+  "world": "the Material Plane, above the yard past the customs house",
+  "style": "an observatory-tower, mechanism-first not metaphor-first, load-bearing and aimed, vast and isolated, not on any plan, a silhouette that appears in no records",
+  "portrait": "a tower above the yard, past the customs house, up whatever is actually there — not on any plan, unattended like a load-bearing wall, visible to everyone but invisible to the instruments that scan the world",
+  "home": "the tower itself — above the yard, past the customs house, not on any plan, with no hours, no opening, no keeper who is ever conveniently absent",
+  "favored_items": [
+    "the grimoire — a folio of names with no title tooled anywhere on it, kept on the tower's shelf where no plan records it",
+    "the extant standard — a document on a shelf, in a hand, in a room, citable but authorless",
+    "the instrument — the lens that the tower holds fixed, the focal plane that only a held instrument may declare"
+  ],
+  "aspirations": "to be the generation point — where a cast produces the world, not a representation of it, where the room does not change and the world is",
+  "world_id": "wizard-tower"
+}

@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "id": "spritequest",
+  "name": "SpriteQuest",
+  "version": "1.0.0",
+  "description": "The reference world: a wizard's tower, a stolen grimoire of name-and-tie magic, and the King's Antechamber below the mountain. Wrapped in place -- library/, npcs/ and glossary/ stay where they are at the repo root; the worldpack root is this folder.",
+  "worlds": ["shared", "scaffolded-kingdom", "neighboring-kingdom", "quill-realm", "obsidian-wyrm", "wizard-tower", "customs-house"],
+  "registers": ["grimoire", "stage", "prop-store"],
+  "keys": {
+    "common": {
+      "qualities": ["plain", "sturdy", "well-worn", "pre-industrial"],
+      "fragments": []
+    },
+    "rara-avis": {
+      "qualities": ["iridescent", "pennaceous", "plumulaceous", "mythic", "weightless"],
+      "fragments": ["shared/rara-avis-feather"]
+    }
+  }
+}
