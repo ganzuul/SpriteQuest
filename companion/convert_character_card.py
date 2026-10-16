@@ -263,10 +263,10 @@ def write_fragments(fragments: list, world_id: str) -> None:
 def main():
     if len(sys.argv) != 4:
         print("Usage: convert_character_card.py <direction> <input> <output>")
-        print("  directions: npcs->card, card->npcs")
+        print("  directions: to-card (or 'npcs->card'), to-npcs (or 'card->npcs')")
         sys.exit(1)
 
-    direction = sys.argv[1]
+    direction = sys.argv[1].lower().strip("-")
     input_path = Path(sys.argv[2])
     output_path = Path(sys.argv[3])
 
@@ -274,9 +274,9 @@ def main():
         print(f"Error: input file not found: {input_path}")
         sys.exit(1)
 
-    if direction == "npcs->card":
+    if direction in ("to-card", "npcs->card", "npcs-to-card"):
         result = npcs_to_card(input_path)
-    elif direction == "card->npcs":
+    elif direction in ("to-npcs", "card->npcs", "card-to-npcs"):
         result = card_to_npcs(input_path)
         # Write fragments back to the fragment library if any were recovered.
         world_id = result.get("world_id", "")

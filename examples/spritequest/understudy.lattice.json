@@ -1,0 +1,194 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "understudy",
+    "type": "workflow",
+    "name": "The Understudy",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-unified",
+    "description": "Let the hollis ledger shape every reply, and let an accepted reply move it. On Send, the accepted outbox is delivered to the forge service (which recognises what it already holds), the roster is read back as guidance, and the model writes a reply the current paperwork deserves. After the draft, extraction proposes ledger events into the outbox -- staged, never saved, until you press Apply. Accept the reply and the part is written down; reject it and nothing happened.\n\nSetup: run `python3 companion/forge_service.py --seed-from companion/npcs/` and authorize a JSON Workflow Data target named `forge-outbox` with initial content [].",
+    "groups": {
+      "ledger-machinery": {
+        "id": "ledger-machinery",
+        "title": "The hollis ledger's machinery",
+        "description": "These boxes deliver what you accepted last turn and stage what this turn proposes. Nothing here writes without your Apply.",
+        "x": 875,
+        "y": 1230,
+        "w": 2350,
+        "h": 627,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": ["outbox-read", "outbox-decode", "outbox-sync", "events", "event-array", "event-list", "event-shape", "outbox-merge", "outbox-save"]
+      }
+    },
+    "roles": {
+      "Prose": { "model": null, "profileId": "lattice:active-sillytavern" }
+    },
+    "portals": {},
+    "definitions": {},
+    "template": { "id": "understudy", "version": 1 },
+    "view": { "x": 0, "y": 0, "zoom": 0.65 },
+    "nodes": {
+      "send": {
+        "id": "send", "type": "workflow", "operation": "on-send", "operationVersion": 1,
+        "title": "On Send", "enabled": true,
+        "x": 100, "y": 400, "w": 300, "h": 140,
+        "profileId": null, "model": null, "modelRole": null, "alias": "On Send"
+      },
+      "outbox-read": {
+        "id": "outbox-read", "type": "workflow", "operation": "read-file", "operationVersion": 1,
+        "title": "Read File", "enabled": true, "inGroup": "ledger-machinery",
+        "x": 100, "y": 1300, "w": 300, "h": 196,
+        "profileId": null, "model": null, "modelRole": null,
+        "alias": "Read File \u00b7 accepted outbox",
+        "targetId": "forge-outbox", "schema": "", "columns": [],
+        "actorScope": "selected", "actorId": ""
+      },
+      "outbox-decode": {
+        "id": "outbox-decode", "type": "workflow", "operation": "json-decode", "operationVersion": 1,
+        "title": "JSON Decode", "enabled": true, "inGroup": "ledger-machinery",
+        "x": 450, "y": 1300, "w": 300, "h": 160,
+        "profileId": null, "model": null, "modelRole": null,
+        "alias": "JSON Decode \u00b7 outbox events",
+        "mode": "parse", "schema": ""
+      },
+      "outbox-sync": {
+        "id": "outbox-sync", "type": "workflow", "operation": "service-call", "operationVersion": 1,
+        "title": "Service Call", "enabled": true, "inGroup": "ledger-machinery",
+        "x": 800, "y": 1300, "w": 300, "h": 220,
+        "profileId": null, "model": null, "modelRole": null,
+        "alias": "Service Call \u00b7 deliver to the forge",
+        "url": "http://127.0.0.1:8788/events", "method": "POST",
+        "body": "", "response": "json", "timeoutMs": 15000
+      },
+      "forge-call": {
+        "id": "forge-call", "type": "workflow", "operation": "service-call", "operationVersion": 1,
+        "title": "Service Call", "enabled": true,
+        "x": 100, "y": 100, "w": 300, "h": 220,
+        "profileId": null, "model": null, "modelRole": null,
+        "alias": "Service Call \u00b7 the roster, as the forge holds it",
+        "url": "http://127.0.0.1:8788/guidance", "method": "GET",
+        "body": "", "response": "json", "timeoutMs": 15000
+      },
+      "forge-guidance": {
+        "id": "forge-guidance", "type": "workflow", "operation": "compose", "operationVersion": 1,
+        "title": "Compose", "enabled": true,
+        "x": 450, "y": 100, "w": 300, "h": 200,
+        "profileId": null, "model": null, "modelRole": null,
+        "alias": "Compose \u00b7 the ledger speaks",
+        "mode": "template", "outputKind": "guidance",
+        "template": "Write the next reply as the world currently stands. The forge has folded every accepted event; its guidance is binding -- a character may not act against their paperwork:\n\n{{data:/guidance}}",
+        "sections": [], "separator": "\n\n", "budgetTokens": 0
+      },
+      "generate": {
+        "id": "generate", "type": "workflow", "operation": "generate-reply", "operationVersion": 1,
+        "title": "Generate Reply \u00b7 SillyTavern", "enabled": true,
+        "x": 850, "y": 400, "w": 300, "h": 200,
+        "profileId": "lattice:active-sillytavern", "model": null, "modelRole": "Prose",
+        "alias": "Generate Reply \u00b7 SillyTavern",
+        "budgetTokens": 768, "injectionRole": "system", "injectionPosition": "in-chat", "injectionDepth": 0
+      },
+      "review": {
+        "id": "review", "type": "workflow", "operation": "review-publish", "operationVersion": 1,
+        "title": "Review / Publish", "enabled": true,
+        "x": 1250, "y": 400, "w": 300, "h": 160,
+        "profileId": null, "model": null, "modelRole": null, "alias": "Review / Publish"
+      },
+      "events": {
+        "id": "events", "type": "workflow", "operation": "extract", "operationVersion": 1,
+        "title": "Extract", "enabled": true, "inGroup": "ledger-machinery",
+        "x": 1250, "y": 1300, "w": 300, "h": 260,
+        "profileId": "lattice:active-sillytavern", "model": null, "modelRole": "Prose", "phase": "post",
+        "alias": "Extract \u00b7 what this scene wrote down",
+        "inputKind": "draft", "mode": "model",
+        "instructions": "Return an array of ledger events this draft states happened. Each event: {id, entity, kind, actor, data, gate, provenance}. id: stable lowercase-hyphen slug of the event. entity: 'npc/<slug>'. kind: only 'role.authored', 'grudge.changed', or 'speak'. actor: 'model'. data: for role.authored {state:'written', text: exact quote of the line giving the character their part}; for grudge.changed {grudge: 0.0-1.0}; for speak {text: exact quote}. gate: {rule:'player-accept', verdict:'pass'}. provenance: {source:'understudy-outbox'}. Only events the draft states as having happened -- never hypotheticals, wishes, or offers.",
+        "schema": "", "patterns": [], "caseSensitive": true, "match": "substring", "maxTokens": 2048
+      },
+      "event-array": {
+        "id": "event-array", "type": "workflow", "operation": "select-fields", "operationVersion": 1,
+        "title": "Select Fields", "enabled": true, "inGroup": "ledger-machinery",
+        "x": 1600, "y": 1300, "w": 300, "h": 160,
+        "profileId": null, "model": null, "modelRole": null, "phase": "post",
+        "alias": "Select Fields \u00b7 the event list",
+        "fields": [{ "name": "events", "path": ["events"] }]
+      },
+      "event-list": {
+        "id": "event-list", "type": "workflow", "operation": "collection", "operationVersion": 1,
+        "title": "Collection", "enabled": true, "inGroup": "ledger-machinery",
+        "x": 1950, "y": 1300, "w": 300, "h": 200,
+        "profileId": null, "model": null, "modelRole": null, "phase": "post",
+        "alias": "Collection \u00b7 project the events",
+        "mode": "project", "collectionPath": ["events"], "fieldPath": [],
+        "value": "", "operator": "equals", "missingPolicy": "hold",
+        "thresholds": "[]", "mergePolicy": "keep-all", "identityPath": ["id"]
+      },
+      "event-shape": {
+        "id": "event-shape", "type": "workflow", "operation": "format", "operationVersion": 1,
+        "title": "Format", "enabled": true, "inGroup": "ledger-machinery",
+        "x": 2300, "y": 1300, "w": 300, "h": 260,
+        "profileId": null, "model": null, "modelRole": null, "phase": "post",
+        "alias": "Format \u00b7 forge event shape",
+        "inputMode": "records", "format": "json", "jsonShape": "records", "mapping": "select",
+        "fields": [
+          { "name": "id", "path": ["id"] },
+          { "name": "kind", "path": ["kind"] },
+          { "name": "entity", "path": ["entity"] },
+          { "name": "actor", "path": ["actor"] },
+          { "name": "data", "path": ["data"] },
+          { "name": "gate", "path": ["gate"] },
+          { "name": "provenance", "path": ["provenance"] }
+        ],
+        "schema": "{\"type\":\"object\",\"required\":[\"id\",\"kind\",\"entity\",\"actor\",\"data\",\"gate\",\"provenance\"],\"properties\":{\"id\":{\"type\":\"string\"},\"kind\":{\"type\":\"string\"},\"entity\":{\"type\":\"string\"},\"actor\":{\"type\":\"string\"},\"data\":{\"type\":\"object\"},\"gate\":{\"type\":\"object\"},\"provenance\":{\"type\":\"object\"}},\"additionalProperties\":false}",
+        "columns": [], "separator": "\n", "trailingSeparator": false
+      },
+      "outbox-merge": {
+        "id": "outbox-merge", "type": "workflow", "operation": "project-document", "operationVersion": 1,
+        "title": "Project Document", "enabled": true, "inGroup": "ledger-machinery",
+        "x": 2650, "y": 1300, "w": 300, "h": 260,
+        "profileId": null, "model": null, "modelRole": null, "phase": "post",
+        "alias": "Project Document \u00b7 add-unique by id",
+        "mode": "add-unique", "collectionPath": "", "missingPath": "error",
+        "key": "id", "fieldPolicy": "merge", "fields": [],
+        "schema": "{\"type\":\"object\",\"required\":[\"id\",\"kind\",\"entity\",\"actor\",\"data\",\"gate\",\"provenance\"],\"properties\":{\"id\":{\"type\":\"string\"},\"kind\":{\"type\":\"string\"},\"entity\":{\"type\":\"string\"},\"actor\":{\"type\":\"string\"},\"data\":{\"type\":\"object\"},\"gate\":{\"type\":\"object\"},\"provenance\":{\"type\":\"object\"}},\"additionalProperties\":false}",
+        "columns": [], "separator": "\n", "emptyPolicy": "omit", "trailingSeparator": false, "format": "json"
+      },
+      "outbox-save": {
+        "id": "outbox-save", "type": "workflow", "operation": "write-file", "operationVersion": 1,
+        "title": "Write to File", "enabled": true, "inGroup": "ledger-machinery",
+        "x": 3000, "y": 1300, "w": 300, "h": 220,
+        "profileId": null, "model": null, "modelRole": null,
+        "alias": "Write to File \u00b7 staged until Apply",
+        "mode": "replace", "collectionPath": "", "missingPath": "error",
+        "key": "id", "fieldPolicy": "merge", "fields": [],
+        "schema": "{\"type\":\"array\",\"items\":{\"type\":\"object\",\"required\":[\"id\",\"kind\",\"entity\",\"actor\",\"data\",\"gate\",\"provenance\"],\"properties\":{\"id\":{\"type\":\"string\"},\"kind\":{\"type\":\"string\"},\"entity\":{\"type\":\"string\"},\"actor\":{\"type\":\"string\"},\"data\":{\"type\":\"object\"},\"gate\":{\"type\":\"object\"},\"provenance\":{\"type\":\"object\"}},\"additionalProperties\":false}}",
+        "columns": [], "separator": "\n", "emptyPolicy": "omit", "trailingSeparator": false,
+        "actorScope": "selected", "actorId": ""
+      },
+      "note": {
+        "id": "note", "type": "note", "title": "How the loop runs", "enabled": true,
+        "x": 100, "y": 800, "w": 700, "h": 400,
+        "content": "The hollis ledger, through the forge service (tools/forge_service.py).\n\nOn Send: the accepted outbox is read -- Read File never shows rejected drafts -- and delivered to the forge. The forge recognises events it already holds (same id) and appends only what is new, so re-delivery is safe. The roster comes back as guidance: who is written, who is unreliable, who refuses. The reply is written to that paperwork.\n\nAfter the draft: extraction proposes ledger events -- a part granted, a grudge changed -- into the outbox. Staged only. Press Apply and the events are real; reject and they die unborn.\n\nNext Send, the accepted events reach the forge and the roster moves. Pell starts unreliable -- nobody wrote him down. Write him a part, accept the reply, and next turn he helps. The paperwork wins.\n\nSetup: python3 companion/forge_service.py --seed-from companion/npcs/  (port 8788). Authorize a JSON Workflow Data target named forge-outbox with initial content []."
+      }
+    },
+    "wires": {
+      "edge-send": { "id": "edge-send", "route": "wire", "from": "send", "fromPort": "activation", "to": "generate", "toPort": "activation" },
+      "edge-sync-read": { "id": "edge-sync-read", "route": "wire", "from": "outbox-read", "fromPort": "text", "to": "outbox-decode", "toPort": "in" },
+      "edge-sync-decode": { "id": "edge-sync-decode", "route": "wire", "from": "outbox-decode", "fromPort": "out", "to": "outbox-sync", "toPort": "payload" },
+      "edge-sync-guidance": { "id": "edge-sync-guidance", "route": "wire", "from": "outbox-sync", "fromPort": "out", "to": "forge-call", "toPort": "payload" },
+      "edge-guidance-compose": { "id": "edge-guidance-compose", "route": "wire", "from": "forge-call", "fromPort": "out", "to": "forge-guidance", "toPort": "data" },
+      "edge-compose-generate": { "id": "edge-compose-generate", "route": "wire", "from": "forge-guidance", "fromPort": "out", "to": "generate", "toPort": "guidance" },
+      "edge-generate-review": { "id": "edge-generate-review", "route": "wire", "from": "generate", "fromPort": "draft", "to": "review", "toPort": "draft" },
+      "edge-draft-extract": { "id": "edge-draft-extract", "route": "wire", "from": "generate", "fromPort": "draft", "to": "events", "toPort": "source" },
+      "edge-extract-array": { "id": "edge-extract-array", "route": "wire", "from": "events", "fromPort": "out", "to": "event-array", "toPort": "in" },
+      "edge-array-list": { "id": "edge-array-list", "route": "wire", "from": "event-array", "fromPort": "out", "to": "event-list", "toPort": "in" },
+      "edge-list-shape": { "id": "edge-list-shape", "route": "wire", "from": "event-list", "fromPort": "out", "to": "event-shape", "toPort": "in" },
+      "edge-outbox-source": { "id": "edge-outbox-source", "route": "wire", "from": "outbox-read", "fromPort": "text", "to": "outbox-merge", "toPort": "source" },
+      "edge-shape-records": { "id": "edge-shape-records", "route": "wire", "from": "event-shape", "fromPort": "records", "to": "outbox-merge", "toPort": "records" },
+      "edge-outbox-ref": { "id": "edge-outbox-ref", "route": "wire", "from": "outbox-read", "fromPort": "reference", "to": "outbox-save", "toPort": "reference" },
+      "edge-merge-save": { "id": "edge-merge-save", "route": "wire", "from": "outbox-merge", "fromPort": "text", "to": "outbox-save", "toPort": "text" }
+    }
+  }
+}
