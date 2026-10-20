@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "wizard-tower/glass-cathedral",
+  "version": 1,
+  "world_id": "wizard-tower",
+  "for": "diffusion",
+  "facets": ["home"],
+  "detail": "a city-sized cathedral floating high in the sky, built entirely from luminous spun and blown glass; interlocking translucent domes, soaring crystalline spires, and suspended glass platforms that refract sunlight into prismatic patterns across the atmosphere, glowing brilliantly at dusk and dawn",
+  "evidence": {
+    "kind": "directed",
+    "source": "user-brief",
+    "quote": "A glass cathedral in the sky. It was created by wizards who directed asteroids to fly close to the sun, where they melted into glass that was spun, blown and formed into perfect geometrical shapes. These domes, platforms and spires were then assembled into a city-size cathedral that can be seen glimmering in the sky at dusk and dawn."
+  },
+  "facts": {
+    "extent": "city-sized airborne complex, several kilometers across",
+    "scale_ref": "visible against the horizon as a glittering constellation of geometric spires and domes at dawn and dusk",
+    "material": "solar-melted asteroid glass, spun and blown into pure geometric domes and spires without terrestrial iron impurities",
+    "state": "assembled in geometric alignment, floating intact in the high atmosphere"
+  },
+  "note": "Created by wizards who directed asteroids into solar flybys to melt, spin, and blow extraterrestrial silica into monumental geometric shapes before assembling them in the upper atmosphere into a city-sized sky cathedral."
+}
