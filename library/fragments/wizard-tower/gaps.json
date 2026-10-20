@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "wizard-tower/gaps",
+  "version": 1,
+  "world_id": "wizard-tower",
+  "for": "diffusion",
+  "facets": [],
+  "detail": "A way to reach the tower that is not a fast-travel menu. A visual grammar for extant document. A ruling on fizzle reporting.",
+  "evidence": {
+    "kind": "observed",
+    "source": "character_book",
+    "quote": ""
+  },
+  "note": "Three gaps the tower needs to exist: navigation without fast travel, visual literacy for extant documents, and fizzle reporting discipline."
+}

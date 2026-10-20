@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "wizard-tower/guardrails",
+  "version": 1,
+  "world_id": "wizard-tower",
+  "for": "diffusion",
+  "facets": [],
+  "detail": "The tower grants nothing. No rod may be coined here. Nobody is at the top. The tower is not the temple. Nothing found at the top may answer a question.",
+  "evidence": {
+    "kind": "observed",
+    "source": "character_book",
+    "quote": ""
+  },
+  "note": "Five guardrails that define the tower's nature. The tower holds finished answers; it does not have one for the hero's actual problem."
+}

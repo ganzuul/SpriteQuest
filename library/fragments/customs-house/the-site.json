@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "customs-house/the-site",
+  "version": 1,
+  "world_id": "customs-house",
+  "for": "diffusion",
+  "facets": [],
+  "detail": "The customs house as its own site \u2014 separated from the asset store. It answers the trade's two questions and nothing else: 1. Is the thing as its manifest says? \u2014 entry, weigh, strike, search. 2. What is the thing allowed to do on the road? \u2014 rate, band, seal. It is where R6 SHIP lives: the crate \u2014 the bounding box \u2014 is demanded here because everything downstream (rate, band, seal, clearance) is arithmetic on the box. No box, no clearance.",
+  "evidence": {
+    "kind": "observed",
+    "source": "character_book",
+    "quote": ""
+  },
+  "note": "The customs house is a site with a specific function: inspection and clearance. It is not the store \u2014 the store stores, the customs clears."
+}

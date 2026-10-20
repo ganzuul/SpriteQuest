@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "shared/glyph-customs-seal",
+  "version": 1,
+  "world_id": "shared",
+  "for": "diffusion",
+  "facets": ["favored_items", "portrait", "home"],
+  "detail": "a circular embossed attribution seal stamped in dark vermilion wax or ink, depicting a balanced two-pan beam scale flanked by nested notched calipers with a central geometric knot",
+  "evidence": {
+    "kind": "directed",
+    "source": "companion/npcs/hollis.json",
+    "quote": "a seal of attribution, worn smooth, that grants rights to an asset when pressed"
+  },
+  "facts": {
+    "extent": "4 cm circular mark",
+    "scale_ref": "fits within the palm of a hand; stamped clearly on crate corners and document margins",
+    "material": "vermilion stamp ink or pressed red sealing wax",
+    "state": "crisp raised lines with slightly worn outer rim"
+  },
+  "note": "The mark of certified clearance and attribution across border checkpoints. Stamped directly onto crated props and bills of lading."
+}

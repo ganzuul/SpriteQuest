@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "customs-house/forfeit-corridor",
+  "version": 1,
+  "world_id": "customs-house",
+  "for": "diffusion",
+  "facets": [],
+  "detail": "The forfeit corridor \u2014 one corridor from the customs house to the yard. A failed consignment walks here quietly and becomes yard-stock under the find.py flags it earned: draft, rough, waiting. The customs punishes; the store absorbs; the two rooms, one trade.",
+  "evidence": {
+    "kind": "observed",
+    "source": "character_book",
+    "quote": ""
+  },
+  "note": "The forfeit corridor is the path of punishment. Failed goods become stock in the yard next door."
+}

@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "wizard-tower/the-grimoire",
+  "version": 1,
+  "world_id": "wizard-tower",
+  "for": "diffusion",
+  "facets": [],
+  "detail": "a folio of names with no title tooled anywhere on it, kept where no plan records it. The instrument is citable; its author is not, and there is no field for that, and asking produces an answer about the edition rather than the author.",
+  "evidence": {
+    "kind": "observed",
+    "source": "character_book",
+    "quote": ""
+  },
+  "note": "The grimoire is the standard kept on the tower's shelf. It is extant and identified, but its author is not citable."
+}

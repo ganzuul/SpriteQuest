@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "obsidian-wyrm/abyssal-citadels",
+  "version": 1,
+  "world_id": "obsidian-wyrm",
+  "for": "diffusion",
+  "facets": [],
+  "detail": "vast autonomous structures in the Abyssal Void, built from the raw material of creation, designed to endure the end of time, floating fragments of rock and stone in endless darkness",
+  "evidence": {
+    "kind": "observed",
+    "source": "character_book",
+    "quote": ""
+  },
+  "note": "The Wyrm's home and the central setting of the campaign. Time capsules built to preserve civilization."
+}

@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "customs-house/statutes",
+  "version": 1,
+  "world_id": "customs-house",
+  "for": "diffusion",
+  "facets": [],
+  "detail": "The statutes this room is built from: Magna Carta's clause 35 (one measure, one weight, without defining units); the 1688 survey finding the Exchequer no longer held the wine-gallon standard; 1695 Ireland lodging standards in the Exchequer and sending copies to counties; 1706 Scotland requiring every burgh to keep duplicates; the 1495 Winchester definitions measuring capacity 'by stricken' (level, not heaped); the 1835 Act making heaped measure illegal; alnage \u2014 cloth ordered uniform from 1196, enforced by an alnager who measured each piece and affixed a stamp, faulty cloth forfeit to the Crown; the 1353 repeal of the single width rule.",
+  "evidence": {
+    "kind": "observed",
+    "source": "character_book",
+    "quote": ""
+  },
+  "note": "The customs house borrows the history of standards and measures, not the text. Single sizes break when goods diversify, so the fare is bands rather than a boolean."
+}

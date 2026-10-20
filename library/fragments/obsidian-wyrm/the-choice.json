@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "obsidian-wyrm/the-choice",
+  "version": 1,
+  "world_id": "obsidian-wyrm",
+  "for": "diffusion",
+  "facets": [],
+  "detail": "Three choices: Sustain the Wyrm (let the calculation continue, the Citadels endure, the harvest continues), Destroy the Wyrm (close the rift, let the end come naturally), or Absorb the Wyrm (become the new warden of the Void, eternally counting)",
+  "evidence": {
+    "kind": "observed",
+    "source": "character_book",
+    "quote": ""
+  },
+  "note": "The climax of the campaign. The players must decide the fate of the Obsidian Wyrm and the Abyssal Citadels."
+}

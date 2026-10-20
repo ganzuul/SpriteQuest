@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "wizard-tower/first-cast-beats",
+  "version": 1,
+  "world_id": "wizard-tower",
+  "for": "diffusion",
+  "facets": [],
+  "detail": "1. The climb \u2014 not on any plan, told by someone who could not say how he knew. 2. The standard is extant \u2014 a document on a shelf, citable but authorless. 3. He incorporates \u2014 no counterparty, the intent gate is not required. 4. The registrar stamps \u2014 checks form, records intent, grants nothing. 5. The cast \u2014 the room does not change and the world is. 6. The paperwork goes to the customs counter afterwards, in triplicate.",
+  "evidence": {
+    "kind": "observed",
+    "source": "character_book",
+    "quote": ""
+  },
+  "note": "Six beats of the first cast. The tower writes nothing, so paperwork arrives after, not before."
+}

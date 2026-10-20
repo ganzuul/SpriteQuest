@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "shared/partially-specified-world",
+  "version": 1,
+  "world_id": "shared",
+  "for": "diffusion",
+  "facets": ["portrait", "favored_items"],
+  "detail": "inventory grid of nine slots with only three filled -- a key, a potion and a scroll -- the remaining six empty and plainly visible",
+  "evidence": {
+    "kind": "observed",
+    "source": "README.md",
+    "quote": "filled only three of nine inventory slots. None of that was asked for."
+  },
+  "note": "The only genuinely unprompted detail from the first batch. Its observation lives in README, not in observations.md -- the filled observations file belongs to the baseline directory and never mentions inventory."
+}

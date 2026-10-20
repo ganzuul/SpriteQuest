@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "customs-house/first-clearance-beats",
+  "version": 1,
+  "world_id": "customs-house",
+  "for": "diffusion",
+  "facets": [],
+  "detail": "Six beats of first clearance: 1. Entry \u2014 the manifest is laid on the counter, read before the crate is looked at. 2. The beam \u2014 weighed against the counter's copy of the standard, nested bell weights from 1588. 3. Stricken \u2014 the searcher strikes level across the open crate. 4. The band \u2014 the customer chooses a rate band, not a number; bands are hypotheses. 5. The seal and the niche \u2014 the stamp goes on the crate's flank; the box's original is in a niche at the temple with no door. 6. Forfeit, quietly \u2014 a second consignment fails the strike, walks one corridor to the yard, becomes stock under find.py flags.",
+  "evidence": {
+    "kind": "observed",
+    "source": "character_book",
+    "quote": ""
+  },
+  "note": "Six beats of the first clearance. The customs punishes; the store absorbs; the two rooms, one trade."
+}

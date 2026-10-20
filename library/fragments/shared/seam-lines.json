@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "shared/seam-lines",
+  "version": 1,
+  "world_id": "shared",
+  "for": "diffusion",
+  "facets": ["portrait", "home", "favored_items", "aspirations"],
+  "detail": "thin dashed stitch lines running between separately laid background tiles, dividing the surface into a visible grid of equal rectangles",
+  "evidence": {
+    "kind": "observed",
+    "source": "docs/quarantine/compiler-pipeline.md",
+    "quote": "dashed stitch lines drawn between background tiles"
+  },
+  "note": "Also present in the sheet's own `style` field, so renders containing it are not proof the fragment transfers on its own. Keep for now; a transfer test should notice."
+}

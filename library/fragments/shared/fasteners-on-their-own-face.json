@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "id": "shared/fasteners-on-their-own-face",
+  "version": 1,
+  "world_id": "shared",
+  "for": "gemma4-orion",
+  "detail": "clasps, catches and their plates fasten at the fore-edge and reach across to the cover, never along the spine",
+  "evidence": {
+    "kind": "directed",
+    "source": "docs/quarantine/dev-pain-log.md",
+    "quote": "clasps, catches and their plates fasten at the fore-edge"
+  },
+  "note": "The brief said 'two brass clasps' and named no location, so the compiler invented one and invented it wrongly three rolls running -- 'clasps hinge along the spine side' is a clasp that holds nothing. An unspecified physical fact is not left blank by a model, it is filled confidently, which is what earns this a place in the library rather than a line in the brief."
+}

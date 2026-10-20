@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "customs-house/r6-ship",
+  "version": 1,
+  "world_id": "customs-house",
+  "for": "diffusion",
+  "facets": [],
+  "detail": "R6 SHIP lives at the customs house. The crate \u2014 the bounding box \u2014 is demanded here because everything downstream (rate, band, seal, clearance) is arithmetic on the box. No box, no clearance; the counter refuses politely, by name.",
+  "evidence": {
+    "kind": "observed",
+    "source": "character_book",
+    "quote": ""
+  },
+  "note": "R6 SHIP is the crate/manifest system that lives at the customs house. The bounding box is the fundamental unit of clearance."
+}

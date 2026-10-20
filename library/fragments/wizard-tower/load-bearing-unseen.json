@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "wizard-tower/load-bearing-unseen",
+  "version": 1,
+  "world_id": "wizard-tower",
+  "for": "diffusion",
+  "facets": [],
+  "detail": "The tower is the most visible object in the world and appears in none of the records. can_cite is false; can_affect is true. It is not unseen by anyone \u2014 it is unseen by the instruments, and that is a different and more precise failure.",
+  "evidence": {
+    "kind": "observed",
+    "source": "character_book",
+    "quote": ""
+  },
+  "note": "The tower moves the world while being unciteable by the instruments. Visible to people, invisible to the scanners."
+}

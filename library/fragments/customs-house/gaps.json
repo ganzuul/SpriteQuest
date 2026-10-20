@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "customs-house/gaps",
+  "version": 1,
+  "world_id": "customs-house",
+  "for": "diffusion",
+  "facets": [],
+  "detail": "Gaps \u2014 what this site needs to exist: 1. Build: R6 SHIP in tools/manifest_rules.py-land \u2014 the gate evaluator with the searcher's absence codes (no-manifest, no-dimensions, field-rejected) and the clearance action. 2. Manifest extension: a certified_by field \u2014 which copy of the standard cleared this crate. 3. Forfeiture: the walk from failure to yard-stock is a prop-store ledger event at both ends. 4. Asset-demand: the counter, the beam, the chest of nested weights, the searcher's strike-tool, the stamp \u2014 all to be born qualified. 5. Glossary watch: customs is a proper-noun-adjacent common word.",
+  "evidence": {
+    "kind": "observed",
+    "source": "character_book",
+    "quote": ""
+  },
+  "note": "The gaps list what the customs house needs to become a fully playable site. R6 SHIP is the gate evaluator; the certified_by field tracks the chain of copies."
+}

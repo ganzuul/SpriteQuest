@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "wizard-tower/the-mount",
+  "version": 1,
+  "world_id": "wizard-tower",
+  "for": "diffusion",
+  "facets": [],
+  "detail": "a tower above the yard, past the customs house, up whatever is actually there. Not on any plan. It has no hours, no opening, no keeper who is ever conveniently absent \u2014 it is unattended in the way a load-bearing wall is unattended.",
+  "evidence": {
+    "kind": "observed",
+    "source": "character_book",
+    "quote": ""
+  },
+  "note": "The tower is the mount's civic form. Everything else about a wizard tower follows from the requirement that an instrument be held fixed."
+}

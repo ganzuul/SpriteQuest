@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "obsidian-wyrm/abyssal-gate",
+  "version": 1,
+  "world_id": "obsidian-wyrm",
+  "for": "diffusion",
+  "facets": [],
+  "detail": "an ancient structure of obsidian and bone, just waiting to be opened, the rift between the Material Plane and the Abyssal Void",
+  "evidence": {
+    "kind": "observed",
+    "source": "character_book",
+    "quote": ""
+  },
+  "note": "The entry point to the Abyssal Void. The structure through which life essence is harvested."
+}

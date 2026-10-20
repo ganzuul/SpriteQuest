@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "wizard-tower/the-shelf",
+  "version": 1,
+  "world_id": "wizard-tower",
+  "for": "diffusion",
+  "facets": [],
+  "detail": "Things kept above the yard on a shelf that appears on no plan: instruments and extant documents, old, whole, and much read. Dark leather and brass, edges gone dark from handling, writing worked into every surface the use has left free.",
+  "evidence": {
+    "kind": "observed",
+    "source": "character_book",
+    "quote": ""
+  },
+  "note": "The tower's shelf holds the grimoire and extant documents. The grimoire is a folio of names with no title tooled anywhere on it."
+}

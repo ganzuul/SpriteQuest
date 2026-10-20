@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "id": "shared/single-face-reading",
+  "version": 1,
+  "world_id": "shared",
+  "for": "gemma4-orion",
+  "detail": "describe the object from one face, at one moment, and let nothing that lives on a hidden face be relocated onto the visible one",
+  "evidence": {
+    "kind": "directed",
+    "source": "docs/quarantine/dev-pain-log.md",
+    "quote": "describe the object from one face, at one moment"
+  },
+  "note": "A rule for the writer, not a detail to be drawn: it has no facet because it selects no sheet. The failure it answers is the grimoire roll that wrote the cover's inscription, the spine's flatness and the fore-edge's wear in one paragraph, and got one surface carrying all three. `docs/quarantine/compose.md` is why this is a fragment and not a line in the prompt file."
+}

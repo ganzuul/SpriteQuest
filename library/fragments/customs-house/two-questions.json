@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "customs-house/two-questions",
+  "version": 1,
+  "world_id": "customs-house",
+  "for": "diffusion",
+  "facets": [],
+  "detail": "The customs house answers two questions: 1. Is the thing as its manifest says? \u2014 entry, weigh, strike, search. 2. What is the thing allowed to do on the road? \u2014 rate, band, seal. Everything downstream (rate, band, seal, clearance) is arithmetic on the box. No box, no clearance; the counter refuses politely, by name.",
+  "evidence": {
+    "kind": "observed",
+    "source": "character_book",
+    "quote": ""
+  },
+  "note": "The two questions define the customs house's entire function. Nothing else happens here."
+}

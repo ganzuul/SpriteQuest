@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "obsidian-wyrm/primordial-heart",
+  "version": 1,
+  "world_id": "obsidian-wyrm",
+  "for": "diffusion",
+  "facets": [],
+  "detail": "the origin core of the Eight Primordial Dragons, a glowing gem-like heart that pulses with the power of creation",
+  "evidence": {
+    "kind": "observed",
+    "source": "character_book",
+    "quote": ""
+  },
+  "note": "The source of the Wyrm's power. The origin core of the Primordial Dragons."
+}

@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "customs-house/searcher",
+  "version": 1,
+  "world_id": "customs-house",
+  "for": "diffusion",
+  "facets": [],
+  "detail": "The searcher \u2014 the trade's own office, modelled on the alnager. The searcher strikes level across the open crate, writes disagreements down rather than fixing either side, and notes the box's original in a niche at the temple. Whether the actors' guild trains searchers is the roster question; the customs house hires the trained and pays off the untrained in goods.",
+  "evidence": {
+    "kind": "observed",
+    "source": "character_book",
+    "quote": ""
+  },
+  "note": "The searcher is the customs house's agent of inspection. The office is the alnager's, but guild training is a roster question."
+}

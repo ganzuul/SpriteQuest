@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "shared/glyph-unwritten-mark",
+  "version": 1,
+  "world_id": "shared",
+  "for": "diffusion",
+  "facets": ["favored_items", "portrait", "home"],
+  "detail": "a faint ruled horizontal baseline terminating in an empty circular hollow mark, surrounded by ruled blank staff lines where no text has been entered",
+  "evidence": {
+    "kind": "directed",
+    "source": "companion/npcs/pell-the-underwritten.json",
+    "quote": "a script whose pages are ruled and numbered but written on only at the top"
+  },
+  "facts": {
+    "extent": "single horizontal ruling line with hollow circle indicator",
+    "scale_ref": "notebook notation scale, faint ruling across an unassigned page",
+    "material": "faint grey graphite ruling on vellum",
+    "state": "ruled guide without inked text"
+  },
+  "note": "The indicator of an unassigned role or unwritten part: a mark standing on an empty line, awaiting standing."
+}

@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "neighboring-kingdom/roles-rehearsed-not-written",
+  "version": 1,
+  "world_id": "neighboring-kingdom",
+  "for": "diffusion",
+  "facets": ["home", "aspirations"],
+  "detail": "several figures arranged on a stage-like floor in correct formation and attentive posture, each looking to a different point as if waiting on a cue that has not been given",
+  "evidence": {
+    "kind": "directed",
+    "source": "npcs/hollis-the-twice-written/observations.md",
+    "quote": "trained actors rehersing for roles which have not yet been properly defined"
+  },
+  "note": "Untested, and the load-bearing one: this is the NPC demanding a well-written role. World-scoped to the friend's broken kingdom, which is where the restoration happens."
+}

@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "wizard-tower/open-questions",
+  "version": 1,
+  "world_id": "wizard-tower",
+  "for": "diffusion",
+  "facets": [],
+  "detail": "Fifth register, or none? Who holds the standard \u2014 the tower, or a copy at the temple? Does the hero know what he incorporated? What does the ascent cost, and does the tower stay reachable?",
+  "evidence": {
+    "kind": "observed",
+    "source": "character_book",
+    "quote": ""
+  },
+  "note": "Open questions about the tower's status. The lean is none \u2014 a fifth register would let it start granting things."
+}

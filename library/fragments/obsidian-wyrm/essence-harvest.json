@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "obsidian-wyrm/essence-harvest",
+  "version": 1,
+  "world_id": "obsidian-wyrm",
+  "for": "diffusion",
+  "facets": [],
+  "detail": "life essence harvested from the Material Plane through the rift, the animating energy within every living being pulled into the Abyssal Citadels to fuel their terraforming",
+  "evidence": {
+    "kind": "observed",
+    "source": "character_book",
+    "quote": ""
+  },
+  "note": "The terrible cost of the Wyrm's calculation. Every creature killed feeds the Citadels."
+}

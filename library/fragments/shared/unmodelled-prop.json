@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "shared/unmodelled-prop",
+  "version": 1,
+  "world_id": "shared",
+  "for": "diffusion",
+  "facets": ["portrait", "favored_items"],
+  "detail": "one part of the subject rendered as a flat, differently-shaded slab of pale unpainted material, its edges blocky and unresolved against the finished surface around it",
+  "evidence": {
+    "kind": "observed",
+    "source": "docs/quarantine/compiler-pipeline.md",
+    "quote": "the missing shoulder rendered as a flat, differently-shaded slab"
+  },
+  "note": "The hand-written original sits in observations.md as 'The assymmetry of the missing sleeve from his coat looks almost intentional' -- an interpretation. This fragment keeps only the observable surface."
+}

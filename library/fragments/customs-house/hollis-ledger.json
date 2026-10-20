@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "customs-house/hollis-ledger",
+  "version": 1,
+  "world_id": "customs-house",
+  "for": "diffusion",
+  "facets": [],
+  "detail": "The hollis ledger lives on the customs counter. Hollis is customer \u2014 quartermaster of the asset trade, keeper of the counter's copy of the standard, signatory of the hollis ledger. A seal is not an entry: the clearance the customs gives is the trade's permission; the hollis ledger's entry is the world's adoption of the thing. The whole separation of customs from store is what keeps those two from merging again.",
+  "evidence": {
+    "kind": "observed",
+    "source": "character_book",
+    "quote": ""
+  },
+  "note": "The hollis ledger is on the customs counter, but the seal never writes to it. Clearance is permission; entry is adoption."
+}

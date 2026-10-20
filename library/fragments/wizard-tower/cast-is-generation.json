@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "wizard-tower/cast-is-generation",
+  "version": 1,
+  "world_id": "wizard-tower",
+  "for": "diffusion",
+  "facets": [],
+  "detail": "A cast from the tower produces the world. Not a representation of it, not a description handed to a generator \u2014 the cast is the generation, and the world-gen stage is the tower's output. A generation failure is a fizzle: a visible null that spends the allocation and never dresses itself as scenery.",
+  "evidence": {
+    "kind": "observed",
+    "source": "character_book",
+    "quote": ""
+  },
+  "note": "The tower is the generation point. Requisition failures (no-item, no-manifest, no-render) are fizzles, not pipeline errors."
+}

@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "shared/wardrobe-unassigned",
+  "version": 1,
+  "world_id": "shared",
+  "for": "diffusion",
+  "facets": ["home", "portrait", "favored_items"],
+  "detail": "garment bag hanging among the others, cinched and tied at the neck, its label card written on only at the top with the part-name line left blank",
+  "evidence": {
+    "kind": "directed",
+    "source": "npcs/pell-the-underwritten.json",
+    "quote": "a call sheet pinned to the wall with every part listed and none of them named"
+  },
+  "note": "Authored 2026-10-03 specifically to test transfer direction. The three fragments in arm B were all extracted from Hollis's observations and may simply be Hollis-flavoured. This one is built from Pell's sheet instead. If it reaches Pell's rewrites where the others did not, the earlier 0/10 on Pell was scene specificity rather than a broken pipeline. If it reaches neither, something else is wrong."
+}

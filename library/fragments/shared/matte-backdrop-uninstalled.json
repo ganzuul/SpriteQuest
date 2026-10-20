@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "shared/matte-backdrop-uninstalled",
+  "version": 1,
+  "world_id": "shared",
+  "for": "diffusion",
+  "facets": ["home"],
+  "detail": "large painted flat leaning or rolled in a corner as a physical object rather than as scenery, its painted face and cut edge both visible, waiting to be hung",
+  "facts": {
+    "extent": "4 m long, 20 cm diameter",
+    "scale_ref": "longer than a person is tall; stood on end, taller than a doorway",
+    "material": "heavy primed canvas, not paper",
+    "count": 1
+  },
+  "evidence": {
+    "kind": "observed",
+    "source": "npcs/hollis-the-twice-written/observations.md",
+    "quote": "The matte backdrops are literal rolled up paintings tucked away in a corner. Shipped but not installed."
+  },
+  "note": "Observation establishes the object; the dimensions are creative input not yet confirmed by any render. Facts exist to correct the model's default reading of 'rolled backdrop' as a paper scroll -- material and relational scale do most of that work, absolute extent anchors the text."
+}

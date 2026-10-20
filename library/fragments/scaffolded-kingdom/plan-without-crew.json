@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "scaffolded-kingdom/plan-without-crew",
+  "version": 1,
+  "world_id": "scaffolded-kingdom",
+  "for": "diffusion",
+  "facets": ["home", "aspirations"],
+  "detail": "scaffolding erected carefully to a visible plan, building material stacked ready beside it, and no workers anywhere on or around it",
+  "evidence": {
+    "kind": "directed",
+    "source": "npcs/hollis-the-twice-written/observations.md",
+    "quote": "extensive scaffolding with a real plan, but the construction material has arrived without anyone to work on the next phase of the project."
+  },
+  "note": "Untested. World-scoped: this describes the princess's kingdom mid-repair, not the friend's."
+}

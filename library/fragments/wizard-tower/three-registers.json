@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "wizard-tower/three-registers",
+  "version": 1,
+  "world_id": "wizard-tower",
+  "for": "diffusion",
+  "facets": [],
+  "detail": "The tower sits outside all three registers: vocabulary (reads only, cannot invent a rod), capability (grants nothing, not a school), standing (writes nothing to the hollis ledger). It is a site with none \u2014 a fifth register would let it start granting things.",
+  "evidence": {
+    "kind": "observed",
+    "source": "character_book",
+    "quote": ""
+  },
+  "note": "The tower deliberately sits outside all three registers. It reads vocabulary, grants nothing, writes nothing."
+}

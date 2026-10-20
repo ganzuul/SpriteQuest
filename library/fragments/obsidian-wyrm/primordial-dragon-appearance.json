@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "obsidian-wyrm/primordial-dragon-appearance",
+  "version": 1,
+  "world_id": "obsidian-wyrm",
+  "for": "diffusion",
+  "facets": [],
+  "detail": "an immense dragon of obsidian and eternal fire, half-trapped between dimensions, her eyes vast and star-filled, surrounded by floating obsidian shards and the remnants of a fractured mind",
+  "evidence": {
+    "kind": "observed",
+    "source": "character_book",
+    "quote": ""
+  },
+  "note": "The core visual of the NPC. The Wyrm is primordial, vast, and partially in another dimension."
+}

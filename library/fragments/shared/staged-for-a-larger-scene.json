@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "shared/staged-for-a-larger-scene",
+  "version": 1,
+  "world_id": "shared",
+  "for": "diffusion",
+  "facets": ["home", "aspirations"],
+  "detail": "room laid out and dressed for a scene larger than its own dimensions, props and standing space overflowing the walls that are meant to contain them",
+  "evidence": {
+    "kind": "directed",
+    "source": "npcs/hollis-the-twice-written/observations.md",
+    "quote": "The customs house has been provisioned for a steady flow of of items and not the sudden influx of bootstrapping an entire world."
+  },
+  "note": "Untested -- no render yet. This is the visual form of 'restoring a narrative costs performance budget': the scene is written bigger than the level can hold."
+}

@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "obsidian-wyrm/eight-primordial-dragons",
+  "version": 1,
+  "world_id": "obsidian-wyrm",
+  "for": "diffusion",
+  "facets": [],
+  "detail": "eight primordial dragons representing the fundamental elements of creation, the Obsidian Wyrm the most powerful, her mind so vast she could see the threads of time itself",
+  "evidence": {
+    "kind": "observed",
+    "source": "character_book",
+    "quote": ""
+  },
+  "note": "The cosmological context of the Wyrm. She is one of eight, the most powerful."
+}

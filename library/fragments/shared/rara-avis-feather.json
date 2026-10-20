@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "id": "shared/rara-avis-feather",
+  "version": 3,
+  "world_id": "shared",
+  "for": "gemma4-orion",
+  "detail": "the rara avis dragon's feather quill, spoken of in the wider feather kind and never as a common flight feather: a great contour feather whose broad pennaceous vane carries structural iridescence over a soft plumulaceous base, filoplumes threading its base like whiskers, and the calamus hollow and cut to a bright nib",
+  "evidence": {
+    "kind": "directed",
+    "source": "docs/quarantine/the-quill.md",
+    "quote": "structural iridescence over a soft plumulaceous base"
+  },
+  "facts": {
+    "extent": "0.45 m from calamus tip to vane apex; the vane 0.10 m across at its widest",
+    "scale_ref": "as long as a grown man's forearm from elbow to fingertip; longer than any common quill",
+    "material": "pennaceous vane of structural iridescence over a plumulaceous base; hollow bright calamus",
+    "count": 1,
+    "state": "shed whole in flight; unbroken; the vane still zipped by its hooklets"
+  }
+}

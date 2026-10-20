@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "customs-house/guardrails",
+  "version": 1,
+  "world_id": "customs-house",
+  "for": "diffusion",
+  "facets": [],
+  "detail": "Guardrails of the customs house: The seal never writes the hollis ledger \u2014 clearance is permission, entry is adoption. No invented figure wears a citation \u2014 band cut-offs, weigh-points and rate numbers are ours, labeled hypothesized. The original stays missing \u2014 no scene may open the niche; the chain of certified copies is the culture. The princess does not clear goods.",
+  "evidence": {
+    "kind": "observed",
+    "source": "character_book",
+    "quote": ""
+  },
+  "note": "The guardrails define what the customs house may and may not do. The seal is not an entry; clearance is not adoption."
+}

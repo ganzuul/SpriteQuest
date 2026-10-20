@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "wizard-tower/the-ancestor",
+  "version": 1,
+  "world_id": "wizard-tower",
+  "for": "diffusion",
+  "facets": [],
+  "detail": "The observatory \u2014 a tower built to hold an instrument pointed outward, mechanism-first not metaphor-first. The guild's monopoly on an instrument is the institutional shape. The literary trope of the wizard tower is named only so the refusal is explicit; the observatory is the ancestor, the trope is the costume.",
+  "evidence": {
+    "kind": "observed",
+    "source": "character_book",
+    "quote": ""
+  },
+  "note": "The tower borrows shape from the observatory and the guild's monopoly, but vocabulary from neither."
+}

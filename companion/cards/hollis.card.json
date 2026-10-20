@@ -28,7 +28,22 @@
     },
     "character_book": {
       "extensions": {},
-      "entries": []
+      "entries": [
+        {
+          "key": "scaffolded-kingdom/destination-unloadable",
+          "value": "shipping document whose destination field is present, ruled and labelled, but filled with blank blocks instead of a place name",
+          "comment": "Untested. The visual form of an asset whose provenance is gone -- the design's core corruption, rendered as paperwork rather than as decay.",
+          "enabled": true,
+          "insertion_order": 0
+        },
+        {
+          "key": "scaffolded-kingdom/plan-without-crew",
+          "value": "scaffolding erected carefully to a visible plan, building material stacked ready beside it, and no workers anywhere on or around it",
+          "comment": "Untested. World-scoped: this describes the princess's kingdom mid-repair, not the friend's.",
+          "enabled": true,
+          "insertion_order": 1
+        }
+      ]
     }
   }
 }

@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "scaffolded-kingdom/destination-unloadable",
+  "version": 1,
+  "world_id": "scaffolded-kingdom",
+  "for": "diffusion",
+  "facets": ["home", "favored_items"],
+  "detail": "shipping document whose destination field is present, ruled and labelled, but filled with blank blocks instead of a place name",
+  "evidence": {
+    "kind": "directed",
+    "source": "npcs/hollis.json",
+    "quote": "a bill of lading listing a shipment from a kingdom that no longer loads"
+  },
+  "note": "Untested. The visual form of an asset whose provenance is gone -- the design's core corruption, rendered as paperwork rather than as decay."
+}

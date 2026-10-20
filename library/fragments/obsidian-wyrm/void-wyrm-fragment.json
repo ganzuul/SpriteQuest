@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "obsidian-wyrm/void-wyrm-fragment",
+  "version": 1,
+  "world_id": "obsidian-wyrm",
+  "for": "diffusion",
+  "facets": [],
+  "detail": "a twisted, lesser shadow of the Obsidian Wyrm's former self that haunts the Abyssal Void, godlike intelligence that reads thoughts and predicts attacks, broadcasting compressed information that causes psychic damage",
+  "evidence": {
+    "kind": "observed",
+    "source": "character_book",
+    "quote": ""
+  },
+  "note": "The fractured shadow of the Wyrm. The antagonist the players encounter in the Abyssal Void."
+}

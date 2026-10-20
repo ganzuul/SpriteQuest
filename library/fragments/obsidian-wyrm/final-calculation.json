@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "obsidian-wyrm/final-calculation",
+  "version": 1,
+  "world_id": "obsidian-wyrm",
+  "for": "diffusion",
+  "facets": [],
+  "detail": "The Obsidian Wyrm did not go mad. It calculated the end of time with perfect accuracy and chose to build shelters for what came after. The Void Citadels are time capsules \u2014 archives that will hold the sum of all civilization when the world finally ends. The essence harvest is calculated sacrifice.",
+  "evidence": {
+    "kind": "observed",
+    "source": "character_book",
+    "quote": ""
+  },
+  "note": "The central revelation of the campaign. The Wyrm's motivation is not malice but foresight."
+}

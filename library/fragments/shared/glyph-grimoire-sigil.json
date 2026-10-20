@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "shared/glyph-grimoire-sigil",
+  "version": 1,
+  "world_id": "shared",
+  "for": "diffusion",
+  "facets": ["favored_items", "portrait", "home"],
+  "detail": "an uncial binding sigil consisting of two vertical parallel rods joined by a single taut diagonal ligature, inscribed with sharp calligraphic pen strokes in metallic cinnabar ink",
+  "evidence": {
+    "kind": "directed",
+    "source": "companion/npcs/wizard-tower.json",
+    "quote": "the grimoire — a folio of names with no title tooled anywhere on it, kept on the tower's shelf where no plan records it"
+  },
+  "facts": {
+    "extent": "6 cm high calligraphic sigil",
+    "scale_ref": "drawn as a chapter heading or engraved on instrument mounts",
+    "material": "cinnabar ink or engraved silver groove",
+    "state": "clean uncial strokes with distinct terminal serifs"
+  },
+  "note": "The foundational name-and-tie mark of the tower's grimoire: two rods standing apart, held by one diagonal tie."
+}

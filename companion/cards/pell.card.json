@@ -27,7 +27,15 @@
     },
     "character_book": {
       "extensions": {},
-      "entries": []
+      "entries": [
+        {
+          "key": "neighboring-kingdom/roles-rehearsed-not-written",
+          "value": "several figures arranged on a stage-like floor in correct formation and attentive posture, each looking to a different point as if waiting on a cue that has not been given",
+          "comment": "Untested, and the load-bearing one: this is the NPC demanding a well-written role. World-scoped to the friend's broken kingdom, which is where the restoration happens.",
+          "enabled": true,
+          "insertion_order": 0
+        }
+      ]
     }
   }
 }

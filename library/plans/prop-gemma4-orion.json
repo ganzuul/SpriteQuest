@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "id": "prop-gemma4-orion",
+  "for": "gemma4-orion",
+  "note": "The default plan: doctrine any prop batch may refine under. Fastener rules moved to library/plans/tower-shelf.json when sets could name a plan (docs/quarantine/compose.md, 'Which plan a batch uses').",
+  "fragments": [
+    {"id": "shared/single-face-reading", "version": 1},
+    {"id": "shared/brief-faces-are-themes", "version": 1},
+    {"id": "shared/secondary-growth-is-not-a-pair", "version": 1}
+  ]
+}
