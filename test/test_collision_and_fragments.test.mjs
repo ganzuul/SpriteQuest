@@ -175,4 +175,78 @@ describe('Fragment Assets, Navigation Collision & Physicality (TDD)', () => {
     const moveAgainstWall = viewer.tryMoveActor('player', 56.0, 80.0);
     assert.ok(moveAgainstWall.actualY >= 79.5, 'Player must not rubber-band back across the doorway threshold');
   });
+
+  test('8. Extended Fragment Derivation (Glass Stasis Coffin, Warrant Pedestal, Unmodelled Slab)', () => {
+    const physicalProps = viewer.getPhysicalProps();
+
+    // 8.1 Borosilicate Glass Stasis Coffin from library/fragments/space-vampires/glass-stasis-coffin.json
+    const coffin = physicalProps.find((p) => p.id === 'glass_stasis_coffin');
+    assert.ok(coffin, 'Glass stasis coffin must be derived and placed in the scene');
+    assert.equal(coffin.salience, 'major');
+    assert.equal(coffin.destructible, true);
+    assert.equal(coffin.mass_kg, 280.0);
+    assert.equal(coffin.bounds.depth, 2.3);
+    assert.equal(coffin.bounds.width, 0.8);
+
+    // 8.2 Canon Warrant Pedestal from library/fragments/cartographers/canon-warrant.json
+    const warrant = physicalProps.find((p) => p.id === 'canon_warrant_pedestal');
+    assert.ok(warrant, 'Canon warrant pedestal must be derived');
+    assert.equal(warrant.salience, 'moderate');
+    assert.equal(warrant.mass_kg, 65.0);
+
+    // 8.3 Unmodelled Placeholder Slab from library/fragments/shared/unmodelled-prop.json
+    const placeholder = physicalProps.find((p) => p.id === 'unmodelled_placeholder_slab');
+    assert.ok(placeholder, 'Unmodelled placeholder slab must be derived');
+    assert.equal(placeholder.salience, 'minor');
+    assert.equal(placeholder.mass_kg, 15.0);
+    assert.equal(placeholder.visual_template, 'unmodelled_slab');
+  });
+
+  test('9. Player Strength Scaling & Dynamic Physical Pushing', () => {
+    // Coffin is at (44.0, 84.0) with mass 280.0 kg
+    viewer.setPropPosition('glass_stasis_coffin', 44.0, 84.0);
+    viewer.setActorPosition('player', 44.0, 82.5);
+
+    // With default player strength 60 kg, pushing 280 kg object must fail
+    viewer.setPlayerStrength(60.0);
+    assert.equal(viewer.getPlayerStrength(), 60.0);
+    const weakPush = viewer.tryMoveActor('player', 44.0, 85.0);
+    assert.equal(weakPush.success, false, 'Default strength (60kg) cannot push 280kg stasis coffin');
+
+    // Scale player strength to superhuman 320 kg (via HUD / ability)
+    viewer.setPlayerStrength(320.0);
+    assert.equal(viewer.getPlayerStrength(), 320.0);
+    const strongPush = viewer.tryMoveActor('player', 44.0, 84.5);
+    assert.equal(strongPush.pushedProp, 'glass_stasis_coffin', 'Superhuman strength pushes the stasis coffin');
+
+    // Reset player strength back to standard
+    viewer.setPlayerStrength(60.0);
+  });
+
+  test('10. Impact Smashing Mechanic for Destructible Props', () => {
+    // Position glass stasis coffin against a solid obstacle
+    viewer.setPropPosition('glass_stasis_coffin', 44.0, 84.0);
+    const initialProps = viewer.getPhysicalProps();
+    const coffin = initialProps.find((p) => p.id === 'glass_stasis_coffin');
+    assert.equal(coffin.is_smashed, false, 'Coffin should start intact');
+
+    // Trigger smashing through direct impact / smashing action
+    viewer.smashProp('glass_stasis_coffin');
+
+    const smashedProps = viewer.getPhysicalProps();
+    const smashedCoffin = smashedProps.find((p) => p.id === 'glass_stasis_coffin');
+    assert.equal(smashedCoffin.is_smashed, true, 'Coffin must be marked as smashed');
+    assert.equal(smashedCoffin.obstacle_type, 'passable', 'Smashed debris becomes passable');
+
+    // Check DOM rendering receives .smashed class
+    const worldEl = document.getElementById('world');
+    const coffinEl = worldEl.querySelector('.prop-glass-coffin');
+    assert.ok(coffinEl, 'Glass coffin DOM element must exist');
+    assert.ok(coffinEl.classList.contains('smashed'), 'Glass coffin DOM element must have .smashed class');
+
+    // Player should now be able to walk directly through the debris without collision blocking
+    viewer.setActorPosition('player', 44.0, 82.5);
+    const walkThroughDebris = viewer.tryMoveActor('player', 44.0, 84.5);
+    assert.equal(walkThroughDebris.success, true, 'Player can walk across shattered glass debris');
+  });
 });

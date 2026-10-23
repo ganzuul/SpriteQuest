@@ -329,6 +329,42 @@ export function initViewer(config) {
         surface.appendChild(folio);
         surface.appendChild(quill);
         propEl.appendChild(surface);
+      } else if (pr.visual_template === 'glass_coffin') {
+        propEl.className = 'prop-glass-coffin scene-prop-token' + (pr.is_smashed ? ' smashed' : '');
+        const hex = document.createElement('div');
+        hex.className = 'coffin-hex-chassis';
+        const chamber = document.createElement('div');
+        chamber.className = 'coffin-cryo-chamber';
+        const figure = document.createElement('div');
+        figure.className = 'coffin-sleeper';
+        const digits = document.createElement('div');
+        digits.className = 'coffin-cycle-counter';
+        digits.textContent = '00:04:18:92';
+        chamber.appendChild(figure);
+        chamber.appendChild(digits);
+        hex.appendChild(chamber);
+        propEl.appendChild(hex);
+      } else if (pr.visual_template === 'warrant_pedestal') {
+        propEl.className = 'prop-warrant-pedestal scene-prop-token';
+        const ped = document.createElement('div');
+        ped.className = 'pedestal-stone';
+        const disc = document.createElement('div');
+        disc.className = 'warrant-brass-disc';
+        disc.textContent = 'SEAL';
+        const ribbon = document.createElement('div');
+        ribbon.className = 'warrant-ribbon';
+        ped.appendChild(disc);
+        ped.appendChild(ribbon);
+        propEl.appendChild(ped);
+      } else if (pr.visual_template === 'unmodelled_slab') {
+        propEl.className = 'prop-unmodelled-slab scene-prop-token';
+        const slab = document.createElement('div');
+        slab.className = 'unmodelled-clay-box';
+        const promptLabel = document.createElement('div');
+        promptLabel.className = 'unmodelled-wireframe-label';
+        promptLabel.textContent = '[Prompt Awaiting]';
+        slab.appendChild(promptLabel);
+        propEl.appendChild(slab);
       } else {
         propEl.className = 'scene-prop-token';
         const icon = document.createElement('div');
@@ -1056,6 +1092,21 @@ export function initViewer(config) {
 
   function setPlayerStrength(val) {
     playerStrength = Number(val);
+    const sEl = typeof document !== 'undefined' ? document.getElementById('stat-player-strength') : null;
+    if (sEl) sEl.textContent = `${playerStrength.toFixed(0)} kg`;
+  }
+
+  function smashProp(propId) {
+    const prop = physicalPropsMap.get(propId);
+    if (!prop) return false;
+    prop.is_smashed = true;
+    prop.obstacle_type = 'passable';
+
+    const pEl = prop.tokenEl || (world ? world.querySelector(`.prop-glass-coffin, [data-prop-id="${propId}"]`) : null);
+    if (pEl) {
+      pEl.classList.add('smashed');
+    }
+    return true;
   }
 
   function getPropPosition(propId) {
@@ -1161,6 +1212,9 @@ export function initViewer(config) {
 
     // 2. Check solid furniture & physical props at target point
     for (const [id, prop] of physicalPropsMap.entries()) {
+      if (prop.obstacle_type === 'passable' || prop.is_smashed) {
+        continue;
+      }
       const bw = prop.bounds?.width || 1.2;
       const bd = prop.bounds?.depth || 1.2;
       const halfW = bw / 2.0 + actorRadius;
@@ -1172,7 +1226,7 @@ export function initViewer(config) {
       if (dx < halfW && dy < halfD) {
         if (prop.obstacle_type === 'solid_furniture' || prop.obstacle_type === 'wall') {
           return { allowed: false, reason: 'solid_obstacle', propId: id };
-        } else if (prop.obstacle_type === 'physics_object') {
+        } else if (prop.obstacle_type === 'physics_object' || prop.obstacle_type === 'destructible_physics_object') {
           if (pushStrength >= prop.mass_kg) {
             return { allowed: true, pushedProp: id };
           } else {
@@ -1209,8 +1263,25 @@ export function initViewer(config) {
           if (p) {
             const moveDx = toX - fromX;
             const moveDy = toY - fromY;
-            setPropPosition(p.id, p.world_x + moveDx * 1.05, p.world_y + moveDy * 1.05);
-            evaluatePhysicalInteractions();
+            const targetPropX = p.world_x + moveDx * 1.05;
+            const targetPropY = p.world_y + moveDy * 1.05;
+
+            // Check if pushed prop impacts an impassable wall
+            let impactsWall = false;
+            for (const w of walls) {
+              const hit = segmentIntersect(p.world_x, p.world_y, targetPropX, targetPropY, w.start[0], w.start[1], w.end[0], w.end[1]);
+              if (hit) {
+                impactsWall = true;
+                break;
+              }
+            }
+
+            if (impactsWall && p.destructible) {
+              smashProp(p.id);
+            } else {
+              setPropPosition(p.id, targetPropX, targetPropY);
+              evaluatePhysicalInteractions();
+            }
           }
         }
       } else {
@@ -1579,6 +1650,7 @@ export function initViewer(config) {
     setPlayerStrength,
     getPropPosition,
     setPropPosition,
+    smashProp,
     canMoveTo,
     tryMoveActor,
     evaluatePhysicalInteractions,
@@ -1620,6 +1692,7 @@ export function initViewer(config) {
     globalRoot.setPlayerStrength = setPlayerStrength;
     globalRoot.getPropPosition = getPropPosition;
     globalRoot.setPropPosition = setPropPosition;
+    globalRoot.smashProp = smashProp;
     globalRoot.canMoveTo = canMoveTo;
     globalRoot.tryMoveActor = tryMoveActor;
     globalRoot.evaluatePhysicalInteractions = evaluatePhysicalInteractions;

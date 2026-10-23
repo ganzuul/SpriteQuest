@@ -304,7 +304,10 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
     .scene-prop-token:hover .prop-tag,
     .prop-r6-crate:hover .prop-tag,
     .prop-weigh-scale:hover .prop-tag,
-    .prop-ledger-desk:hover .prop-tag {{
+    .prop-ledger-desk:hover .prop-tag,
+    .prop-glass-coffin:hover .prop-tag,
+    .prop-warrant-pedestal:hover .prop-tag,
+    .prop-unmodelled-slab:hover .prop-tag {{
       opacity: 1;
       visibility: visible;
     }}
@@ -538,6 +541,147 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
       font-size: 10px;
     }}
 
+    /* Borosilicate Glass Stasis Coffin (Space Vampires impounded artifact) */
+    .prop-glass-coffin {{
+      position: absolute;
+      transform: translate(-50%, -50%) translateZ(30px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: grab;
+      z-index: 55;
+      transition: transform 0.2s ease, opacity 0.3s ease;
+    }}
+    .coffin-hex-chassis {{
+      width: 24px; height: 50px;
+      background: rgba(8, 28, 36, 0.75);
+      border: 1.5px solid #38bdf8;
+      border-radius: 6px;
+      box-shadow: 0 0 16px rgba(56, 189, 248, 0.45), inset 0 0 10px rgba(56, 189, 248, 0.35);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 3px;
+      position: relative;
+      overflow: hidden;
+    }}
+    .coffin-cryo-chamber {{
+      width: 100%; height: 100%;
+      background: radial-gradient(circle, rgba(14, 165, 233, 0.25) 0%, rgba(2, 132, 199, 0.05) 80%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }}
+    .coffin-sleeper {{
+      width: 10px; height: 28px;
+      background: rgba(224, 242, 254, 0.55);
+      border-radius: 4px;
+      filter: blur(1px);
+    }}
+    .coffin-cycle-counter {{
+      font-family: 'Courier New', monospace;
+      font-size: 5px;
+      color: #4ade80;
+      letter-spacing: 0.05em;
+      position: absolute;
+      bottom: 2px;
+    }}
+    /* Smashed Debris State */
+    .prop-glass-coffin.smashed {{
+      cursor: default;
+      filter: grayscale(0.5);
+    }}
+    .prop-glass-coffin.smashed .coffin-hex-chassis {{
+      background: rgba(15, 23, 42, 0.3);
+      border: 1px dashed rgba(56, 189, 248, 0.4);
+      box-shadow: 0 0 6px rgba(56, 189, 248, 0.2);
+      transform: scaleY(0.4) rotate(8deg);
+      border-radius: 2px;
+    }}
+    .prop-glass-coffin.smashed .coffin-sleeper {{
+      display: none;
+    }}
+    .prop-glass-coffin.smashed::after {{
+      content: '✨ shards';
+      position: absolute;
+      font-size: 7px;
+      color: #7dd3fc;
+      bottom: -4px;
+      white-space: nowrap;
+    }}
+
+    /* Canon Warrant Pedestal (Cartographers) */
+    .prop-warrant-pedestal {{
+      position: absolute;
+      transform: translate(-50%, -50%) translateZ(30px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 55;
+    }}
+    .pedestal-stone {{
+      width: 26px; height: 26px;
+      background: #475569;
+      border: 1px solid #94a3b8;
+      border-radius: 3px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.7);
+      position: relative;
+    }}
+    .warrant-brass-disc {{
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #fde047 0%, #ca8a04 100%);
+      border: 1px solid #713f12;
+      box-shadow: 0 0 6px rgba(234, 179, 8, 0.6);
+      font-size: 5px;
+      font-weight: 800;
+      color: #451a03;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }}
+    .warrant-ribbon {{
+      width: 4px; height: 8px;
+      background: #dc2626;
+      border-radius: 0 0 2px 2px;
+      margin-top: -1px;
+    }}
+
+    /* Unmodelled Placeholder Slab (4th-Wall Standing Translation) */
+    .prop-unmodelled-slab {{
+      position: absolute;
+      transform: translate(-50%, -50%) translateZ(25px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: grab;
+      z-index: 55;
+    }}
+    .unmodelled-clay-box {{
+      width: 28px; height: 28px;
+      background: #c4b5fd;
+      border: 1.5px dashed #7c3aed;
+      border-radius: 2px;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.6), inset 0 0 6px rgba(124, 58, 237, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }}
+    .unmodelled-wireframe-label {{
+      font-size: 5.5px;
+      font-family: monospace;
+      color: #4c1d95;
+      text-align: center;
+      font-weight: 700;
+    }}
+
     /* Actor Tokens & Theatrical Speech Balloons */
     .actor-token {{
       position: absolute;
@@ -730,6 +874,19 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
         <div class="section-title">Scene Zone & Interactables</div>
         <div class="stat-row"><span>Current Zone:</span><span class="stat-val stat-accent" id="stat-player-zone">Border Approach (Wilderness)</span></div>
         <div class="stat-row"><span>Nearest Prop:</span><span class="stat-val stat-gold" id="stat-nearest-prop">--</span></div>
+      </div>
+
+      <div class="panel-section">
+        <div class="section-title">Physicality & Push Strength</div>
+        <div class="stat-row"><span>Push Strength:</span><span class="stat-val stat-gold" id="stat-player-strength">60 kg</span></div>
+        <div style="display: flex; gap: 4px; margin-top: 8px;">
+          <button style="flex: 1; padding: 4px; font-size: 10px; background: #26211c; border: 1px solid #786b59; color: #eed; border-radius: 3px; cursor: pointer;" onclick="window.viewer && window.viewer.setPlayerStrength(60)">60kg (Norm)</button>
+          <button style="flex: 1; padding: 4px; font-size: 10px; background: #26211c; border: 1px solid #786b59; color: #eed; border-radius: 3px; cursor: pointer;" onclick="window.viewer && window.viewer.setPlayerStrength(160)">160kg (Locker)</button>
+          <button style="flex: 1; padding: 4px; font-size: 10px; background: #26211c; border: 1px solid #ca8a04; color: #fde047; border-radius: 3px; cursor: pointer;" onclick="window.viewer && window.viewer.setPlayerStrength(320)">320kg (Cryo)</button>
+        </div>
+        <div style="margin-top: 6px; font-size: 9.5px; color: #9c8e80; line-height: 1.3;">
+          Push objects with mass &le; strength. Fragile borosilicate glass artifacts shatter when impacted into stone walls.
+        </div>
       </div>
 
       <div class="panel-section">

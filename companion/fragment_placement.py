@@ -29,15 +29,18 @@ class FragmentAsset:
     fragment_id: str
     label: str
     salience: str  # "major" | "moderate" | "minor"
-    obstacle_type: str  # "physics_object" | "solid_furniture" | "wall" | "passable"
+    obstacle_type: str  # "physics_object" | "destructible_physics_object" | "solid_furniture" | "wall" | "passable"
     mass_kg: float
     world_x: float
     world_y: float
     world_z: float
     bounds: dict[str, float]  # width, depth, height
-    visual_template: str  # "r6_crate", "balance_scale", "ledger_desk", "cairn", etc.
+    visual_template: str  # "r6_crate", "balance_scale", "ledger_desk", "glass_coffin", "warrant_pedestal", "unmodelled_slab", "cairn", etc.
     interactive_verbs: list[str] = field(default_factory=list)
     lore_snippet: str = ""
+    destructible: bool = False
+    is_smashed: bool = False
+    smash_threshold_kg: float = 80.0
 
 
 class FragmentPlacementEngine:
@@ -161,7 +164,85 @@ class FragmentPlacementEngine:
             )
         )
 
-        # 5. Outdoor Frontier Props
+        # 5. Borosilicate Glass Stasis Coffin (Space-Vampires impounded artifact awaiting quarantine)
+        coffin_frag_path = REPO_ROOT / "library" / "fragments" / "space-vampires" / "glass-stasis-coffin.json"
+        coffin_desc = ""
+        if coffin_frag_path.exists():
+            c_data = json.loads(coffin_frag_path.read_text(encoding="utf-8"))
+            coffin_desc = c_data.get("detail", "")
+
+        self.fragment_assets.append(
+            FragmentAsset(
+                id="glass_stasis_coffin",
+                fragment_id="space-vampires/glass-stasis-coffin",
+                label="Hexagonal Borosilicate Glass Stasis Coffin",
+                salience="major",
+                obstacle_type="destructible_physics_object",
+                mass_kg=280.0,
+                world_x=44.0,
+                world_y=84.0,
+                world_z=anc_z,
+                bounds={"width": 0.8, "depth": 2.3, "height": 0.9},
+                visual_template="glass_coffin",
+                interactive_verbs=["inspect_cryo_gauge", "tap_glass", "push", "smash"],
+                lore_snippet=coffin_desc,
+                destructible=True,
+                is_smashed=False,
+                smash_threshold_kg=80.0,
+            )
+        )
+
+        # 6. Canon Warrant Pedestal (Cartographers' certified seal & surveyor folio)
+        warrant_frag_path = REPO_ROOT / "library" / "fragments" / "cartographers" / "canon-warrant.json"
+        warrant_desc = ""
+        if warrant_frag_path.exists():
+            w_data = json.loads(warrant_frag_path.read_text(encoding="utf-8"))
+            warrant_desc = w_data.get("detail", "")
+
+        self.fragment_assets.append(
+            FragmentAsset(
+                id="canon_warrant_pedestal",
+                fragment_id="cartographers/canon-warrant",
+                label="Bureau of the Unwritten Atlas Canon Warrant Pedestal",
+                salience="moderate",
+                obstacle_type="solid_furniture",
+                mass_kg=65.0,
+                world_x=67.0,
+                world_y=63.0,
+                world_z=anc_z,
+                bounds={"width": 1.0, "depth": 1.0, "height": 1.4},
+                visual_template="warrant_pedestal",
+                interactive_verbs=["audit_warrant", "read_seal"],
+                lore_snippet=warrant_desc,
+            )
+        )
+
+        # 7. Unmodelled Placeholder Slab (4th-wall standing translation of prompt underdetermination)
+        unmod_frag_path = REPO_ROOT / "library" / "fragments" / "shared" / "unmodelled-prop.json"
+        unmod_desc = ""
+        if unmod_frag_path.exists():
+            u_data = json.loads(unmod_frag_path.read_text(encoding="utf-8"))
+            unmod_desc = u_data.get("detail", "")
+
+        self.fragment_assets.append(
+            FragmentAsset(
+                id="unmodelled_placeholder_slab",
+                fragment_id="shared/unmodelled-prop",
+                label="Unmodelled Generative Slab (Awaiting Prompt Specification)",
+                salience="minor",
+                obstacle_type="physics_object",
+                mass_kg=15.0,
+                world_x=42.0,
+                world_y=74.0,
+                world_z=anc_z,
+                bounds={"width": 0.9, "depth": 0.9, "height": 0.8},
+                visual_template="unmodelled_slab",
+                interactive_verbs=["inspect_wireframe", "push", "author_prompt"],
+                lore_snippet=unmod_desc,
+            )
+        )
+
+        # 8. Outdoor Frontier Props
         for op in self.scene_engine.get_outdoor_props():
             if "cairn" in op.id:
                 self.fragment_assets.append(
