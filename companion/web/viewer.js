@@ -40,6 +40,7 @@ export function initViewer(config) {
   const world = dom?.world || document.getElementById('world');
   const playerEl = dom?.player || document.getElementById('player');
   const probeEl = dom?.probe || document.getElementById('probe');
+  const tooltipEl = dom?.tooltip || (typeof document !== 'undefined' ? document.getElementById('cursor-tooltip') : null);
   const featuresEl = dom?.features || (typeof document !== 'undefined' ? document.getElementById('features') : null);
   const canvas = dom?.canvas || (typeof document !== 'undefined' ? document.getElementById('lighting-canvas') : null);
   const ctx = canvas && canvas.getContext ? canvas.getContext('2d') : null;
@@ -937,47 +938,192 @@ export function initViewer(config) {
     renderLightingOverlay();
   }
 
-  // Mouse movement: update cursor depth probe
+  function screenToWorld(pxX, pxY, wWidth = (world ? world.clientWidth || 600 : 600), wHeight = (world ? world.clientHeight || 700 : 700)) {
+    const rx = Math.max(0, Math.min(1, pxX / wWidth));
+    const ry = Math.max(0, Math.min(1, pxY / wHeight));
+    return {
+      x: rx * mapWidthM,
+      y: ry * mapLengthM,
+    };
+  }
+
+  function getInteractableAt(xm, ym) {
+    // 1. Check physical props (bounding box + 0.45m margin)
+    for (const prop of physicalPropsMap.values()) {
+      const bw = prop.bounds?.width || 1.2;
+      const bd = prop.bounds?.depth || 1.2;
+      const halfW = bw / 2.0 + 0.45;
+      const halfD = bd / 2.0 + 0.45;
+      if (Math.abs(xm - prop.world_x) <= halfW && Math.abs(ym - prop.world_y) <= halfD) {
+        return {
+          kind: 'prop',
+          id: prop.id,
+          label: prop.label,
+          sublabel: `${prop.mass_kg}kg | ${prop.obstacle_type.replace(/_/g, ' ')}`,
+          lore: prop.lore_snippet,
+          verbs: prop.interactive_verbs || ['examine', 'push'],
+          salience: prop.salience,
+          mass_kg: prop.mass_kg,
+          destructible: prop.destructible,
+          is_smashed: prop.is_smashed,
+          targetX: prop.world_x,
+          targetY: prop.world_y,
+        };
+      }
+    }
+
+    // 2. Check actors
+    for (const [id, actor] of actors.entries()) {
+      if (id === 'player') continue;
+      const d = Math.hypot(xm - actor.x, ym - actor.y);
+      if (d <= 1.25) {
+        return {
+          kind: 'actor',
+          id: actor.id,
+          label: `${actor.name} (${actor.role})`,
+          sublabel: actor.written ? 'Standing: Written (Clearance)' : 'Standing: Unwritten (Understudy)',
+          verbs: ['speak', 'examine'],
+          targetX: actor.x,
+          targetY: actor.y,
+        };
+      }
+    }
+
+    // 3. Check cue marks
+    for (const cm of cueMarks) {
+      const d = Math.hypot(xm - cm.world_x, ym - cm.world_y);
+      if (d <= (cm.radius_m || 2.0)) {
+        return {
+          kind: 'cue_mark',
+          id: cm.id,
+          label: cm.label,
+          sublabel: `Gate: ${cm.standing_gate} [${cm.standing_verdict}]`,
+          verbs: ['step_to_cue', 'stage_action'],
+          targetX: cm.world_x,
+          targetY: cm.world_y,
+        };
+      }
+    }
+
+    // 4. Fallback to Zone
+    const zone = getZoneAt(xm, ym);
+    if (zone) {
+      return {
+        kind: 'zone',
+        id: zone.id,
+        label: zone.name,
+        sublabel: `Elevation: ${typeof zone.elevation === 'number' ? zone.elevation.toFixed(1) + 'm' : 'Ground'} | ${zone.material || 'Terrain'}`,
+        verbs: ['walk_here'],
+        targetX: xm,
+        targetY: ym,
+      };
+    }
+
+    return {
+      kind: 'zone',
+      id: 'border-wilderness',
+      label: 'Border March Wilderness',
+      sublabel: `Elevation: ${sampleElevation(xm, ym).toFixed(1)}m | Open Terrain`,
+      verbs: ['walk_here'],
+      targetX: xm,
+      targetY: ym,
+    };
+  }
+
+  function handleMouseMove(pxX, pxY, wWidth = (world ? world.clientWidth || 600 : 600), wHeight = (world ? world.clientHeight || 700 : 700)) {
+    const worldCoord = screenToWorld(pxX, pxY, wWidth, wHeight);
+    cursorX = worldCoord.x;
+    cursorY = worldCoord.y;
+
+    if (probeEl) {
+      probeEl.style.display = 'block';
+      probeEl.style.left = `${pxX}px`;
+      probeEl.style.top = `${pxY}px`;
+    }
+
+    const curZ = sampleElevation(cursorX, cursorY);
+    const pZ = sampleElevation(playerX, playerY);
+    const deltaZ = curZ - pZ;
+    const slope = getSlope(cursorX, cursorY);
+
+    const cXyEl = typeof document !== 'undefined' ? document.getElementById('stat-cursor-xy') : null;
+    if (cXyEl) cXyEl.innerText = `${cursorX.toFixed(1)}m, ${cursorY.toFixed(1)}m`;
+    const cZEl = typeof document !== 'undefined' ? document.getElementById('stat-cursor-z') : null;
+    if (cZEl) cZEl.innerText = `${curZ.toFixed(2)}m`;
+    const cDeltaEl = typeof document !== 'undefined' ? document.getElementById('stat-cursor-delta') : null;
+    if (cDeltaEl) cDeltaEl.innerText = `${deltaZ >= 0 ? '+' : ''}${deltaZ.toFixed(2)}m`;
+    const cSlopeEl = typeof document !== 'undefined' ? document.getElementById('stat-cursor-slope') : null;
+    if (cSlopeEl) {
+      cSlopeEl.innerText = `${slope}° (${
+        slope >= 45 ? 'Ancient Overhang' : slope < 35 ? 'Walkable' : 'Scramble'
+      })`;
+    }
+
+    // Hit-testing interactables & floating cursor tooltip
+    const hit = getInteractableAt(cursorX, cursorY);
+    const currentTooltipEl = tooltipEl || (typeof document !== 'undefined' ? document.getElementById('cursor-tooltip') : null);
+    if (currentTooltipEl) {
+      if (hit && hit.kind !== 'zone') {
+        currentTooltipEl.style.display = 'block';
+        currentTooltipEl.style.left = `${pxX}px`;
+        currentTooltipEl.style.top = `${pxY}px`;
+
+        const badgeText = hit.kind === 'prop' ? (hit.salience ? `PROP - ${hit.salience.toUpperCase()}` : 'PROP') : hit.kind.replace(/_/g, ' ').toUpperCase();
+        let html = `<div class="tooltip-badge">[${badgeText}]</div>`;
+        html += `<div class="tooltip-title">${hit.label}</div>`;
+        if (hit.sublabel) html += `<div class="tooltip-meta">${hit.sublabel}</div>`;
+        if (hit.is_smashed) html += `<div class="tooltip-meta" style="color: #7dd3fc;">✨ Fractured Cryogenic Debris</div>`;
+        if (hit.verbs && hit.verbs.length) {
+          html += `<div class="tooltip-verbs">Actions: ${hit.verbs.map((v) => `[${v.replace(/_/g, ' ')}]`).join(' ')}</div>`;
+        }
+        currentTooltipEl.innerHTML = html;
+      } else {
+        currentTooltipEl.style.display = 'none';
+        currentTooltipEl.innerHTML = '';
+      }
+    }
+
+    renderLightingOverlay();
+    return hit;
+  }
+
+  function handleClick(pxX, pxY, wWidth = (world ? world.clientWidth || 600 : 600), wHeight = (world ? world.clientHeight || 700 : 700)) {
+    const worldCoord = screenToWorld(pxX, pxY, wWidth, wHeight);
+    const hit = getInteractableAt(worldCoord.x, worldCoord.y);
+
+    if (hit && hit.kind === 'prop') {
+      tryMoveActor('player', hit.targetX, hit.targetY);
+      return { hitKind: 'prop', targetId: hit.id, x: hit.targetX, y: hit.targetY };
+    } else if (hit && hit.kind === 'cue_mark') {
+      tryMoveActor('player', hit.targetX, hit.targetY);
+      return { hitKind: 'cue_mark', targetId: hit.id, x: hit.targetX, y: hit.targetY };
+    } else if (hit && hit.kind === 'actor') {
+      tryMoveActor('player', hit.targetX, hit.targetY);
+      return { hitKind: 'actor', targetId: hit.id, x: hit.targetX, y: hit.targetY };
+    } else {
+      tryMoveActor('player', worldCoord.x, worldCoord.y);
+      return { hitKind: 'ground', x: worldCoord.x, y: worldCoord.y };
+    }
+  }
+
+  // Mouse interaction surfaces
   if (world && world.addEventListener) {
     world.addEventListener('mousemove', (e) => {
       const rect = world.getBoundingClientRect();
-      const rx = (e.clientX - rect.left) / rect.width;
-      const ry = (e.clientY - rect.top) / rect.height;
-
-      cursorX = rx * mapWidthM;
-      cursorY = ry * mapLengthM;
-
-      if (probeEl) {
-        probeEl.style.display = 'block';
-        probeEl.style.left = rx * world.clientWidth + 'px';
-        probeEl.style.top = ry * world.clientHeight + 'px';
-      }
-
-      const curZ = sampleElevation(cursorX, cursorY);
-      const pZ = sampleElevation(playerX, playerY);
-      const deltaZ = curZ - pZ;
-      const slope = getSlope(cursorX, cursorY);
-
-      const cXyEl = document.getElementById('stat-cursor-xy');
-      if (cXyEl) cXyEl.innerText = `${cursorX.toFixed(1)}m, ${cursorY.toFixed(1)}m`;
-      const cZEl = document.getElementById('stat-cursor-z');
-      if (cZEl) cZEl.innerText = `${curZ.toFixed(2)}m`;
-      const cDeltaEl = document.getElementById('stat-cursor-delta');
-      if (cDeltaEl) cDeltaEl.innerText = `${deltaZ >= 0 ? '+' : ''}${deltaZ.toFixed(2)}m`;
-      const cSlopeEl = document.getElementById('stat-cursor-slope');
-      if (cSlopeEl) {
-        cSlopeEl.innerText = `${slope}° (${
-          slope >= 45 ? 'Ancient Overhang' : slope < 35 ? 'Walkable' : 'Scramble'
-        })`;
-      }
-
-      renderLightingOverlay();
+      const pxX = e.clientX - rect.left;
+      const pxY = e.clientY - rect.top;
+      handleMouseMove(pxX, pxY, rect.width || world.clientWidth || 600, rect.height || world.clientHeight || 700);
     });
 
     world.addEventListener('mouseleave', () => {
       cursorX = null;
       cursorY = null;
       if (probeEl) probeEl.style.display = 'none';
+      const currentTooltipEl = tooltipEl || (typeof document !== 'undefined' ? document.getElementById('cursor-tooltip') : null);
+      if (currentTooltipEl) {
+        currentTooltipEl.style.display = 'none';
+        currentTooltipEl.innerHTML = '';
+      }
 
       const cXyEl = document.getElementById('stat-cursor-xy');
       if (cXyEl) cXyEl.innerText = '--';
@@ -991,11 +1137,12 @@ export function initViewer(config) {
       renderLightingOverlay();
     });
 
-    // Click to move
-    world.addEventListener('click', () => {
-      if (cursorX !== null && cursorY !== null) {
-        tryMoveActor('player', cursorX, cursorY);
-      }
+    // Click to move / interact
+    world.addEventListener('click', (e) => {
+      const rect = world.getBoundingClientRect();
+      const pxX = e.clientX - rect.left;
+      const pxY = e.clientY - rect.top;
+      handleClick(pxX, pxY, rect.width || world.clientWidth || 600, rect.height || world.clientHeight || 700);
     });
   }
 
@@ -1667,12 +1814,20 @@ export function initViewer(config) {
     getExploredGrid: () => explored,
     getPlayerPos: () => ({ x: playerX, y: playerY }),
     getPlayerPosition: () => ({ x: playerX, y: playerY }),
+    screenToWorld,
+    getInteractableAt,
+    handleMouseMove,
+    handleClick,
   };
 
   const globalRoot = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this);
   if (globalRoot) {
     globalRoot.getPlayerPos = () => ({ x: playerX, y: playerY });
     globalRoot.getPlayerPosition = () => ({ x: playerX, y: playerY });
+    globalRoot.screenToWorld = screenToWorld;
+    globalRoot.getInteractableAt = getInteractableAt;
+    globalRoot.handleMouseMove = handleMouseMove;
+    globalRoot.handleClick = handleClick;
     globalRoot.sampleElevation = sampleElevation;
     globalRoot.getSlope = getSlope;
     globalRoot.playerX = playerX;

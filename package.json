@@ -8,6 +8,8 @@
   },
   "scripts": {
     "test": "node tools/test-all.mjs",
+    "test:fast": "node --test test/*.test.mjs",
+    "test:light": "node --test test/*.test.mjs && python3 companion/test_web_preview.py && python3 companion/test_stagecraft_anchoring.py && python3 companion/test_scene_placement.py",
     "test:browser": "playwright test",
     "harness": "node tools/serve-harness.mjs",
     "build": "vite build",

@@ -769,16 +769,56 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
       transform: scale(0.98);
     }}
 
-    /* Cursor Depth Probe Ring */
+    /* Cursor Depth Probe Ring & Floating Interaction Tooltip */
     .probe-cursor {{
       position: absolute;
-      width: 26px; height: 26px;
+      width: 24px; height: 24px;
       border-radius: 50%;
       border: 2px dashed var(--gold);
-      transform: translate(-50%, -50%) translateZ(145px);
+      transform: translate(-50%, -50%);
       pointer-events: none;
       display: none;
-      box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+      box-shadow: 0 0 10px rgba(245, 158, 11, 0.45);
+      z-index: 90;
+    }}
+    .cursor-tooltip {{
+      position: absolute;
+      transform: translate(14px, 14px);
+      background: rgba(14, 12, 10, 0.95);
+      border: 1px solid #ca8a04;
+      border-radius: 4px;
+      padding: 6px 9px;
+      color: #f3ece2;
+      font-size: 10px;
+      line-height: 1.35;
+      pointer-events: none;
+      display: none;
+      z-index: 120;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.85);
+      max-width: 220px;
+    }}
+    .tooltip-badge {{
+      font-size: 7.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 800;
+      color: #ca8a04;
+      margin-bottom: 2px;
+    }}
+    .tooltip-title {{
+      font-weight: 700;
+      color: #fef08a;
+      font-size: 11px;
+    }}
+    .tooltip-meta {{
+      font-size: 9px;
+      color: #94a3b8;
+      margin-top: 2px;
+    }}
+    .tooltip-verbs {{
+      font-size: 8.5px;
+      color: #38bdf8;
+      margin-top: 4px;
     }}
 
     /* Telemetry HUD Panel */
@@ -855,8 +895,9 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
           <div class="player-arrow"></div>
         </div>
 
-        <!-- Mouse probe ring -->
+        <!-- Mouse probe ring & floating tooltip -->
         <div class="probe-cursor" id="probe"></div>
+        <div class="cursor-tooltip" id="cursor-tooltip"></div>
       </div>
     </div>
 
