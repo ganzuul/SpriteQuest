@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "id": "ridge-pass",
+  "name": "Traversable Ridge Pass",
+  "category": "corridor",
+  "description": "A navigable low-elevation mountain saddle flanked by steep natural ridge walls. Forms natural choke points and elevation transitions.",
+  "default_scale": {
+    "pass_width_m": 8.0,
+    "ridge_flank_width_m": 22.0,
+    "pass_elevation_m": 4.0,
+    "ridge_elevation_m": 18.0
+  },
+  "slope_pass_deg": 12.0,
+  "slope_flank_deg": 52.0,
+  "traversable": true,
+  "tag_bit": 4
+}

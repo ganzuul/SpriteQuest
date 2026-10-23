@@ -24,8 +24,10 @@ should not pretend to be:
 
 | `for` | Read by | Composed into | Admission test |
 |---|---|---|---|
-| `diffusion` | the sampler | appended to the render prompt, **after** refinement | could an artist be handed this line and draw it? |
+| `diffusion` | the sampler (Black Forest Labs Flux 3 Klein) | appended to the render prompt, **after** refinement | could an artist be handed this line and draw it? |
 | `gemma4-orion` | the rewriter | the system prompt, **before** refinement | would this change what the compiler writes? |
+
+> **Diffusion Architecture**: The project's diffusion model for NPC sheet facets and scene visual generation is **Black Forest Labs' Flux 3 Klein** (running via ComfyUI with step-distilled or base weights), replacing legacy Qwen Image 2.1.
 
 The distinction is enforced at compose time, not advisory, and the reason is
 `docs/quarantine/dev-pain-log.md` entries 2 and 9: **rewriting erodes constraints**. A
@@ -226,6 +228,104 @@ Symbols, sigils, and glyphs represent discrete visual marks, stamps, seals, and 
    - **`facets`**: Typically `["favored_items", "portrait", "home"]` because glyphs appear on seals, stamped props, illuminated manuscripts, or architectural lintels.
    - **`facts`**: Always specify `extent`, `scale_ref` (size relative to hands, documents, or doorways), `material` (e.g., vermilion wax, cinnabar ink, graphite), and `state` (e.g., crisp, worn, chipped).
 
+## NPC Factions
+
+An **NPC Faction** is a collection of fragments and composition transforms defined in a faction plan (`library/plans/factions/<faction>.json`). Faction plans can be composed with any base NPC declaration sheet to compile an aligned version of that character and generate a Tavern v2 character card with an embedded lorebook.
+
+### How Faction Compilation Works
+
+Using `companion/compile_faction_npc.py`, a base NPC sheet (e.g., `companion/npcs/hollis.json`) is composed with a faction template:
+1. **Role & Title**: Appends faction status or postings (`role_suffix`).
+2. **Visual & Rendering Style**: Overlays faction aesthetic (e.g., obsidian, clean geometry, precision lighting) on top of the base art style.
+3. **Portrait Modifiers**: Injects faction physiological and attire traits (e.g., stasis frost, thermoelectric conduits, tailored robes).
+4. **Setting / Home**: Relocates or stations the character at a faction facility.
+5. **Favored Items & Tags**: Merges base items with faction technology and badges.
+6. **Aspirations & Ethos**: Re-aligns character motivation to faction imperatives.
+7. **Lorebook Synthesis**: Automatically builds a SillyTavern `character_book` containing every faction fragment alongside the character's native kingdom fragments.
+
+### Faction 1: The Space Vampires (`space-vampires`)
+
+- **Classification**: Enemy faction.
+- **Lore Identity**: An ancient, dark, and mysterious force organized into vast **mercantile houses**.
+- **Cold Optimality vs. Virtue**: Game-theoretic cooperation and mechanical optimality replace virtue and wisdom. Relations are governed by contract matrices, Pareto efficiency, and Nash equilibria.
+- **Intelligence vs. Faith**: Cold computational intellect replaces faith and religious mysticism.
+- **Glass Stasis Coffins vs. Death**: Instead of death or decay, they use vacuum-sealed borosilicate glass stasis coffins to drift across deep time with zero thermodynamic waste.
+- **Thermodynamic Anti-Life Ethos**: Rooted in statistical mechanics and cosmic heat death. They view living beings as chaotic, wasteful dissipative structures that disrupt thermodynamic equilibrium.
+- **Pure Technology, No Magic**: Precision instrumentation, cryogenic superfluid sinks, vector logic tablets, and thermoelectric regulators.
+- **Fragments** (`library/fragments/space-vampires/`):
+  - `mercantile-house.json`: Monolithic alloy orbital counting-house and matrix consoles.
+  - `glass-stasis-coffin.json`: Hexagonal borosilicate glass sarcophagus with thermoelectric peltier cooling.
+  - `anti-life-entropy.json`: Dry-gas calibration chamber monitoring particle heat death.
+  - `technological-instrumentation.json`: Milled black aluminum calculation tablet with vector matrix display.
+  - `glyph-entropy-matrix.json`: Converging thermodynamic decay curve crest etched in palladium trace.
+
+### Faction 2: The Grey Wind (`grey-wind`)
+
+- **Classification**: Neutral faction.
+- **Lore Identity**: Tall beings with matte slate-grey skin who walk into solid mountains and disappear as easily as mortals walk into fog.
+- **Wish-Granting Power**: Immensely powerful, they are said to have the ability to grant wishes with the quiet, irreversible permanence of geological fact.
+- **Geological Patience**: In conversation, they never haste or argue; they are content to simply wait—forever if needed—for others to come around to their meaning.
+- **Named Ruins Without War**: No historical record mentions them ever going to war, yet the unscarred ruins of lost civilizations lie layered around their mountains, and they hold a distinct name for every one of them.
+- **Fragments** (`library/fragments/grey-wind/`):
+  - `mountain-passage.json`: Tall slate-skinned figure stepping seamlessly into an unbroken granite cliff face like mist.
+  - `infinite-patience.json`: Slate-skinned speaker seated motionless on a boulder with alpine lichen creeping over their mantle hem while waiting for an answer.
+  - `named-ruins.json`: Stratified, unscarred ruins of lost civilizations in a high mountain basin watched over by a lone Grey Wind figure.
+  - `wish-granting.json`: Open slate-grey palm above which a spoken wish condenses into a dense stone tablet.
+  - `glyph-stone-horizon.json`: Chiseled petroglyph of a steep mountain peak intersected by three horizontal fog lines.
+
+## Scene Refinement: Floor Plans
+
+Scenes advance from narrative concept and visual lore fragments to **Floor Plans** (`library/floorplans/*.json`). Floor plans provide the **geometric and spatial ground truth** for downstream architectural refinement, 3D scene construction, movement paths, and stagecraft blocking.
+
+```
+lore fragment ──> floor plan ──> 3D blockout / meshes
+                      │       ──> movement paths & clearance
+                      └───────> stagecraft proscenium & cue marks
+```
+
+### The Three Downstream Roles of a Floor Plan
+
+1. **Architectural Refinement & 3D Scene Construction**:
+   - Declares real-world bounding boxes (width, length, height in meters) and grid increments.
+   - Defines physical zones with elevations, acoustic reverberation, and boundary polygons.
+   - Places structural elements (portals, doors, stairs, risers, column rows, barriers, and prop sockets) with exact clearance dimensions.
+
+2. **Movement Paths & Traversal**:
+   - Defines directed, cleared routes across and between zones (axial processionals, clearance lanes, forfeit corridors, service routes).
+   - Specifies ordered 3D waypoints `[x, y, z]` and minimum clearance widths in meters to validate collision and movement continuity.
+
+3. **Setting for Stagecraft & Theatrical Blocking**:
+   - Anchors the **proscenium line** separating the observer/camera boundary from the playing space.
+   - Maps theatrical zones (`downstage_center`, `stage_left`, `stage_right`, `upstage_altar`, etc.) to coordinate space.
+   - Positions **actor cue marks** with designated facing vectors and dramatic purposes.
+   - Defines camera sightlines, viewing frustums, and field-of-view angles (`fov_deg`).
+
+### Reference Floor Plans
+
+- [`library/floorplans/glass-cathedral.json`](file:///home/nos/Nextcloud/SpriteQuest/library/floorplans/glass-cathedral.json): 120m × 240m × 80m soaring asteroid-glass cathedral (sky portico, 16-column grand nave, dusk/dawn transepts, and high solar focus chancel).
+- [`library/floorplans/customs-house.json`](file:///home/nos/Nextcloud/SpriteQuest/library/floorplans/customs-house.json): 36m × 60m border checkpoint between level chunks (clearance foyer, inspection hall, quartermaster ledger desk, and forfeit corridor).
+
+### Tooling
+
+Use [`companion/floorplan.py`](file:///home/nos/Nextcloud/SpriteQuest/companion/floorplan.py) to validate, inspect, and analyze floor plans:
+
+```bash
+# List all registered floor plans
+python3 companion/floorplan.py --list
+
+# Validate schema conformance
+python3 companion/floorplan.py glass-cathedral --validate
+
+# Render top-down 2D ASCII layout
+python3 companion/floorplan.py glass-cathedral --ascii
+
+# Print movement path lengths and elevation deltas
+python3 companion/floorplan.py customs-house --metrics
+
+# Inspect stagecraft blocking, cue marks, and camera sightlines
+python3 companion/floorplan.py glass-cathedral --stagecraft
+```
+
 ## Deliberately not in schema v1
 
 Deferred because nothing consumes them yet, not because they are wrong:
@@ -251,11 +351,15 @@ library/
   fragments/
     shared/                 # belongs to no single kingdom (includes shared glyphs: glyph-*)
     customs-house/          # checkpoint and inspection fragments
+    grey-wind/              # grey wind neutral faction fragments
     neighboring-kingdom/    # the friend's game
     obsidian-wyrm/          # wyrm and citadel fragments
     scaffolded-kingdom/     # the princess's game
+    space-vampires/         # space vampire enemy faction fragments
     wizard-tower/           # tower and grimoire fragments
   plans/                    # ordered {id, version} selections, one per batch
+    factions/               # faction composition plans (space-vampires, grey-wind)
+  floorplans/               # scene floor plans & ground truth stagecraft geometry
 ```
 
 `world_id` must match the directory, so a fragment's scope is visible from the

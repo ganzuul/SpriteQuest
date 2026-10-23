@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "space-vampires/glass-stasis-coffin",
+  "version": 1,
+  "world_id": "space-vampires",
+  "for": "diffusion",
+  "facets": ["home", "favored_items"],
+  "detail": "a slender hexagonal sarcophagus of flawless vacuum-cast borosilicate glass, completely transparent, containing a motionless pale figure suspended in optical superfluid; perimeter copper heat-pipes and thermoelectric peltier coils vent residual thermal noise into a liquid-helium sink, with digital cycle-counters silently ticking down centuries in green phosphor digits",
+  "evidence": {
+    "kind": "directed",
+    "source": "user-brief",
+    "quote": "Instead of faith the space vampiers have intelligence, and instead of death they have glass stasis coffins which transport them through deep time with perfect efficiency."
+  },
+  "facts": {
+    "extent": "2.3 meters long, 0.8 meters wide, hexagonal profile",
+    "scale_ref": "sized to hold one adult humanoid in zero-g restraint straps",
+    "material": "ultra-pure synthetic quartz glass, OFHC copper thermal rails, helium-jacketed cryogenic seals, silicon display strip",
+    "state": "sealed under ultra-high vacuum, humming with microscopic thermoelectric peltier cycles"
+  },
+  "note": "Instead of death or organic burial, Space Vampires endure deep-time transit inside perfectly efficient glass stasis coffins that eliminate all thermodynamic loss."
+}

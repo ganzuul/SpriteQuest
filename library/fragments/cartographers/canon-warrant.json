@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "cartographers/canon-warrant",
+  "version": 1,
+  "world_id": "cartographers",
+  "for": "diffusion",
+  "facets": ["favored_items", "portrait", "evidence"],
+  "detail": "a heavy circular brass medallion stamped with an indelible iron-gall seal and ribbon of parchment, bearing the engraved seal of the Bureau of the Unwritten Atlas certifying that a territory, structure, or person has achieved canonical standing through years of repeatable observation",
+  "evidence": {
+    "kind": "directed",
+    "source": "openrig-port",
+    "quote": "The warrant rule: canon without warrants is cargo cult. Stage moves occur with ceremony and require an authored warrant."
+  },
+  "facts": {
+    "extent": "10 cm stamped brass disc with parchment counter-seal",
+    "scale_ref": "carried openly on a surveyor's lapel or pinned into an atlas folio margin",
+    "material": "cast yellow brass, cold-stamped iron-gall wax, linen-rag vellum ribbon",
+    "state": "embossed with indelible coordinates and dated audit marks"
+  },
+  "note": "The Bureau's primary currency of truth. Any land, building, or claim without a physical Canon Warrant is legally classified as mere rumor and denied standing in the Atlas."
+}

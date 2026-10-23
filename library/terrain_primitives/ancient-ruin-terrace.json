@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "id": "ancient-ruin-terrace",
+  "name": "Ancient Overhang Ruin Buttress",
+  "category": "ancient_ruin",
+  "description": "Stepped stone buttress and corbelled terrace from an ancient unwritten era. Strictly conforms to the 45-degree overhang constraint, signaling ambient, non-navigable relic infrastructure.",
+  "default_scale": {
+    "base_width_m": 22.0,
+    "base_length_m": 22.0,
+    "top_elevation_m": 16.0,
+    "base_elevation_m": 0.0,
+    "overhang_angle_deg": 45.0
+  },
+  "slope_face_deg": 45.0,
+  "traversable": false,
+  "tag_bit": 2,
+  "lore_marker": "ambient_unwritten_relic"
+}

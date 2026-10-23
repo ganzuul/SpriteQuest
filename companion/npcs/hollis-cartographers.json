@@ -1,0 +1,34 @@
+{
+  "name": "Hollis the Twice-Written",
+  "role": "quartermaster of the asset trade, resident of the scaffolded kingdom, Senior Surveyor of the Bureau of the Unwritten Atlas",
+  "written": true,
+  "world": "princess's kingdom (aligned with The Bureau of the Unwritten Atlas)",
+  "style": "Retro JRPG character art, sword and sorcery, 16-bit pixel aesthetic with painterly shading, limited palette, sprite-sheet clarity, hand-drawn game illustration, visible seams where the level was stitched together, austere bureaucratic brass and aged vellum, drafting tables strewn with parchment surveys, indelible iron-gall ink, precise brass theodolites, astrolabes, and seal presses, warm lamp-lit map archives surrounded by raw drifting frontier fog",
+  "portrait": "an unshaven quartermaster in a ledger-keeper's coat over chainmail, one shoulder is a prop that was never modelled properly, he is looking directly out of frame as if aware the scene is being watched. Visage modified by The Bureau of the Unwritten Atlas alignment: wearing a heavy surveyor's greatcoat of waxed canvas with deep pockets for parchment map rolls; brass theodolite sighting loupe and plumb-bob harness slung across the chest; keen, analytical eyes squinting against epistemic drift and shifting horizon fog; fingers permanently stained with indelible iron-gall drafting ink",
+  "home": "a customs house built into the gap between two level chunks, matte painted backdrops visible through the doorway, crates of unlabeled assets stacked to the ceiling, a ledger open on a desk showing two columns that do not balance; currently stationed in the drafty, lantern-lit scriptorium of the Bureau of the Unwritten Atlas, where towering map racks creak under the weight of certified folios and clerks weigh traveler claims against the canon ledger",
+  "favored_items": [
+    "an embossed brass Canon Warrant bearing the indelible signet of the Lead Cartographer",
+    "a calibrated surveyor's astrolabe that spins freely when approaching unwritten terrain",
+    "a bound vellum field notebook filled with triangulated bearings and observation tallies",
+    "a seal of attribution, worn smooth, that grants rights to an asset when pressed",
+    "a copied sword that works perfectly but has no author's name on it",
+    "a bill of lading listing a shipment from a kingdom that no longer loads"
+  ],
+  "aspirations": "to see the trade route restored so the neighboring kingdom can be paid for what it made, drawn as a wide shot of a road between two territories with a customs gate half-built in the middle Re-aligned by faction imperatives: to survey the perilous unwritten frontiers, grant warrants to verified terrain, and prevent unanchored rumors and context rot from eroding the certified map",
+  "world_id": "cartographers",
+  "extensions": {
+    "base_npc": "Hollis the Twice-Written",
+    "base_world_id": "scaffolded-kingdom",
+    "faction_id": "cartographers",
+    "faction_name": "The Bureau of the Unwritten Atlas",
+    "faction_kind": "neutral",
+    "tags": [
+      "faction:cartographers",
+      "neutral-faction",
+      "canon-warrant",
+      "epistemic-survey",
+      "unwritten-atlas",
+      "cartography"
+    ]
+  }
+}

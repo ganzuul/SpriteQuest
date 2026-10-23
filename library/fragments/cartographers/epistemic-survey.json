@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "cartographers/epistemic-survey",
+  "version": 1,
+  "world_id": "cartographers",
+  "for": "diffusion",
+  "facets": ["home", "lore"],
+  "detail": "a tiered wooden scriptorium where apprentice surveyors record fleeting rumors into rough field notebooks, journeymen cross-check bearings across observation ledgers, and master cartographers engrave verified landmarks into permanent copper plates with steel styluses under gas lamps",
+  "evidence": {
+    "kind": "directed",
+    "source": "openrig-port",
+    "quote": "Knowledge maturity ladder: DATA -> FIELD NOTES / OBSERVATIONS -> INSIGHTS -> CANON. Canon diffs should read as addition. Promotion is explicit: harvest / notice -> fold in own words -> curate."
+  },
+  "facts": {
+    "extent": "multi-tiered archive hall 30 meters high",
+    "scale_ref": "clerks and surveyors on rolling brass ladders navigating four ascending gallery levels of maturity",
+    "material": "polished dark oak desks, aged rag paper, brass sighting instruments, heavy iron-bound registry volumes",
+    "state": "quiet, methodical scratching of quills and steady smell of lamp oil and gall ink"
+  },
+  "note": "The four-tier epistemic ladder where raw observations mature over years into unalterable canon. Demoting an established entry requires an official inquest and public revocation."
+}

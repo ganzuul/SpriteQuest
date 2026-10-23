@@ -1,0 +1,307 @@
+{
+  "schema_version": 1,
+  "id": "customs-house/customs-house",
+  "name": "The Border Customs House",
+  "scene_id": "customs-house",
+  "refinement_level": "floor_plan",
+  "description": "The administrative border checkpoint wedged into the structural gap between two level chunks. Serves as ground truth for architectural blockout, clearance routing, forfeit transit, and quartermaster stagecraft blocking.",
+  "scale": {
+    "unit": "meter",
+    "grid_step": 1.0,
+    "center_xz": [0.0, 30.0],
+    "resolution": [1024, 1024],
+    "bounding_box": {
+      "width": 36.0,
+      "length": 60.0,
+      "height": 10.0
+    }
+  },
+  "zones": [
+    {
+      "id": "clearance-foyer",
+      "name": "Intake & Queue Foyer",
+      "elevation": 0.0,
+      "bounds": {"x_min": -16.0, "x_max": 0.0, "z_min": 0.0, "z_max": 24.0},
+      "material": "uneven cobblestone and exposed structural subfloor",
+      "acoustic_reverb": "damp",
+      "description": "Waiting area for arriving carriers and travellers with crated assets."
+    },
+    {
+      "id": "inspection-hall",
+      "name": "Weigh & Inspection Hall",
+      "elevation": 0.0,
+      "bounds": {"x_min": -16.0, "x_max": 16.0, "z_min": 24.0, "z_max": 44.0},
+      "material": "scarred timber planking over iron joists",
+      "acoustic_reverb": "clattering",
+      "description": "Central inspection zone where goods are weighed, struck, rated, and sealed."
+    },
+    {
+      "id": "quartermaster-office",
+      "name": "Quartermaster's Desk & Ledger Bench",
+      "elevation": 0.6,
+      "bounds": {"x_min": 2.0, "x_max": 16.0, "z_min": 26.0, "z_max": 42.0},
+      "material": "varnished oak desktop, cast-iron grille enclosure",
+      "acoustic_reverb": "intimate",
+      "description": "The administrative desk where Hollis reviews manifests and updates the two-column ledger."
+    },
+    {
+      "id": "forfeit-corridor",
+      "name": "The Forfeit Corridor",
+      "elevation": 0.0,
+      "bounds": {"x_min": -16.0, "x_max": -6.0, "z_min": 44.0, "z_max": 60.0},
+      "material": "narrow flagstone passage lined with iron studs",
+      "acoustic_reverb": "muffled echo",
+      "description": "One-way transit corridor along which uncredited and forfeit assets travel to the yard."
+    },
+    {
+      "id": "cleared-egress",
+      "name": "Cleared Transit Way",
+      "elevation": 0.0,
+      "bounds": {"x_min": -4.0, "x_max": 16.0, "z_min": 44.0, "z_max": 60.0},
+      "material": "smooth macadam road slab leading to the scaffolded kingdom",
+      "acoustic_reverb": "open",
+      "description": "The cleared roadway for accredited assets and verified travellers."
+    }
+  ],
+  "architectural_elements": [
+    {
+      "id": "intake-outer-gate",
+      "type": "portal",
+      "zone_a": "clearance-foyer",
+      "zone_b": "external-road",
+      "position": [-8.0, 0.0, 0.0],
+      "width": 5.0,
+      "height": 4.5,
+      "passable": true,
+      "material": "iron-braced timber double doors"
+    },
+    {
+      "id": "barrier-inspection-counter",
+      "type": "counter_barrier",
+      "zone": "inspection-hall",
+      "start": [-14.0, 0.0, 28.0],
+      "end": [0.0, 0.0, 28.0],
+      "height": 1.1,
+      "depth": 1.2,
+      "passable": false,
+      "material": "heavy oak timber topped with zinc sheeting"
+    },
+    {
+      "id": "gate-forfeit-wicket",
+      "type": "portal",
+      "zone_a": "inspection-hall",
+      "zone_b": "forfeit-corridor",
+      "position": [-11.0, 0.0, 44.0],
+      "width": 2.2,
+      "height": 3.0,
+      "passable": true,
+      "material": "heavy riveted iron door, keyed lock"
+    },
+    {
+      "id": "gate-cleared-barrier",
+      "type": "turnstile_gate",
+      "zone_a": "inspection-hall",
+      "zone_b": "cleared-egress",
+      "position": [6.0, 0.0, 44.0],
+      "width": 4.0,
+      "height": 3.5,
+      "passable": true,
+      "material": "counterbalanced timber boom gate with seal clamp"
+    }
+  ],
+  "movement_paths": [
+    {
+      "id": "path-clearance-flow",
+      "name": "Standard Clearance Route",
+      "type": "primary_clearance",
+      "clearance_width": 2.5,
+      "waypoints": [
+        {"id": "wp_queue", "x": -8.0, "y": 0.0, "z": 8.0, "zone": "clearance-foyer"},
+        {"id": "wp_scale", "x": -7.0, "y": 0.0, "z": 26.0, "zone": "inspection-hall"},
+        {"id": "wp_strike", "x": 0.0, "y": 0.0, "z": 34.0, "zone": "inspection-hall"},
+        {"id": "wp_exit_gate", "x": 6.0, "y": 0.0, "z": 44.0, "zone": "cleared-egress"},
+        {"id": "wp_road_onward", "x": 6.0, "y": 0.0, "z": 56.0, "zone": "cleared-egress"}
+      ]
+    },
+    {
+      "id": "path-forfeit-flow",
+      "name": "Forfeit Seizure Route",
+      "type": "unidirectional_forfeit",
+      "clearance_width": 2.0,
+      "waypoints": [
+        {"id": "wp_strike_reject", "x": -7.0, "y": 0.0, "z": 34.0, "zone": "inspection-hall"},
+        {"id": "wp_forfeit_wicket", "x": -11.0, "y": 0.0, "z": 44.0, "zone": "forfeit-corridor"},
+        {"id": "wp_yard_dump", "x": -11.0, "y": 0.0, "z": 56.0, "zone": "forfeit-corridor"}
+      ]
+    }
+  ],
+  "stagecraft": {
+    "proscenium_line": {
+      "start": [-16.0, 0.0, 16.0],
+      "end": [16.0, 0.0, 16.0],
+      "facing_angle_deg": 0.0,
+      "description": "Primary observer boundary looking upstage across the inspection counter toward the quartermaster's desk"
+    },
+    "playing_areas": {
+      "downstage_entrant": {
+        "x": -7.0,
+        "y": 0.0,
+        "z": 24.0,
+        "radius": 3.5,
+        "blocking_label": "Downstage Left (The Entrant / Traveller Mark)"
+      },
+      "center_counter": {
+        "x": -2.0,
+        "y": 0.0,
+        "z": 30.0,
+        "radius": 3.0,
+        "blocking_label": "Center Stage (The Weigh Beam & Manifest Strike)"
+      },
+      "upstage_quartermaster": {
+        "x": 8.0,
+        "y": 0.6,
+        "z": 34.0,
+        "radius": 4.0,
+        "blocking_label": "Stage Right / Upstage (Quartermaster's Elevated Desk)"
+      },
+      "forfeit_door": {
+        "x": -11.0,
+        "y": 0.0,
+        "z": 44.0,
+        "radius": 2.5,
+        "blocking_label": "Upstage Left (The Forfeit Wicket)"
+      }
+    },
+    "cue_marks": [
+      {
+        "id": "mark_hollis",
+        "label": "Mark H (Hollis the Quartermaster)",
+        "x": 8.0,
+        "y": 0.6,
+        "z": 34.0,
+        "facing": "downstage_left",
+        "description": "Standing or leaning over the open ledger on the high desk"
+      },
+      {
+        "id": "mark_supplicant",
+        "label": "Mark S (Carrier / Trader)",
+        "x": -7.0,
+        "y": 0.0,
+        "z": 24.0,
+        "facing": "stage_right",
+        "description": "Standing on the cobblestones presenting crates and shipping slips"
+      }
+    ],
+    "sightlines": [
+      {
+        "id": "cam_proscenium_dialogue",
+        "type": "camera_vantage",
+        "position": [0.0, 1.8, 14.0],
+        "target": [2.0, 1.4, 32.0],
+        "fov_deg": 60.0,
+        "description": "Two-shot eye-level theatrical framing capturing entrant on left and Hollis on elevated right"
+      },
+      {
+        "id": "cam_hollis_over_shoulder",
+        "type": "camera_vantage",
+        "position": [9.5, 2.2, 36.5],
+        "target": [-7.0, 1.5, 24.0],
+        "fov_deg": 48.0,
+        "description": "Over-the-shoulder shot past Hollis's ledger looking at the entrant across the counter"
+      }
+    ]
+  },
+  "prop_sockets": [
+    {
+      "id": "socket-quartermaster-desk",
+      "zone": "quartermaster-office",
+      "position": [8.0, 0.6, 34.0],
+      "footprint": [2.4, 1.4, 1.1],
+      "recommended_prop": "hollis-ledger-desk"
+    },
+    {
+      "id": "socket-two-pan-scale",
+      "zone": "inspection-hall",
+      "position": [-7.0, 1.1, 28.0],
+      "footprint": [1.5, 0.8, 0.9],
+      "recommended_prop": "beam-balance-scale"
+    }
+  ],
+  "walls": [
+    {"id": "wall-inspection-counter", "start": [-16.0, 28.0], "end": [0.0, 28.0], "thickness": 0.45},
+    {"id": "wall-office-grille-west", "start": [2.0, 26.0], "end": [2.0, 42.0], "thickness": 0.30},
+    {"id": "wall-forfeit-divider", "start": [-6.0, 44.0], "end": [-6.0, 60.0], "thickness": 0.45},
+    {"id": "wall-north-hall-split", "start": [-16.0, 44.0], "end": [16.0, 44.0], "thickness": 0.40}
+  ],
+  "portals": [
+    {"id": "intake-outer-gate", "kind": "door", "position": [-8.0, 0.0, 0.0], "width": 5.0, "orientation": "horizontal"},
+    {"id": "gate-forfeit-wicket", "kind": "door", "position": [-11.0, 0.0, 44.0], "width": 2.2, "orientation": "horizontal"},
+    {"id": "gate-cleared-barrier", "kind": "door", "position": [6.0, 0.0, 44.0], "width": 4.0, "orientation": "horizontal"}
+  ],
+  "props": [
+    {
+      "id": "quartermaster_desk",
+      "label": "Hollis's quartermaster ledger desk",
+      "glb": "scenes/asset-store/props/common-furniture/common-table/mesh/00002-lowpoly.glb",
+      "at": [8.0, 0.6, 34.0],
+      "yaw_deg": -90.0,
+      "scale": 1.3
+    },
+    {
+      "id": "quartermaster_chair",
+      "label": "quartermaster high-backed chair",
+      "glb": "scenes/asset-store/props/common-furniture/common-chair/mesh/00002-lowpoly.glb",
+      "at": [10.2, 0.6, 34.0],
+      "yaw_deg": 90.0,
+      "scale": 1.15
+    },
+    {
+      "id": "ledger_bookcase_north",
+      "label": "customs manifest archive bookcase",
+      "glb": "scenes/asset-store/props/common-furniture/common-bookcase/mesh/00007-lowpoly.glb",
+      "at": [13.5, 0.6, 30.0],
+      "yaw_deg": -90.0,
+      "scale": 1.3
+    },
+    {
+      "id": "seal_cabinet",
+      "label": "wax seal and stamp cabinet",
+      "glb": "scenes/asset-store/props/common-furniture/common-cabinet/mesh/00003-lowpoly.glb",
+      "at": [13.5, 0.6, 38.0],
+      "yaw_deg": -90.0,
+      "scale": 1.25
+    },
+    {
+      "id": "weigh_table",
+      "label": "inspection weigh table",
+      "glb": "scenes/asset-store/props/common-furniture/common-dresser/mesh/00002-lowpoly.glb",
+      "at": [-7.0, 0.0, 28.0],
+      "yaw_deg": 0.0,
+      "scale": 1.4
+    },
+    {
+      "id": "queue_bench_west",
+      "label": "carrier waiting bench",
+      "glb": "scenes/asset-store/props/common-furniture/common-bench/mesh/00002-lowpoly.glb",
+      "at": [-13.0, 0.0, 12.0],
+      "yaw_deg": 90.0,
+      "scale": 1.6
+    },
+    {
+      "id": "queue_bench_east",
+      "label": "carrier waiting bench",
+      "glb": "scenes/asset-store/props/common-furniture/common-bench/mesh/00002-lowpoly.glb",
+      "at": [-3.0, 0.0, 12.0],
+      "yaw_deg": -90.0,
+      "scale": 1.6
+    },
+    {
+      "id": "forfeit_wardrobe",
+      "label": "impounded goods locker",
+      "glb": "scenes/asset-store/props/common-furniture/common-wardrobe/mesh/00002-lowpoly.glb",
+      "at": [-13.8, 0.0, 52.0],
+      "yaw_deg": 90.0,
+      "scale": 1.4
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "id": "cartographers",
+  "name": "The Bureau of the Unwritten Atlas",
+  "faction_title": "The Surveyors of Certified Canon",
+  "kind": "neutral",
+  "world_id": "cartographers",
+  "for": "gemma4-orion",
+  "description": "An austere guild of bureaucratic cartographers who certify what is real. Operating from drafty vellum archives along the edge of known space, they view unmapped land and unwritten beings as dangerous epistemic hazards. They grant Canon Warrants through a strict four-stage survey ladder.",
+  "fragments": [
+    {"id": "cartographers/canon-warrant", "version": 1},
+    {"id": "cartographers/epistemic-survey", "version": 1},
+    {"id": "cartographers/the-living-atlas", "version": 1},
+    {"id": "cartographers/unwritten-borders", "version": 1},
+    {"id": "cartographers/glyph-surveyor-rose", "version": 1}
+  ],
+  "composition": {
+    "role_suffix": ", Senior Surveyor of the Bureau of the Unwritten Atlas",
+    "style_overlay": "austere bureaucratic brass and aged vellum, drafting tables strewn with parchment surveys, indelible iron-gall ink, precise brass theodolites, astrolabes, and seal presses, warm lamp-lit map archives surrounded by raw drifting frontier fog",
+    "portrait_modifiers": [
+      "wearing a heavy surveyor's greatcoat of waxed canvas with deep pockets for parchment map rolls",
+      "brass theodolite sighting loupe and plumb-bob harness slung across the chest",
+      "keen, analytical eyes squinting against epistemic drift and shifting horizon fog",
+      "fingers permanently stained with indelible iron-gall drafting ink"
+    ],
+    "favored_items": [
+      "an embossed brass Canon Warrant bearing the indelible signet of the Lead Cartographer",
+      "a calibrated surveyor's astrolabe that spins freely when approaching unwritten terrain",
+      "a bound vellum field notebook filled with triangulated bearings and observation tallies"
+    ],
+    "home_overlay": "the drafty, lantern-lit scriptorium of the Bureau of the Unwritten Atlas, where towering map racks creak under the weight of certified folios and clerks weigh traveler claims against the canon ledger",
+    "aspirations_overlay": "to survey the perilous unwritten frontiers, grant warrants to verified terrain, and prevent unanchored rumors and context rot from eroding the certified map",
+    "greeting_template": "Halt and present your warrant. I am {name}. Has this territory been certified, or are you wandering unwritten ground?",
+    "tags": [
+      "faction:cartographers",
+      "neutral-faction",
+      "canon-warrant",
+      "epistemic-survey",
+      "unwritten-atlas",
+      "cartography"
+    ]
+  },
+  "note": "Faction template compiling base NPCs into Bureau Cartographers. Imbues characters with epistemic precision, surveyor instruments, obsessive canon verification, and suspicion of unwritten anomalies."
+}

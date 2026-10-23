@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "cartographers/glyph-surveyor-rose",
+  "version": 1,
+  "world_id": "cartographers",
+  "for": "diffusion",
+  "facets": ["favored_items", "portrait", "home"],
+  "detail": "an engraved brass compass rose enclosing a weighted surveyor's plumb-bob and an open all-seeing eye, surrounded by sixteen graduation marks indexing degrees of epistemic certitude, stamped onto frontier boundary stones and embossed onto official Bureau seal-presses",
+  "evidence": {
+    "kind": "directed",
+    "source": "openrig-port",
+    "quote": "Operating model trace: one filename per chain, identical at every level. The compass that anchors position against drift."
+  },
+  "facts": {
+    "extent": "12 cm circular seal",
+    "scale_ref": "chiseled into milestone plinths and cast in relief on surveyor shoulder-clasps",
+    "material": "weathered naval brass, engraved copper inlay",
+    "state": "crisp, mathematically exact cardinal graduation"
+  },
+  "note": "The official emblem of the Bureau of the Unwritten Atlas, representing empirical measurement, unyielding canon, and protection against narrative drift."
+}

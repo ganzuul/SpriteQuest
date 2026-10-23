@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "id": "space-vampires",
+  "name": "The Space Vampires",
+  "faction_title": "The Mercantile Houses of the Deep Vacuum",
+  "kind": "enemy",
+  "world_id": "space-vampires",
+  "for": "gemma4-orion",
+  "description": "An ancient, dark, and mysterious force organized as mercantile houses. Governed by game-theoretic cooperation, cold optimality, and statistical mechanics. Anti-life whose ethos is cosmic heat death, transporting themselves across deep time in glass stasis coffins. Pure technology, zero magic.",
+  "fragments": [
+    {"id": "space-vampires/mercantile-house", "version": 1},
+    {"id": "space-vampires/glass-stasis-coffin", "version": 1},
+    {"id": "space-vampires/anti-life-entropy", "version": 1},
+    {"id": "space-vampires/technological-instrumentation", "version": 1},
+    {"id": "space-vampires/glyph-entropy-matrix", "version": 1}
+  ],
+  "composition": {
+    "role_suffix": ", factor to the Mercantile Houses of the Deep Vacuum",
+    "style_overlay": "sterile technological geometry, vacuum-sealed obsidian aesthetic, cold monochromatic lighting with pale luminescent indicators, precision instrumentation, zero-entropy crystal and polished alloy surfaces",
+    "portrait_modifiers": [
+      "bleached porcelain skin with faint subcutaneous thermoelectric conduits",
+      "tailored vacuum-tight formal mercantile robes in matte obsidian",
+      "unblinking calculating gaze evaluating game-theoretic utility",
+      "faint stasis frost clinging to temples and collar"
+    ],
+    "favored_items": [
+      "a glass stasis coffin cipher key cut from single-crystal silicon",
+      "a game-theoretic payoff matrix tablet computing Nash equilibria in real time",
+      "a cryo-vacuum thermoelectric regulator worn at the throat"
+    ],
+    "home_overlay": "a pressurized orbital counting-house and stasis vault, ranked with vacuum-sealed glass coffins humming at near absolute zero, bathed in cold instrumental telemetry",
+    "aspirations_overlay": "to enforce Pareto-optimal resource extraction and accelerate the universe toward thermodynamic equilibrium, extinguishing wasteful negentropic dissipation",
+    "greeting_template": "I am {name}. Our calculations indicate your utility parameters have reached threshold.",
+    "tags": [
+      "faction:space-vampires",
+      "enemy-faction",
+      "mercantile-house",
+      "anti-life",
+      "thermodynamics",
+      "technology"
+    ]
+  },
+  "note": "Faction template for compiling any base NPC into a Space Vampire aligned variant. Merges cold game-theoretic doctrine, anti-life thermodynamic ideology, and technological apparatus into the target character sheet and lorebook."
+}

@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "space-vampires/technological-instrumentation",
+  "version": 1,
+  "world_id": "space-vampires",
+  "for": "diffusion",
+  "facets": ["favored_items", "portrait"],
+  "detail": "a handheld calculation tablet milled from solid black billet aluminum, featuring a monochrome vector display that models multi-agent game-theoretic equilibria, surrounded by knurled rotary encoders, fiber-optic data ports, and cold thermoelectric sensor probes; completely unadorned by runes, filigree, or occult symbols",
+  "evidence": {
+    "kind": "directed",
+    "source": "user-brief",
+    "quote": "The don't have magic; they have technology."
+  },
+  "facts": {
+    "extent": "25 cm by 18 cm by 2 cm rectangular tablet",
+    "scale_ref": "handheld diagnostic instrument held with gauntleted or bare hands",
+    "material": "hard-anodized black aluminum chassis, monochrome high-refresh phosphor screen, optical glass interface",
+    "state": "powered on, displaying active matrix calculations and thermal loss coefficients"
+  },
+  "note": "They have no magic and no faith; their dominance rests entirely on advanced technology, statistical computation, and physical instrumentation."
+}

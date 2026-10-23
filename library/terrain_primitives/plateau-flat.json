@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "id": "plateau-flat",
+  "name": "Flat Plateau Build Plate",
+  "category": "build_plate",
+  "description": "A flattened, level tableland designed to host local architectural scenes (customs house, outposts, campsites) with smooth perimeter blend margins.",
+  "default_scale": {
+    "width_m": 40.0,
+    "length_m": 60.0,
+    "elevation_m": 6.0,
+    "blend_margin_m": 4.0
+  },
+  "slope_max_deg": 2.0,
+  "traversable": true,
+  "tag_bit": 1
+}

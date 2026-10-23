@@ -8,16 +8,35 @@ Its purpose is to provide node-based workflow orchestration and narrative consis
 
 ---
 
-## Critical Boundary: In-Game Lore vs. Software Development
+## The 4th-Wall Seam: Knowingly Crossing the Lore / Engineering Boundary
 
-> **IMPORTANT RULE FOR AGENTS**:
-> In-game narrative concepts (such as "the Hollis ledger", "earned standing", "unwritten parts", "Customs House", or "the Understudy") are **fictional game mechanics and storytelling devices within SillyTavern**.
-> 
-> - **THEY ARE NOT SOFTWARE ENGINEERING POLICIES.**
-> - **THEY ARE NOT REPOSITORY RULES.**
-> - Do **NOT** enforce in-game vocabulary in git commit messages, code comments, or directory structures.
-> - Do **NOT** install git hooks or checkers that gate development based on in-game terms.
-> - Follow standard, pragmatic software engineering practices: write clean, maintainable TypeScript/JavaScript/Svelte, standard unit tests, and conventional git commits.
+SpriteQuest's core creative and architectural premise is the **standing translation rule**: real-world software engineering realities, agent systems, LLM constraints, and developer pain (e.g., underdetermination, context rot, prompt gaps, epistemic maturity, provenance, ledgers) are **knowingly and deliberately translated across the 4th wall into in-game lore, mechanics, and factions**.
+
+Examples of this intentional crossing:
+- **The Forge** translates generative model underdetermination into an in-world smithy that answers wishes literally and coarsely.
+- **The Hollis Ledger** translates asset provenance and deterministic acceptance gates into a diegetic record where objects earn standing.
+- **Pell the Underwritten** translates prompt underdetermination and incomplete character definitions into a diegetic character reality.
+- **The Bureau of the Unwritten Atlas / Cartographers** deliberately adapts real-world agent orchestration and epistemic governance (such as OpenRig's knowledge maturity ladder, canon warrants, and context packs) into a fantasy faction certifying maps and truth.
+
+### The Boundary: Why We Account For It (Engineering Hygiene)
+
+We explicitly highlight this 4th-wall barrier **because we are knowingly crossing it**, not because crossing it is forbidden. 
+
+The boundary is an **engineering discipline**, not a creative prohibition:
+
+1. **Creative & Design Freedom**:
+   - You **ARE EXPECTED** to adapt and translate real-world engineering concepts (e.g., OpenRig, diffusion pipelines, agent topologies, context engineering) into in-game factions, lore fragments, and mechanics.
+   - Do **NOT** flag 4th-wall conceptual translation as a "category error" or a "boundary violation." It is the intended artistic and architectural methodology of SpriteQuest.
+
+2. **Practical Repository & Code Hygiene**:
+   - In actual code (`src/`, `ui/`, `companion/`), write clean, maintainable, idiomatic TypeScript, Svelte, and Python.
+   - Use standard software engineering practices: conventional git commits (`feat:`, `fix:`), standard unit tests (`npm test`, `pytest`), and standard schema designs.
+   - Do **NOT** confuse the in-game fiction with repository governance: do not write commit messages in in-game roleplay prose, do not invent git hooks gating code merges on "in-game character standing", and do not refuse normal refactoring on fictional grounds.
+
+3. **Accounting for the Seam in Design Docs**:
+   - When a design doc crosses this seam, it must clearly account for **both sides**:
+     - **The Diegetic Translation**: How does the concept manifest in-game? (Faction plans in `library/plans/factions/`, lorebook entries, NPC dialogue, character cards, diffusion portrait modifiers).
+     - **The Concrete Implementation**: How does it actually execute in the extension? (Lattice nodes in `workflows/`, JSON schemas, companion HTTP endpoints in `companion/`, standard Tavern v2 formats).
 
 ---
 
@@ -40,6 +59,9 @@ Its purpose is to provide node-based workflow orchestration and narrative consis
    - `companion/test_forge_service.py`: Automated test suite for the companion service.
    - `companion/npcs/`: Character declaration sheets (`hollis.json`, `pell-the-underwritten.json`, etc.).
    - `companion/convert_character_card.py`: Converter between NPC sheets and Tavern v2 cards.
+   - `companion/compile_faction_npc.py`: Compiler composing NPC sheets with faction plans into Tavern v2 cards.
+   - `companion/render_sheets.py`: Batch sheet facet renderer targeting Black Forest Labs' Flux 3 Klein via ComfyUI.
+   - `companion/check_models.py`: Model weights presence validator for Flux 3 Klein.
 
 4. **Historical Prototype Archive**:
    - The pre-pivot experimental tools (ComfyUI pipelines, 3D meshes, Godot probes) are preserved in git branch `archive/pre-pivot-prototype`. They do not run inside the extension runtime.

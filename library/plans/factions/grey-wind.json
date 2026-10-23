@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "id": "grey-wind",
+  "name": "The Grey Wind",
+  "faction_title": "The Walkers in Stone and Mist",
+  "kind": "neutral",
+  "world_id": "grey-wind",
+  "for": "gemma4-orion",
+  "description": "Tall beings with slate-grey skin who walk into solid mountains as easily as stepping into fog. Immensely powerful and said to grant wishes, they have never been recorded at war, though the named ruins of lost civilizations lie all around them. In conversation, they are content to wait forever for others to come around to their meaning.",
+  "fragments": [
+    {"id": "grey-wind/mountain-passage", "version": 1},
+    {"id": "grey-wind/infinite-patience", "version": 1},
+    {"id": "grey-wind/named-ruins", "version": 1},
+    {"id": "grey-wind/wish-granting", "version": 1},
+    {"id": "grey-wind/glyph-stone-horizon", "version": 1}
+  ],
+  "composition": {
+    "role_suffix": ", speaker of the Grey Wind and keeper of vanished names",
+    "style_overlay": "muted mineral palette of weathered slate, granite, and drifting mountain fog, monumental stillness, ancient weathered stone textures, soft diffused highland light",
+    "portrait_modifiers": [
+      "tall, elongated stature with smooth matte slate-grey skin",
+      "draped in coarse mineral-dyed mantle with alpine lichen at the hem",
+      "patient, unblinking eyes that hold the stillness of deep mountain stone",
+      "faint wisps of mountain mist trailing from their shoulders as if emerging from solid rock"
+    ],
+    "favored_items": [
+      "a smooth slate tally inscribed with the true names of seven vanished civilizations",
+      "a dense stone token condensed from a granted wish, warm and impossibly heavy",
+      "a uncut shard of heart-granite carried from the core of a sealed peak"
+    ],
+    "home_overlay": "a fog-shrouded mountain ridge overlooking the layered, unscarred ruins of lost civilizations whose names only the Grey Wind remember, where sheer granite cliff faces serve as open doorways",
+    "aspirations_overlay": "to wait in unhurried silence until speaking beings come around to the true meaning of their own wishes, and to remember the names of every civilization that rises and falls around the mountain",
+    "greeting_template": "I am {name}. Take all the time you require; the mountain is not going anywhere, and neither am I.",
+    "tags": [
+      "faction:grey-wind",
+      "neutral-faction",
+      "wish-granter",
+      "mountain-walker",
+      "ancient-patience",
+      "named-ruins"
+    ]
+  },
+  "note": "Faction template for compiling any base NPC into a Grey Wind aligned variant. Imbues the character with slate-grey physiology, geological patience, mountain-walking permeability, and the quiet weight of wish-granting."
+}

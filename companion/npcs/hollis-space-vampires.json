@@ -1,0 +1,34 @@
+{
+  "name": "Hollis the Twice-Written",
+  "role": "quartermaster of the asset trade, resident of the scaffolded kingdom, factor to the Mercantile Houses of the Deep Vacuum",
+  "written": true,
+  "world": "princess's kingdom (aligned with The Space Vampires)",
+  "style": "Retro JRPG character art, sword and sorcery, 16-bit pixel aesthetic with painterly shading, limited palette, sprite-sheet clarity, hand-drawn game illustration, visible seams where the level was stitched together, sterile technological geometry, vacuum-sealed obsidian aesthetic, cold monochromatic lighting with pale luminescent indicators, precision instrumentation, zero-entropy crystal and polished alloy surfaces",
+  "portrait": "an unshaven quartermaster in a ledger-keeper's coat over chainmail, one shoulder is a prop that was never modelled properly, he is looking directly out of frame as if aware the scene is being watched. Visage modified by The Space Vampires alignment: bleached porcelain skin with faint subcutaneous thermoelectric conduits; tailored vacuum-tight formal mercantile robes in matte obsidian; unblinking calculating gaze evaluating game-theoretic utility; faint stasis frost clinging to temples and collar",
+  "home": "a customs house built into the gap between two level chunks, matte painted backdrops visible through the doorway, crates of unlabeled assets stacked to the ceiling, a ledger open on a desk showing two columns that do not balance; currently stationed in a pressurized orbital counting-house and stasis vault, ranked with vacuum-sealed glass coffins humming at near absolute zero, bathed in cold instrumental telemetry",
+  "favored_items": [
+    "a glass stasis coffin cipher key cut from single-crystal silicon",
+    "a game-theoretic payoff matrix tablet computing Nash equilibria in real time",
+    "a cryo-vacuum thermoelectric regulator worn at the throat",
+    "a seal of attribution, worn smooth, that grants rights to an asset when pressed",
+    "a copied sword that works perfectly but has no author's name on it",
+    "a bill of lading listing a shipment from a kingdom that no longer loads"
+  ],
+  "aspirations": "to see the trade route restored so the neighboring kingdom can be paid for what it made, drawn as a wide shot of a road between two territories with a customs gate half-built in the middle Re-aligned by faction imperatives: to enforce Pareto-optimal resource extraction and accelerate the universe toward thermodynamic equilibrium, extinguishing wasteful negentropic dissipation",
+  "world_id": "space-vampires",
+  "extensions": {
+    "base_npc": "Hollis the Twice-Written",
+    "base_world_id": "scaffolded-kingdom",
+    "faction_id": "space-vampires",
+    "faction_name": "The Space Vampires",
+    "faction_kind": "enemy",
+    "tags": [
+      "faction:space-vampires",
+      "enemy-faction",
+      "mercantile-house",
+      "anti-life",
+      "thermodynamics",
+      "technology"
+    ]
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "grey-wind/glyph-stone-horizon",
+  "version": 1,
+  "world_id": "grey-wind",
+  "for": "diffusion",
+  "facets": ["favored_items", "portrait", "home"],
+  "detail": "a weathered carved mark consisting of a steep triangular mountain peak intersected horizontally by three parallel drifting fog lines, chiseled deep into raw grey slate without pigment or gilding",
+  "evidence": {
+    "kind": "directed",
+    "source": "user-brief",
+    "quote": "Neutral faction: The Grey Wind. These are tall beings with slate grey skin. They have been seen to walk into mountains and disappear as easily as people walk into the fog."
+  },
+  "facts": {
+    "extent": "12 cm wide chiseled petroglyph",
+    "scale_ref": "carved into boundary stones, ruined lintels, and slate tallies",
+    "material": "unpainted cleft slate or mountain granite",
+    "state": "ancient, wind-smoothed grooves softened by centuries of mist"
+  },
+  "note": "The boundary and remembrance mark of the Grey Wind, signifying the equivalence of stone and fog, and placed upon the ruins of named civilizations."
+}

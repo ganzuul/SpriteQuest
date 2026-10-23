@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "space-vampires/glyph-entropy-matrix",
+  "version": 1,
+  "world_id": "space-vampires",
+  "for": "diffusion",
+  "facets": ["favored_items", "portrait", "home"],
+  "detail": "an etched geometric house crest consisting of a stark equilateral triangle bisected by three decaying exponential curves that converge toward a central zero point, inlaid in silver-palladium trace wire onto black anodized panels or laser-etched onto glass coffin lids",
+  "evidence": {
+    "kind": "directed",
+    "source": "user-brief",
+    "quote": "The space vampires. These are an ancient, dark and mysterious force that are organized as mercantile houses... anti-life form who's ethos is entirely sourced in statistical mechanics and the heat death of universes"
+  },
+  "facts": {
+    "extent": "8 cm insignia",
+    "scale_ref": "etched into breastplates, lapels, stasis coffin viewing ports, and official contract seals",
+    "material": "palladium-silver conductive inlay on dark anodized metal or frosted laser etching in quartz",
+    "state": "sharp, mathematically exact microscopic line tolerance"
+  },
+  "note": "The heraldic mark of the Space Vampire mercantile houses, symbolizing thermodynamic decay, mathematical convergence, and optimal utility."
+}

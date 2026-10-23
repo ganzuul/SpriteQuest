@@ -1,0 +1,304 @@
+{
+  "schema_version": 1,
+  "id": "common-quarters/furniture-room",
+  "name": "The Quartermaster's Furnished Lodge (16-Asset Room-Scale Plan)",
+  "scene_id": "common-quarters",
+  "refinement_level": "floor_plan",
+  "description": "A 10m x 10m timber-and-stone domestic lodge room containing sixteen metric 3D furniture assets arranged into three functional zones: a northern storage wall, a central dining and dressing parlor, and a southern sleeping alcove. Serves as the canonical room-scale benchmark for top-down orthographic 3D asset projection and Flux 3 Klein diffusion layout control.",
+  "scale": {
+    "unit": "meter",
+    "grid_step": 1.0,
+    "center_xz": [0.0, 0.0],
+    "resolution": [1024, 1024],
+    "bounding_box": {
+      "width": 10.0,
+      "length": 10.0,
+      "height": 3.4
+    }
+  },
+  "room": {
+    "w": 10.0,
+    "d": 10.0,
+    "h": 3.4,
+    "wall_thickness": 0.28,
+    "ceiling": false
+  },
+  "zones": [
+    {
+      "id": "north-storage-row",
+      "name": "North Storage & Archive Wall",
+      "elevation": 0.0,
+      "bounds": {"x_min": -5.0, "x_max": 5.0, "z_min": -5.0, "z_max": -2.8},
+      "material": "wide oak floorboards along dressed stone masonry",
+      "acoustic_reverb": "warm",
+      "description": "Northern wall lined with heavy storage furniture: wardrobe, bookcase, dresser, and cabinet."
+    },
+    {
+      "id": "central-parlor",
+      "name": "Central Dining & Dressing Parlor",
+      "elevation": 0.0,
+      "bounds": {"x_min": -5.0, "x_max": 5.0, "z_min": -2.8, "z_max": 1.4},
+      "material": "worn timber floorboards with woven runner",
+      "acoustic_reverb": "lively",
+      "description": "Central gathering space with table, chair, stool, bench, standing mirror, and folding screen."
+    },
+    {
+      "id": "south-sleeping-alcove",
+      "name": "Southern Sleeping & Wash Alcove",
+      "elevation": 0.0,
+      "bounds": {"x_min": -5.0, "x_max": 5.0, "z_min": 1.4, "z_max": 5.0},
+      "material": "pegged pine planking with wool hearth rug",
+      "acoustic_reverb": "damped",
+      "description": "Southern quarters containing the bed, cradle, nightstand, sideboard, washstand, and coat-stand."
+    }
+  ],
+  "walls": [],
+  "portals": [
+    {
+      "id": "door-south-entry",
+      "type": "door",
+      "position": [0.0, 0.0, 5.0],
+      "width": 1.4,
+      "orientation": "horizontal",
+      "swing_deg": 90,
+      "passable": true,
+      "material": "heavy latched oak door"
+    },
+    {
+      "id": "door-east-passage",
+      "type": "door",
+      "position": [5.0, 0.0, -0.4],
+      "width": 1.2,
+      "orientation": "vertical",
+      "swing_deg": 90,
+      "passable": true,
+      "material": "paneled interior timber door"
+    },
+    {
+      "id": "window-west-casement",
+      "type": "window",
+      "position": [-5.0, 1.0, -0.4],
+      "width": 1.6,
+      "orientation": "vertical",
+      "swing_deg": 0,
+      "passable": false,
+      "material": "leaded glass casement window"
+    }
+  ],
+  "movement_paths": [
+    {
+      "id": "path-entry-to-archive",
+      "name": "Entry to North Archive Route",
+      "type": "primary_circulation",
+      "clearance_width": 1.0,
+      "waypoints": [
+        {"id": "wp_south_door", "x": 0.0, "y": 0.0, "z": 4.6, "zone": "south-sleeping-alcove"},
+        {"id": "wp_mid_aisle",  "x": 0.0, "y": 0.0, "z": 1.8, "zone": "south-sleeping-alcove"},
+        {"id": "wp_east_table", "x": 2.3, "y": 0.0, "z": -0.8, "zone": "central-parlor"},
+        {"id": "wp_north_row",  "x": 0.0, "y": 0.0, "z": -3.1, "zone": "north-storage-row"}
+      ]
+    },
+    {
+      "id": "path-east-west-cross",
+      "name": "East Passage to Washstand Route",
+      "type": "secondary_circulation",
+      "clearance_width": 0.9,
+      "waypoints": [
+        {"id": "wp_east_door", "x": 4.5, "y": 0.0, "z": -0.4, "zone": "central-parlor"},
+        {"id": "wp_center_gap", "x": 1.2, "y": 0.0, "z": 0.2, "zone": "central-parlor"},
+        {"id": "wp_washstand", "x": -2.6, "y": 0.0, "z": 0.8, "zone": "central-parlor"}
+      ]
+    }
+  ],
+  "stagecraft": {
+    "proscenium_line": {
+      "start": [-5.0, 0.0, 4.4],
+      "end": [5.0, 0.0, 4.4],
+      "facing_angle_deg": 180.0,
+      "description": "Primary observer line near the southern threshold looking north across the three zones."
+    },
+    "playing_areas": {
+      "upstage_archive": {
+        "x": -0.4,
+        "y": 0.0,
+        "z": -3.4,
+        "radius": 1.6,
+        "blocking_label": "Upstage Center (Bookcase & Dresser Inspection)"
+      },
+      "center_table": {
+        "x": -0.3,
+        "y": 0.0,
+        "z": -1.2,
+        "radius": 1.8,
+        "blocking_label": "Center Stage (Parlor Table & Seating)"
+      },
+      "downstage_bedside": {
+        "x": -2.0,
+        "y": 0.0,
+        "z": 3.3,
+        "radius": 1.6,
+        "blocking_label": "Downstage Left (Bed & Cradle)"
+      }
+    },
+    "cue_marks": [
+      {
+        "id": "mark_scholar",
+        "label": "Mark A (Table Seated)",
+        "x": -2.0,
+        "y": 0.0,
+        "z": -0.8,
+        "facing": "upstage_right",
+        "description": "Seated or standing by the parlor chair facing the table"
+      },
+      {
+        "id": "mark_visitor",
+        "label": "Mark B (East Doorway Entrant)",
+        "x": 4.2,
+        "y": 0.0,
+        "z": -0.4,
+        "facing": "stage_left",
+        "description": "Entering from the east passage door toward the bench and table"
+      }
+    ],
+    "sightlines": [
+      {
+        "id": "cam_room_overview",
+        "type": "camera_vantage",
+        "position": [0.0, 1.7, 4.6],
+        "target": [0.0, 1.0, -1.5],
+        "fov_deg": 50.0,
+        "description": "Standing eye-height perspective from the southern entry looking across all 16 pieces"
+      }
+    ]
+  },
+  "props": [
+    {
+      "id": "wardrobe",
+      "label": "wooden wardrobe",
+      "description": "top-down architectural plan view of a tall dark wooden wardrobe cabinet against the northwest wall",
+      "glb": "scenes/asset-store/props/common-furniture/common-wardrobe/mesh/00002-lowpoly.glb",
+      "at": [-3.9, 0.0, -4.0],
+      "yaw_deg": 12.0
+    },
+    {
+      "id": "bookcase",
+      "label": "wooden bookcase",
+      "description": "top-down architectural plan view of a wooden bookcase filled with books along the north wall",
+      "glb": "scenes/asset-store/props/common-furniture/common-bookcase/mesh/00007-lowpoly.glb",
+      "at": [-1.9, 0.0, -4.2],
+      "yaw_deg": 0.0
+    },
+    {
+      "id": "dresser",
+      "label": "wooden dresser",
+      "description": "top-down architectural plan view of a wooden chest of drawers dresser along the north wall",
+      "glb": "scenes/asset-store/props/common-furniture/common-dresser/mesh/00002-lowpoly.glb",
+      "at": [0.5, 0.0, -4.1],
+      "yaw_deg": -5.0
+    },
+    {
+      "id": "cabinet",
+      "label": "storage cabinet",
+      "description": "top-down architectural plan view of a wooden storage cabinet in the northeast corner",
+      "glb": "scenes/asset-store/props/common-furniture/common-cabinet/mesh/00003-lowpoly.glb",
+      "at": [3.1, 0.0, -4.1],
+      "yaw_deg": 8.0
+    },
+    {
+      "id": "mirror",
+      "label": "standing mirror",
+      "description": "top-down architectural plan view of a standing cheval mirror tilted near the west wall",
+      "glb": "scenes/asset-store/props/common-furniture/common-mirror/mesh/00003-lowpoly.glb",
+      "at": [-3.8, 0.0, -1.6],
+      "yaw_deg": 78.0
+    },
+    {
+      "id": "table",
+      "label": "rectangular wooden table",
+      "description": "top-down architectural plan view of a rectangular wooden dining table in the center of the room",
+      "glb": "scenes/asset-store/props/common-furniture/common-table/mesh/00002-lowpoly.glb",
+      "at": [-0.3, 0.0, -1.3],
+      "yaw_deg": 14.0
+    },
+    {
+      "id": "chair",
+      "label": "wooden chair",
+      "description": "top-down architectural plan view of a wooden chair angled beside the central table",
+      "glb": "scenes/asset-store/props/common-furniture/common-chair/mesh/00002-lowpoly.glb",
+      "at": [-2.0, 0.0, -0.8],
+      "yaw_deg": -150.0
+    },
+    {
+      "id": "stool",
+      "label": "wooden stool",
+      "description": "top-down architectural plan view of a round wooden stool near the central table",
+      "glb": "scenes/asset-store/props/common-furniture/common-stool/mesh/00002-lowpoly.glb",
+      "at": [1.5, 0.0, -1.3],
+      "yaw_deg": 30.0
+    },
+    {
+      "id": "screen",
+      "label": "folding screen divider",
+      "description": "top-down architectural plan view of a hinged wooden folding privacy screen in the northeast parlor",
+      "glb": "scenes/asset-store/props/common-furniture/common-screen/mesh/00002-lowpoly.glb",
+      "at": [3.5, 0.0, -2.0],
+      "yaw_deg": 40.0
+    },
+    {
+      "id": "bench",
+      "label": "wooden bench",
+      "description": "top-down architectural plan view of an elongated wooden bench in the central parlor",
+      "glb": "scenes/asset-store/props/common-furniture/common-bench/mesh/00002-lowpoly.glb",
+      "at": [0.1, 0.0, 0.6],
+      "yaw_deg": -18.0
+    },
+    {
+      "id": "washstand",
+      "label": "wooden washstand basin",
+      "description": "top-down architectural plan view of a wooden washstand with round basin near the west wall",
+      "glb": "scenes/asset-store/props/common-furniture/common-washstand/mesh/00002-lowpoly.glb",
+      "at": [-3.7, 0.0, 1.0],
+      "yaw_deg": 92.0
+    },
+    {
+      "id": "coat-stand",
+      "label": "wooden coat rack",
+      "description": "top-down architectural plan view of a wooden coat rack stand in the southwest parlor",
+      "glb": "scenes/asset-store/props/common-furniture/common-coat-stand/mesh/00002-lowpoly.glb",
+      "at": [-1.8, 0.0, 1.1],
+      "yaw_deg": 12.0
+    },
+    {
+      "id": "sideboard",
+      "label": "round wooden sideboard",
+      "description": "top-down architectural plan view of a large round wooden sideboard table in the southeast parlor",
+      "glb": "scenes/asset-store/props/common-furniture/common-sideboard/mesh/00002-lowpoly.glb",
+      "at": [3.4, 0.0, 1.4],
+      "yaw_deg": -95.0
+    },
+    {
+      "id": "bed",
+      "label": "wooden bed frame",
+      "description": "top-down architectural plan view of a wooden bed with mattress and pillows in the southwest corner",
+      "glb": "scenes/asset-store/props/common-furniture/common-bed/mesh/00003-lowpoly.glb",
+      "at": [-3.3, 0.0, 3.4],
+      "yaw_deg": 5.0
+    },
+    {
+      "id": "cradle",
+      "label": "wooden rocking cradle",
+      "description": "top-down architectural plan view of a wooden rocking cradle with pillow in the southern sleeping area",
+      "glb": "scenes/asset-store/props/common-furniture/common-cradle/mesh/00002-lowpoly.glb",
+      "at": [-1.2, 0.0, 3.3],
+      "yaw_deg": -15.0
+    },
+    {
+      "id": "nightstand",
+      "label": "wooden nightstand table",
+      "description": "top-down architectural plan view of a wooden nightstand table in the southeast sleeping area",
+      "glb": "scenes/asset-store/props/common-furniture/common-nightstand/mesh/00003-lowpoly.glb",
+      "at": [1.8, 0.0, 3.5],
+      "yaw_deg": -15.0
+    }
+  ]
+}

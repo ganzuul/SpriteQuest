@@ -1,0 +1,146 @@
+{
+  "schema_version": 1,
+  "id": "border-march",
+  "name": "The Border March & Forfeit Gap",
+  "category": "outdoor_map",
+  "description": "An uneven frontier landscape stretching between two level chunks. Centered around a plateau hosting the Border Customs House, bounded by an eastern mountain pass and ancient 45-degree overhang ruin ramparts in the north.",
+  "scale": {
+    "unit": "meter",
+    "grid_step": 0.5,
+    "dimensions": {
+      "width": 120.0,
+      "length": 140.0,
+      "height": 28.0
+    },
+    "base_elevation": 2.0
+  },
+  "strata": [
+    {
+      "id": "stratum_valley",
+      "name": "Intake Lowlands & River Bed",
+      "z_min": 2.0,
+      "z_max": 6.0,
+      "css_z_px": 0
+    },
+    {
+      "id": "stratum_customs_plateau",
+      "name": "Customs House Plateau & Clear Transit",
+      "z_min": 6.0,
+      "z_max": 12.0,
+      "css_z_px": 45
+    },
+    {
+      "id": "stratum_ridge_saddle",
+      "name": "High Mountain Pass & Scree",
+      "z_min": 12.0,
+      "z_max": 20.0,
+      "css_z_px": 100
+    },
+    {
+      "id": "stratum_ancient_ruins",
+      "name": "Ancient Overhang Relic Ramparts",
+      "z_min": 20.0,
+      "z_max": 28.0,
+      "css_z_px": 165
+    }
+  ],
+  "build_plates": [
+    {
+      "id": "plate-customs-house",
+      "name": "Customs House Ground Foundation",
+      "scene_floorplan": "library/floorplans/customs-house.json",
+      "anchor": {
+        "center_x": 55.0,
+        "center_y": 65.0,
+        "elevation": 6.0
+      },
+      "footprint": {
+        "width": 42.0,
+        "length": 68.0,
+        "blend_margin": 4.0
+      }
+    }
+  ],
+  "primitives": [
+    {
+      "id": "east-pass",
+      "type": "ridge_pass",
+      "start": [90.0, 30.0],
+      "end": [90.0, 120.0],
+      "pass_elevation": 5.0,
+      "ridge_elevation": 22.0,
+      "pass_width": 10.0,
+      "ridge_flank_width": 24.0
+    },
+    {
+      "id": "north-ancient-bastion",
+      "type": "ancient_ruin_buttress",
+      "center": [24.0, 24.0],
+      "base_width": 26.0,
+      "base_length": 26.0,
+      "top_elevation": 24.0,
+      "base_elevation": 2.0,
+      "overhang_angle_deg": 45.0
+    },
+    {
+      "id": "west-watch-ruin",
+      "type": "ancient_ruin_buttress",
+      "center": [18.0, 110.0],
+      "base_width": 20.0,
+      "base_length": 20.0,
+      "top_elevation": 18.0,
+      "base_elevation": 2.0,
+      "overhang_angle_deg": 45.0
+    }
+  ],
+  "props": [
+    {
+      "id": "prop-border-signpost",
+      "label": "Border Milestone Signpost",
+      "type": "signpost",
+      "at": [32.0, 64.0],
+      "elevation_mode": "surface",
+      "yaw_deg": 45.0,
+      "scale": 1.2,
+      "description": "Weathered oak post marking the boundary between the intake approach and the Customs House."
+    },
+    {
+      "id": "prop-checkpoint-brazier",
+      "label": "Frontier Iron Brazier",
+      "type": "brazier",
+      "at": [37.5, 47.0],
+      "elevation_mode": "surface",
+      "yaw_deg": 0.0,
+      "scale": 1.0,
+      "description": "Charcoal embers burning in a heavy cast-iron basket guarding the intake gate."
+    },
+    {
+      "id": "prop-approach-crates",
+      "label": "Impounded Cargo Crates",
+      "type": "cargo_crates",
+      "at": [33.0, 72.0],
+      "elevation_mode": "surface",
+      "yaw_deg": 15.0,
+      "scale": 1.5,
+      "description": "Stacked iron-banded pine crates awaiting customs inspection."
+    },
+    {
+      "id": "prop-relic-cairn",
+      "label": "Ancient Overhang Relic Cairn",
+      "type": "ancient_cairn",
+      "at": [24.0, 24.0],
+      "elevation_mode": "surface",
+      "yaw_deg": 0.0,
+      "scale": 2.0,
+      "description": "A monolithic cantilevered stone marker honoring the unwritten dead atop the 45-degree ruin."
+    }
+  ],
+  "initial_spawn": {
+    "player": {
+      "x": 35.0,
+      "y": 65.0,
+      "facing_deg": 90.0,
+      "description": "Standing on the cobblestone approach road just west of the Customs House Foyer"
+    }
+  }
+}

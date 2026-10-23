@@ -1,0 +1,235 @@
+{
+  "schema_version": 1,
+  "id": "wizard-tower/glass-cathedral",
+  "name": "The Glass Cathedral in the Sky",
+  "scene_id": "wizard-tower",
+  "refinement_level": "floor_plan",
+  "description": "Monumental airborne cathedral constructed from solar-melted asteroid glass. Provides exact ground truth for 3D geometric blockout, movement vectors, and stagecraft blocking across the nave, transepts, and high solar chancel.",
+  "scale": {
+    "unit": "meter",
+    "grid_step": 1.0,
+    "bounding_box": {
+      "width": 120.0,
+      "length": 240.0,
+      "height": 80.0
+    }
+  },
+  "zones": [
+    {
+      "id": "narthex",
+      "name": "Outer Sky Portico & Narthex",
+      "elevation": 0.0,
+      "bounds": {"x_min": -25.0, "x_max": 25.0, "z_min": 0.0, "z_max": 30.0},
+      "material": "fused borosilicate slab, transparent",
+      "acoustic_reverb": "high",
+      "description": "Cantilevered glass entry terrace open to the high atmosphere and sky currents."
+    },
+    {
+      "id": "central-nave",
+      "name": "The Grand Nave of Blown Glass",
+      "elevation": 0.0,
+      "bounds": {"x_min": -20.0, "x_max": 20.0, "z_min": 30.0, "z_max": 140.0},
+      "material": "polished spun silica tiles over lattice ribbing",
+      "acoustic_reverb": "cathedral",
+      "description": "Monumental barrel-vaulted glass hall flanked by sixteen fluted asteroid-glass columns."
+    },
+    {
+      "id": "transept-west",
+      "name": "West Solar Solarium",
+      "elevation": 1.5,
+      "bounds": {"x_min": -55.0, "x_max": -20.0, "z_min": 110.0, "z_max": 150.0},
+      "material": "faceted leaded quartz glass",
+      "acoustic_reverb": "medium",
+      "description": "Projecting western wing oriented toward dusk solar refraction."
+    },
+    {
+      "id": "transept-east",
+      "name": "East Aurora Solarium",
+      "elevation": 1.5,
+      "bounds": {"x_min": 20.0, "x_max": 55.0, "z_min": 110.0, "z_max": 150.0},
+      "material": "faceted leaded quartz glass",
+      "acoustic_reverb": "medium",
+      "description": "Projecting eastern wing oriented toward dawn solar alignment."
+    },
+    {
+      "id": "chancel-high-altar",
+      "name": "The Chancel & Solar Focus",
+      "elevation": 3.0,
+      "bounds": {"x_min": -18.0, "x_max": 18.0, "z_min": 150.0, "z_max": 220.0},
+      "material": "pure synthetic silica crystal, zero optical defect",
+      "acoustic_reverb": "pure harmonic",
+      "description": "Elevated semicircular apse housing the central astronomical lens and solar focus plinth."
+    }
+  ],
+  "architectural_elements": [
+    {
+      "id": "portal-narthex-nave",
+      "type": "portal",
+      "zone_a": "narthex",
+      "zone_b": "central-nave",
+      "position": [0.0, 0.0, 30.0],
+      "width": 10.0,
+      "height": 16.0,
+      "passable": true,
+      "material": "spun glass portal arch"
+    },
+    {
+      "id": "colonnade-west",
+      "type": "column_row",
+      "zone": "central-nave",
+      "start": [-18.0, 0.0, 40.0],
+      "end": [-18.0, 0.0, 130.0],
+      "count": 8,
+      "radius": 1.2,
+      "height": 45.0,
+      "material": "asteroid-melted glass fluted columns"
+    },
+    {
+      "id": "colonnade-east",
+      "type": "column_row",
+      "zone": "central-nave",
+      "start": [18.0, 0.0, 40.0],
+      "end": [18.0, 0.0, 130.0],
+      "count": 8,
+      "radius": 1.2,
+      "height": 45.0,
+      "material": "asteroid-melted glass fluted columns"
+    },
+    {
+      "id": "dais-chancel-steps",
+      "type": "stairs",
+      "zone_a": "central-nave",
+      "zone_b": "chancel-high-altar",
+      "position": [0.0, 0.0, 145.0],
+      "width": 24.0,
+      "risers": 15,
+      "rise_per_step": 0.2,
+      "passable": true
+    }
+  ],
+  "movement_paths": [
+    {
+      "id": "processional-way",
+      "name": "Processional Way of Dawn",
+      "type": "primary_axial",
+      "clearance_width": 6.0,
+      "waypoints": [
+        {"id": "wp_entry", "x": 0.0, "y": 0.0, "z": 5.0, "zone": "narthex"},
+        {"id": "wp_portal", "x": 0.0, "y": 0.0, "z": 30.0, "zone": "central-nave"},
+        {"id": "wp_crossing", "x": 0.0, "y": 0.0, "z": 130.0, "zone": "central-nave"},
+        {"id": "wp_dais", "x": 0.0, "y": 1.5, "z": 145.0, "zone": "chancel-high-altar"},
+        {"id": "wp_focus", "x": 0.0, "y": 3.0, "z": 185.0, "zone": "chancel-high-altar"}
+      ]
+    },
+    {
+      "id": "transept-transversal",
+      "name": "Solarium Cross-Corridor",
+      "type": "secondary_transversal",
+      "clearance_width": 4.0,
+      "waypoints": [
+        {"id": "wp_west_wing", "x": -45.0, "y": 1.5, "z": 130.0, "zone": "transept-west"},
+        {"id": "wp_crossing_mid", "x": 0.0, "y": 0.0, "z": 130.0, "zone": "central-nave"},
+        {"id": "wp_east_wing", "x": 45.0, "y": 1.5, "z": 130.0, "zone": "transept-east"}
+      ]
+    }
+  ],
+  "stagecraft": {
+    "proscenium_line": {
+      "start": [-25.0, 0.0, 35.0],
+      "end": [25.0, 0.0, 35.0],
+      "facing_angle_deg": 0.0,
+      "description": "Baseline camera boundary positioned right inside the grand entrance"
+    },
+    "playing_areas": {
+      "downstage_center": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 55.0,
+        "radius": 7.0,
+        "blocking_label": "Downstage Center (Nave Threshold)"
+      },
+      "stage_left": {
+        "x": -15.0,
+        "y": 0.0,
+        "z": 90.0,
+        "radius": 5.0,
+        "blocking_label": "Stage Left (West Aisle)"
+      },
+      "stage_right": {
+        "x": 15.0,
+        "y": 0.0,
+        "z": 90.0,
+        "radius": 5.0,
+        "blocking_label": "Stage Right (East Aisle)"
+      },
+      "center_crossing": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 130.0,
+        "radius": 10.0,
+        "blocking_label": "Center Stage (The Crossing)"
+      },
+      "upstage_altar": {
+        "x": 0.0,
+        "y": 3.0,
+        "z": 185.0,
+        "radius": 8.0,
+        "blocking_label": "Upstage Center (The High Solar Plinth)"
+      }
+    },
+    "cue_marks": [
+      {
+        "id": "mark_initiator",
+        "label": "Mark I (Initiate)",
+        "x": 0.0,
+        "y": 0.0,
+        "z": 55.0,
+        "facing": "upstage",
+        "description": "Position where a visitor halts upon entering the glass nave"
+      },
+      {
+        "id": "mark_hierophant",
+        "label": "Mark H (Hierophant / High Wizard)",
+        "x": 0.0,
+        "y": 3.0,
+        "z": 185.0,
+        "facing": "downstage",
+        "description": "Position atop the elevated chancel overlooking the entire assembly"
+      }
+    ],
+    "sightlines": [
+      {
+        "id": "cam_proscenium_wide",
+        "type": "camera_vantage",
+        "position": [0.0, 4.0, 25.0],
+        "target": [0.0, 15.0, 140.0],
+        "fov_deg": 68.0,
+        "description": "Wide low-angle framing looking down the soaring nave toward the sunlit chancel"
+      },
+      {
+        "id": "cam_chancel_reverse",
+        "type": "camera_vantage",
+        "position": [0.0, 6.0, 205.0],
+        "target": [0.0, 1.0, 50.0],
+        "fov_deg": 55.0,
+        "description": "Reverse angle from behind high altar looking past the celebrant toward the open sky portico"
+      }
+    ]
+  },
+  "prop_sockets": [
+    {
+      "id": "socket-solar-lens-altar",
+      "zone": "chancel-high-altar",
+      "position": [0.0, 3.0, 190.0],
+      "footprint": [5.0, 5.0, 4.0],
+      "recommended_prop": "solar-fused-glass-altar"
+    },
+    {
+      "id": "socket-lectern-west",
+      "zone": "transept-west",
+      "position": [-40.0, 1.5, 130.0],
+      "footprint": [2.0, 2.0, 1.8],
+      "recommended_prop": "crystalline-astronomical-codex"
+    }
+  ]
+}

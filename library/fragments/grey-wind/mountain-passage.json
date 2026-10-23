@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "grey-wind/mountain-passage",
+  "version": 1,
+  "world_id": "grey-wind",
+  "for": "diffusion",
+  "facets": ["portrait", "home"],
+  "detail": "a towering figure with matte slate-grey skin stepping half-submerged into an unbroken vertical face of raw granite, the solid rock parting around their shoulders like drifting mountain fog without cracking or disturbing a single pebble",
+  "evidence": {
+    "kind": "directed",
+    "source": "user-brief",
+    "quote": "These are tall beings with slate grey skin. They have been seen to walk into mountains and disappear as easily as people walk into the fog."
+  },
+  "facts": {
+    "extent": "2.6 meters tall figure at a sheer mountain cliff face",
+    "scale_ref": "a full head and shoulders taller than an ordinary human; sheer stone wall rising behind them",
+    "material": "weathered slate-grey epidermis, unquarried mountain granite, low-hanging mist",
+    "state": "half-merged with solid stone in silent, frictionless transit"
+  },
+  "note": "The Grey Wind pass through solid geological strata as effortlessly as mortals walk into mist, leaving no tunnel or fracture behind."
+}

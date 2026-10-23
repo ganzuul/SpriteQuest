@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "space-vampires/mercantile-house",
+  "version": 1,
+  "world_id": "space-vampires",
+  "for": "diffusion",
+  "facets": ["home", "portrait"],
+  "detail": "an imposing orbital counting-house constructed from monolithic slabs of matte black alloy and anti-reflective glass, filled with tiered computational consoles displaying real-time game-theoretic payoff matrices and contractual balance ledgers, operated by tall, pale figures in tailored vacuum-tight robes who communicate through cold acoustic clicks and data pulses",
+  "evidence": {
+    "kind": "directed",
+    "source": "user-brief",
+    "quote": "The space vampires. These are an ancient, dark and mysterious force that are organized as mercantile houses, where game theoretic cooperation and optimality in a cold and mechanical way replace what virtue and wisdom accomplishes for the living."
+  },
+  "facts": {
+    "extent": "orbital station interior, multi-tiered hall 200 meters long",
+    "scale_ref": "mercantile factors dwarfed by towering holographic matrices of trade routes and thermodynamic deficits",
+    "material": "vacuum-grade matte black titanium-ceramic composite, anti-reflective leaded silica, monochrome phosphorus displays",
+    "state": "operating at zero acoustic vibration, pressurized and climate-controlled to near-freezing"
+  },
+  "note": "The administrative and commercial seat of a Space Vampire house. Virtue and wisdom are replaced entirely by cold game-theoretic optimality and mechanical contractual equilibrium."
+}

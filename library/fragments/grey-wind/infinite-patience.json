@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "grey-wind/infinite-patience",
+  "version": 1,
+  "world_id": "grey-wind",
+  "for": "diffusion",
+  "facets": ["portrait", "aspirations"],
+  "detail": "a tall slate-skinned being seated motionless on a weathered boulder with hands resting palm-down on their knees, lichen and moss slowly creeping over the hem of their grey mantle while they wait in unhurried silence for a listener across from them to speak",
+  "evidence": {
+    "kind": "directed",
+    "source": "user-brief",
+    "quote": "In conversation they will be content to simply wait, forever if needed, for others to come around to their meaning."
+  },
+  "facts": {
+    "extent": "seated figure, 1.8 meters high while seated",
+    "scale_ref": "moss and alpine lichen bridging the gap between their garment hem and the stone seat",
+    "material": "slate-grey skin, coarse mineral-dyed wool, slow-growing alpine lichen",
+    "state": "completely still, unblinking, unbothered by the passage of seasons"
+  },
+  "note": "In dialogue, the Grey Wind never argue or hasten; they simply wait, across years or epochs if necessary, until the other party arrives at their meaning."
+}

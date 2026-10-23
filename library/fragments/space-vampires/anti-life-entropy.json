@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "space-vampires/anti-life-entropy",
+  "version": 1,
+  "world_id": "space-vampires",
+  "for": "diffusion",
+  "facets": ["aspirations", "portrait"],
+  "detail": "a sterile chamber devoid of organic warmth, moisture, or biological growth, where all matter is arranged in minimal-energy configurations; fine calibration needles monitor the heat death decay of isolated particle samples, contrasting sharply against any ragged, chaotic warmth of living dissipative structures",
+  "evidence": {
+    "kind": "directed",
+    "source": "user-brief",
+    "quote": "These space vampiers are an anti-life form who's ethos is entirely sourced in statistical mechanics and the heat death of universes and they stand in stark contrast to life, which is negentropic and flourishes where dissipative structures may exist."
+  },
+  "facts": {
+    "extent": "laboratory and balance room, 15 meters square",
+    "scale_ref": "precision instrumentation sensitive to single microkelvin fluctuations",
+    "material": "inert polished obsidian, zero-expansion Invar struts, synthetic sapphire lenses",
+    "state": "maintained in absolute dry-gas isolation, free of microbial life or thermal gradients"
+  },
+  "note": "The ideological core of the Space Vampires: rooted in statistical mechanics and cosmic heat death. They view living beings as chaotic, wasteful dissipative structures that delay the universe's ultimate thermodynamic equilibrium."
+}

@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "grey-wind/wish-granting",
+  "version": 1,
+  "world_id": "grey-wind",
+  "for": "diffusion",
+  "facets": ["favored_items", "portrait"],
+  "detail": "an open slate-grey palm held level at waist height, above which the air bends with immense quiet weight as a spoken wish condenses into a smooth, heavy stone tablet inscribed with a single irreversible fact",
+  "evidence": {
+    "kind": "directed",
+    "source": "user-brief",
+    "quote": "Immensely powerful, they are said to have the ability grant wishes."
+  },
+  "facts": {
+    "extent": "30 cm span above an outstretched hand",
+    "scale_ref": "a palm significantly broader and longer than a human hand, cradling a dense stone token",
+    "material": "compressed slate, refractive atmospheric distortion, pale mountain mist",
+    "state": "quiet, non-theatrical manifestation of immense power"
+  },
+  "note": "The Grey Wind are said to grant wishes—not through flamboyant sorcery, but with the quiet, crushing permanence of geological fact, often tied to the fate of the ruins around them."
+}

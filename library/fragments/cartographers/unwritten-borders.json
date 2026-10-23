@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "cartographers/unwritten-borders",
+  "version": 1,
+  "world_id": "cartographers",
+  "for": "diffusion",
+  "facets": ["home", "terrain"],
+  "detail": "a perilous frontier where paved cobblestone and crisp surveyor boundary markers abruptly terminate at a wall of swirling grey void-mist, revealing an empty chalk-white expanse of unwritten terrain waiting for an author's prompt or surveyor's bearing",
+  "evidence": {
+    "kind": "directed",
+    "source": "openrig-port",
+    "quote": "Scenes arrive underdetermined; character resolves them. The map is not the territory; unwritten parts remain raw until surveyed."
+  },
+  "facts": {
+    "extent": "unbounded edge of the certified realm",
+    "scale_ref": "surveyors in greatcoats standing with tripod theodolites at the stone threshold looking into the mist",
+    "material": "granite border plinths, brass plumb lines, featureless chalk mist",
+    "state": "liminal, fluctuating edge where physical laws dissolve into potential"
+  },
+  "note": "The precipice where the written world ends and the raw underdetermined void begins. Travelers crossing without certified roles risk dissolution or prompt drift."
+}

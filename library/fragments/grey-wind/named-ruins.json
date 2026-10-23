@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "grey-wind/named-ruins",
+  "version": 1,
+  "world_id": "grey-wind",
+  "for": "diffusion",
+  "facets": ["home", "aspirations"],
+  "detail": "a high mountain valley strewn with the toppled colonnades, sunken plazas, and eroded foundations of multiple distinct lost civilizations layered one atop another, untouched by scorch marks or siege weapons, watched over by a lone slate-grey figure standing on a ridge",
+  "evidence": {
+    "kind": "directed",
+    "source": "user-brief",
+    "quote": "In the records there is no mention of them having been to war, although the ruins of lost civilizations exist around them, all of which they have a name for."
+  },
+  "facts": {
+    "extent": "mountain basin several kilometers wide filled with stratified ancient masonry",
+    "scale_ref": "fallen pillars and stepped foundations spanning epochs, with a solitary tall figure on the overlooking crag",
+    "material": "eroded limestone, basalts, overgrown marble, mountain scree",
+    "state": "collapsed through deep time and consequence rather than warfare; no weapon scars or fortifications"
+  },
+  "note": "No chronicle records the Grey Wind ever going to war, yet the ruins of vanished empires encircle their territories—and they remember the true name of every single one."
+}

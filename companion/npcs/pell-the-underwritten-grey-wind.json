@@ -1,0 +1,34 @@
+{
+  "name": "Pell the Underwritten",
+  "role": "understudy awaiting a role, resident of the neighboring kingdom, speaker of the Grey Wind and keeper of vanished names",
+  "written": false,
+  "world": "neighboring kingdom (aligned with The Grey Wind)",
+  "style": "muted mineral palette of weathered slate, granite, and drifting mountain fog, monumental stillness, ancient weathered stone textures, soft diffused highland light",
+  "portrait": "a young understudy in a plain rehearsal tunic holding a script that is blank below the first line, standing in a pool of light with the rest of the stage unlit behind them. Visage modified by The Grey Wind alignment: tall, elongated stature with smooth matte slate-grey skin; draped in coarse mineral-dyed mantle with alpine lichen at the hem; patient, unblinking eyes that hold the stillness of deep mountain stone; faint wisps of mountain mist trailing from their shoulders as if emerging from solid rock",
+  "home": "a dressing room shared with more performers than mirrors, costumes hung in ranked rows, a call sheet pinned to the wall with every part listed and none of them named, the corridor outside visible through an open door; currently stationed in a fog-shrouded mountain ridge overlooking the layered, unscarred ruins of lost civilizations whose names only the Grey Wind remember, where sheer granite cliff faces serve as open doorways",
+  "favored_items": [
+    "a smooth slate tally inscribed with the true names of seven vanished civilizations",
+    "a dense stone token condensed from a granted wish, warm and impossibly heavy",
+    "a uncut shard of heart-granite carried from the core of a sealed peak",
+    "a script whose pages are ruled and numbered but written on only at the top",
+    "a prompt book with the margin notes of a director who stopped mid-scene",
+    "a spotlight gelled for a scene nobody has blocked yet"
+  ],
+  "aspirations": "to be given a part with an ending, drawn as a wide shot of an empty stage with a single lit mark centre floor and the seating in darkness Re-aligned by faction imperatives: to wait in unhurried silence until speaking beings come around to the true meaning of their own wishes, and to remember the names of every civilization that rises and falls around the mountain",
+  "world_id": "grey-wind",
+  "extensions": {
+    "base_npc": "Pell the Underwritten",
+    "base_world_id": "neighboring-kingdom",
+    "faction_id": "grey-wind",
+    "faction_name": "The Grey Wind",
+    "faction_kind": "neutral",
+    "tags": [
+      "faction:grey-wind",
+      "neutral-faction",
+      "wish-granter",
+      "mountain-walker",
+      "ancient-patience",
+      "named-ruins"
+    ]
+  }
+}

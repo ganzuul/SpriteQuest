@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "cartographers/the-living-atlas",
+  "version": 1,
+  "world_id": "cartographers",
+  "for": "diffusion",
+  "facets": ["home", "prop"],
+  "detail": "a monumental counterweighted atlas folio bound in pigskin and brass mesh, its colossal vellum leaves open on a canted granite lectern, meticulously illuminating certified terrain, settled kingdoms, and physical constants with microscopic calligraphy and hand-ground mineral pigments",
+  "evidence": {
+    "kind": "directed",
+    "source": "openrig-port",
+    "quote": "The Atlas as a context pack: ontology + lore + skills + mission. Atoms keyed by region: identity, ontology, terrain, actors, laws, history, state, affordances."
+  },
+  "facts": {
+    "extent": "2.5-meter wide open atlas folio on a granite pedestal",
+    "scale_ref": "requires two clerks turning cranked brass levers to turn a single page",
+    "material": "cured pigskin, brass corner brackets, calfskin vellum, lapis lazuli and vermilion inks",
+    "state": "immaculate, dry, slowly updated on a timescale of years"
+  },
+  "note": "The supreme document of the Bureau. What is drawn within its leaves exists by imperial warrant; what is excluded has no legal reality. Resists narrative drift and context rot."
+}
