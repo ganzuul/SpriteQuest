@@ -55,10 +55,49 @@ export function initViewer(config) {
   // Multi-actor registry and physical prop state
   const actors = new Map();
   const propStates = new Map();
+  const physicalPropsList = features?.physical_props || [];
+  const physicalPropsMap = new Map();
+  let playerStrength = 60.0;
 
+  // Initialize physical props from fragments
+  physicalPropsList.forEach((fp) => {
+    physicalPropsMap.set(fp.id, {
+      ...fp,
+      tokenEl: null,
+    });
+  });
+
+  // Fallback for props not in physicalProps
   props.forEach((p) => {
-    propStates.set(p.id, {
-      id: p.id,
+    if (!physicalPropsMap.has(p.id)) {
+      const isSolid =
+        p.id.includes('desk') ||
+        p.id.includes('table') ||
+        p.id.includes('bookcase') ||
+        p.id.includes('wardrobe') ||
+        p.id.includes('cairn');
+      physicalPropsMap.set(p.id, {
+        id: p.id,
+        fragment_id: 'floorplan/customs-house',
+        label: p.label,
+        salience: 'minor',
+        obstacle_type: isSolid ? 'solid_furniture' : 'passable',
+        mass_kg: isSolid ? 100.0 : 15.0,
+        world_x: p.world_x,
+        world_y: p.world_y,
+        world_z: p.world_z || 6.0,
+        bounds: { width: 1.2, depth: 1.2, height: 1.0 },
+        visual_template: 'generic',
+        interactive_verbs: [],
+        tokenEl: null,
+      });
+    }
+  });
+
+  // Populate propStates
+  physicalPropsMap.forEach((p, id) => {
+    propStates.set(id, {
+      id,
       label: p.label,
       world_x: p.world_x,
       world_y: p.world_y,
@@ -227,37 +266,91 @@ export function initViewer(config) {
       featuresEl.appendChild(portalEl);
     });
 
-    // 4. Render Props
-    props.forEach((pr) => {
+    // 4. Render Physical & Fragment Props
+    physicalPropsMap.forEach((pr) => {
       const pxX = (pr.world_x / mapWidthM) * worldW;
       const pxY = (pr.world_y / mapLengthM) * worldH;
 
       const propEl = document.createElement('div');
-      propEl.className = 'scene-prop-token';
+      if (propEl.dataset) propEl.dataset.propId = pr.id;
       propEl.style.left = `${pxX}px`;
       propEl.style.top = `${pxY}px`;
+      pr.tokenEl = propEl;
 
-      const icon = document.createElement('div');
-      icon.className = 'prop-icon';
-      let symbol = '📦';
-      if (pr.id.includes('desk') || pr.id.includes('table')) symbol = '📜';
-      else if (pr.id.includes('chair') || pr.id.includes('bench')) symbol = '🪑';
-      else if (pr.id.includes('signpost')) symbol = '🪧';
-      else if (pr.id.includes('brazier')) symbol = '🔥';
-      else if (pr.id.includes('cairn') || pr.id.includes('altar')) symbol = '🗿';
-      else if (pr.id.includes('bookcase') || pr.id.includes('cabinet')) symbol = '📚';
-      icon.innerText = symbol;
+      if (pr.visual_template === 'r6_crate') {
+        propEl.className = 'prop-r6-crate scene-prop-token';
+        const box = document.createElement('div');
+        box.className = 'crate-box';
+        const stencil = document.createElement('div');
+        stencil.className = 'crate-stencil';
+        stencil.textContent = 'R6-SHIP';
+        const band = document.createElement('div');
+        band.className = 'crate-band';
+        const mass = document.createElement('div');
+        mass.className = 'crate-mass';
+        mass.textContent = `${pr.mass_kg}kg`;
+        box.appendChild(stencil);
+        box.appendChild(band);
+        box.appendChild(mass);
+        propEl.appendChild(box);
+      } else if (pr.visual_template === 'weigh_scale') {
+        propEl.className = 'prop-weigh-scale scene-prop-token';
+        const base = document.createElement('div');
+        base.className = 'scale-base';
+        const beam = document.createElement('div');
+        beam.className = 'scale-beam';
+        const lPan = document.createElement('div');
+        lPan.className = 'scale-pan left-pan';
+        const rPan = document.createElement('div');
+        rPan.className = 'scale-pan right-pan';
+        beam.appendChild(lPan);
+        beam.appendChild(rPan);
+        const lbl = document.createElement('div');
+        lbl.className = 'scale-label';
+        lbl.textContent = '1588 Standard';
+        base.appendChild(beam);
+        base.appendChild(lbl);
+        propEl.appendChild(base);
+      } else if (pr.visual_template === 'ledger_desk') {
+        propEl.className = 'prop-ledger-desk scene-prop-token';
+        const surface = document.createElement('div');
+        surface.className = 'desk-surface';
+        const folio = document.createElement('div');
+        folio.className = 'ledger-folio';
+        const col1 = document.createElement('div');
+        col1.className = 'folio-col left-col';
+        const col2 = document.createElement('div');
+        col2.className = 'folio-col right-col';
+        folio.appendChild(col1);
+        folio.appendChild(col2);
+        const quill = document.createElement('div');
+        quill.className = 'desk-quill';
+        quill.textContent = '✒️';
+        surface.appendChild(folio);
+        surface.appendChild(quill);
+        propEl.appendChild(surface);
+      } else {
+        propEl.className = 'scene-prop-token';
+        const icon = document.createElement('div');
+        icon.className = 'prop-icon';
+        let symbol = '📦';
+        if (pr.id.includes('chair') || pr.id.includes('bench')) symbol = '🪑';
+        else if (pr.id.includes('signpost')) symbol = '🪧';
+        else if (pr.id.includes('brazier')) symbol = '🔥';
+        else if (pr.id.includes('cairn') || pr.id.includes('altar')) symbol = '🗿';
+        else if (pr.id.includes('bookcase') || pr.id.includes('cabinet') || pr.id.includes('wardrobe')) symbol = '📚';
+        icon.textContent = symbol;
+        propEl.appendChild(icon);
+      }
 
       const tag = document.createElement('div');
       tag.className = 'prop-tag';
-      tag.innerText = pr.label;
-
-      propEl.appendChild(icon);
+      tag.textContent = pr.label;
       propEl.appendChild(tag);
 
       propEl.addEventListener('click', (e) => {
         if (e.stopPropagation) e.stopPropagation();
-        updatePlayerPosition(pr.world_x, pr.world_y);
+        tryMoveActor('player', pr.world_x, pr.world_y);
       });
 
       featuresEl.appendChild(propEl);
@@ -858,7 +951,7 @@ export function initViewer(config) {
     // Click to move
     world.addEventListener('click', () => {
       if (cursorX !== null && cursorY !== null) {
-        updatePlayerPosition(cursorX, cursorY);
+        tryMoveActor('player', cursorX, cursorY);
       }
     });
   }
@@ -867,10 +960,10 @@ export function initViewer(config) {
   if (typeof window !== 'undefined') {
     window.addEventListener('keydown', (e) => {
       const step = 2.5;
-      if (e.key === 'w' || e.key === 'ArrowUp') updatePlayerPosition(playerX, playerY - step);
-      if (e.key === 's' || e.key === 'ArrowDown') updatePlayerPosition(playerX, playerY + step);
-      if (e.key === 'a' || e.key === 'ArrowLeft') updatePlayerPosition(playerX - step, playerY);
-      if (e.key === 'd' || e.key === 'ArrowRight') updatePlayerPosition(playerX + step, playerY);
+      if (e.key === 'w' || e.key === 'ArrowUp') tryMoveActor('player', playerX, playerY - step);
+      if (e.key === 's' || e.key === 'ArrowDown') tryMoveActor('player', playerX, playerY + step);
+      if (e.key === 'a' || e.key === 'ArrowLeft') tryMoveActor('player', playerX - step, playerY);
+      if (e.key === 'd' || e.key === 'ArrowRight') tryMoveActor('player', playerX + step, playerY);
     });
   }
 
@@ -944,6 +1037,190 @@ export function initViewer(config) {
 
   function getPropState(propId) {
     return propStates.get(propId) || null;
+  }
+
+  function getPhysicalProps() {
+    return Array.from(physicalPropsMap.values());
+  }
+
+  function getPlayerStrength() {
+    return playerStrength;
+  }
+
+  function setPlayerStrength(val) {
+    playerStrength = Number(val);
+  }
+
+  function getPropPosition(propId) {
+    const p = physicalPropsMap.get(propId);
+    if (!p) return null;
+    return { x: p.world_x, y: p.world_y, z: p.world_z };
+  }
+
+  function setPropPosition(propId, x, y, z) {
+    const p = physicalPropsMap.get(propId);
+    if (!p) return;
+    p.world_x = x;
+    p.world_y = y;
+    if (z !== undefined) p.world_z = z;
+
+    const wState = propStates.get(propId);
+    if (wState) {
+      wState.world_x = x;
+      wState.world_y = y;
+    }
+
+    if (p.tokenEl && world) {
+      const wW = world.clientWidth || 600;
+      const wH = world.clientHeight || 700;
+      p.tokenEl.style.left = `${(x / mapWidthM) * wW}px`;
+      p.tokenEl.style.top = `${(y / mapLengthM) * wH}px`;
+    }
+  }
+
+  function evaluatePhysicalInteractions() {
+    let totalWeight = 0;
+    for (const [id, prop] of physicalPropsMap.entries()) {
+      if (prop.obstacle_type === 'physics_object') {
+        const distToScale = Math.hypot(prop.world_x - 48.0, prop.world_y - 63.0);
+        if (distToScale <= 2.5) {
+          totalWeight += prop.mass_kg;
+        }
+      }
+    }
+
+    const scaleState = propStates.get('weigh_table') || { id: 'weigh_table' };
+    scaleState.weightKg = totalWeight;
+    scaleState.balanceAngleDeg =
+      totalWeight > 0 ? Math.min(18, Math.max(4, (totalWeight - 30) * 0.8)) : 0;
+    propStates.set('weigh_table', scaleState);
+
+    const beamEl = world && world.querySelector ? world.querySelector('.scale-beam') : null;
+    if (beamEl && beamEl.style) {
+      beamEl.style.transform = `rotate(${scaleState.balanceAngleDeg}deg)`;
+    }
+  }
+
+  function setActorPosition(actorId, x, y) {
+    let actor = actors.get(actorId);
+    if (!actor) {
+      actor = addActor(actorId, { x, y });
+    }
+    actor.x = x;
+    actor.y = y;
+    let az = sampleElevation(x, y);
+    const zone = getZoneAt(x, y);
+    if (zone && typeof zone.elevation === 'number') {
+      az = Math.max(az, zone.elevation);
+    }
+    actor.z = az;
+
+    const wW = world ? world.clientWidth || 600 : 600;
+    const wH = world ? world.clientHeight || 700 : 700;
+
+    if (actorId === 'player') {
+      playerX = x;
+      playerY = y;
+      if (playerEl) {
+        playerEl.style.left = `${(x / mapWidthM) * wW}px`;
+        playerEl.style.top = `${(y / mapLengthM) * wH}px`;
+      }
+      renderLightingOverlay();
+    } else if (actor.tokenEl) {
+      actor.tokenEl.style.left = `${(x / mapWidthM) * wW}px`;
+      actor.tokenEl.style.top = `${(y / mapLengthM) * wH}px`;
+    }
+  }
+
+  function canMoveTo(fromX, fromY, toX, toY, actorRadius = 0.5, pushStrength = playerStrength) {
+    // 1. Check wall collisions
+    for (const w of walls) {
+      const hit = segmentIntersect(fromX, fromY, toX, toY, w.start[0], w.start[1], w.end[0], w.end[1]);
+      if (hit) {
+        let throughPortal = false;
+        for (const p of portals) {
+          if (!p.passable) continue;
+          const distToPortal = Math.hypot(hit.x - p.world_x, hit.y - p.world_y);
+          if (distToPortal <= p.width / 2.0 + 0.15) {
+            throughPortal = true;
+            break;
+          }
+        }
+        if (!throughPortal) {
+          const angle = Math.atan2(toY - fromY, toX - fromX);
+          const stopDist = Math.max(0, Math.hypot(hit.x - fromX, hit.y - fromY) - actorRadius);
+          const clampedX = fromX + Math.cos(angle) * stopDist;
+          const clampedY = fromY + Math.sin(angle) * stopDist;
+          return { allowed: false, x: clampedX, y: clampedY, reason: 'wall_collision', hit };
+        }
+      }
+    }
+
+    // 2. Check solid furniture & physical props (swept ray test)
+    const distTotal = Math.hypot(toX - fromX, toY - fromY);
+    const numSubsteps = Math.max(1, Math.ceil(distTotal / 0.35));
+
+    for (let s = 1; s <= numSubsteps; s++) {
+      const st = s / numSubsteps;
+      const testX = fromX + (toX - fromX) * st;
+      const testY = fromY + (toY - fromY) * st;
+
+      for (const [id, prop] of physicalPropsMap.entries()) {
+        const bw = prop.bounds?.width || 1.2;
+        const bd = prop.bounds?.depth || 1.2;
+        const halfW = bw / 2.0 + actorRadius;
+        const halfD = bd / 2.0 + actorRadius;
+
+        const dx = Math.abs(testX - prop.world_x);
+        const dy = Math.abs(testY - prop.world_y);
+
+        if (dx < halfW && dy < halfD) {
+          if (prop.obstacle_type === 'solid_furniture' || prop.obstacle_type === 'wall') {
+            const signY = toY > fromY ? -1 : 1;
+            const clampedY = prop.world_y + signY * halfD;
+            const signX = toX > fromX ? -1 : 1;
+            const clampedX = Math.abs(toX - fromX) > 0.01 ? prop.world_x + signX * halfW : fromX;
+            return { allowed: false, x: clampedX, y: clampedY, reason: 'solid_obstacle', propId: id };
+          } else if (prop.obstacle_type === 'physics_object') {
+            if (pushStrength >= prop.mass_kg) {
+              const moveDx = toX - fromX;
+              const moveDy = toY - fromY;
+              const newPropX = prop.world_x + moveDx * 1.1;
+              const newPropY = prop.world_y + moveDy * 1.1;
+              setPropPosition(id, newPropX, newPropY);
+              evaluatePhysicalInteractions();
+              return { allowed: true, x: toX, y: toY, pushedProp: id };
+            } else {
+              return { allowed: false, x: fromX, y: fromY, reason: 'too_heavy', propId: id };
+            }
+          }
+        }
+      }
+    }
+
+    return { allowed: true, x: toX, y: toY };
+  }
+
+  function tryMoveActor(actorId, targetX, targetY) {
+    const actor = actors.get(actorId) || { x: playerX, y: playerY, written: actorWritten };
+    const str = actorId === 'player' ? playerStrength : 80.0;
+    const res = canMoveTo(actor.x, actor.y, targetX, targetY, 0.5, str);
+
+    if (res.allowed) {
+      if (actorId === 'player') {
+        updatePlayerPosition(res.x, res.y);
+      } else {
+        setActorPosition(actorId, res.x, res.y);
+      }
+      return { success: true, actualX: res.x, actualY: res.y, pushedProp: res.pushedProp };
+    } else {
+      if (actorId === 'player') {
+        updatePlayerPosition(res.x, res.y);
+      } else {
+        setActorPosition(actorId, res.x, res.y);
+      }
+      return { success: false, actualX: res.x, actualY: res.y, reason: res.reason };
+    }
   }
 
   async function moveActor(id, targetX, targetY, options = {}) {
@@ -1238,7 +1515,16 @@ export function initViewer(config) {
     getStageDirection: (xm = playerX, ym = playerY, written = actorWritten) => getStageDirection(xm, ym, written),
     addActor,
     getActor: (id) => actors.get(id),
+    setActorPosition,
     getPropState,
+    getPhysicalProps,
+    getPlayerStrength,
+    setPlayerStrength,
+    getPropPosition,
+    setPropPosition,
+    canMoveTo,
+    tryMoveActor,
+    evaluatePhysicalInteractions,
     moveActor,
     executeAffordance,
     speak,
@@ -1267,7 +1553,16 @@ export function initViewer(config) {
     globalRoot.getStageDirection = (xm = playerX, ym = playerY, written = actorWritten) => getStageDirection(xm, ym, written);
     globalRoot.addActor = addActor;
     globalRoot.getActor = (id) => actors.get(id);
+    globalRoot.setActorPosition = setActorPosition;
     globalRoot.getPropState = getPropState;
+    globalRoot.getPhysicalProps = getPhysicalProps;
+    globalRoot.getPlayerStrength = getPlayerStrength;
+    globalRoot.setPlayerStrength = setPlayerStrength;
+    globalRoot.getPropPosition = getPropPosition;
+    globalRoot.setPropPosition = setPropPosition;
+    globalRoot.canMoveTo = canMoveTo;
+    globalRoot.tryMoveActor = tryMoveActor;
+    globalRoot.evaluatePhysicalInteractions = evaluatePhysicalInteractions;
     globalRoot.moveActor = moveActor;
     globalRoot.executeAffordance = executeAffordance;
     globalRoot.speak = speak;

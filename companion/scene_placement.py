@@ -316,14 +316,17 @@ class ScenePlacementEngine:
 
     def export_features_json(self) -> dict[str, Any]:
         """Export serialized feature bundle for web preview and SillyTavern adapters."""
+        from companion.fragment_placement import FragmentPlacementEngine
         from companion.stagecraft_anchoring import StagecraftAnchoringEngine
 
         sc_engine = StagecraftAnchoringEngine(self)
+        frag_engine = FragmentPlacementEngine(self)
         return {
             "zones": [asdict(z) for z in self.zones],
             "walls": [asdict(w) for w in self.walls],
             "portals": [asdict(p) for p in self.portals],
             "props": [asdict(pr) for pr in self.props],
+            "physical_props": frag_engine.export_fragment_assets(),
             "stagecraft": sc_engine.export_stagecraft_manifest(),
         }
 

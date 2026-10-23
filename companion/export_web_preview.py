@@ -379,6 +379,125 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
       overflow-y: auto;
     }}
 
+    /* Visually Meaningful Fragment Prop Styles */
+    .prop-r6-crate {{
+      position: absolute;
+      transform: translate(-50%, -50%) translateZ(28px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: grab;
+      z-index: 55;
+    }}
+    .crate-box {{
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, #78350f 0%, #92400e 50%, #451a03 100%);
+      border: 2px solid #ca8a04;
+      border-radius: 4px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.75), inset 0 0 6px rgba(0, 0, 0, 0.6);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }}
+    .crate-stencil {{
+      font-family: 'Courier New', monospace;
+      font-size: 7px;
+      font-weight: 800;
+      color: #fef08a;
+      letter-spacing: 0.05em;
+    }}
+    .crate-band {{
+      width: 100%; height: 3px;
+      background: #475569;
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      border-top: 1px solid #1e293b;
+      border-bottom: 1px solid #1e293b;
+    }}
+    .crate-mass {{
+      font-size: 6px;
+      color: #cbd5e1;
+      margin-top: 5px;
+      font-weight: 700;
+    }}
+
+    .prop-weigh-scale {{
+      position: absolute;
+      transform: translate(-50%, -50%) translateZ(32px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 55;
+    }}
+    .scale-base {{
+      width: 38px; height: 26px;
+      background: #334155;
+      border: 1px solid #64748b;
+      border-radius: 3px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 2px;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.7);
+    }}
+    .scale-beam {{
+      width: 32px; height: 3px;
+      background: #eab308;
+      display: flex;
+      justify-content: space-between;
+      position: relative;
+      transition: transform 0.3s ease;
+    }}
+    .scale-pan {{
+      width: 8px; height: 4px;
+      background: #cbd5e1;
+      border-radius: 0 0 4px 4px;
+      border: 1px solid #475569;
+    }}
+    .scale-label {{
+      font-size: 6px;
+      color: #94a3b8;
+      font-weight: 700;
+      text-transform: uppercase;
+    }}
+
+    .prop-ledger-desk {{
+      position: absolute;
+      transform: translate(-50%, -50%) translateZ(32px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 55;
+    }}
+    .desk-surface {{
+      width: 44px; height: 26px;
+      background: linear-gradient(135deg, #3f2e20 0%, #5c4331 100%);
+      border: 1px solid #855e3e;
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.8);
+    }}
+    .ledger-folio {{
+      width: 18px; height: 14px;
+      background: #fef3c7;
+      border: 1px solid #b45309;
+      display: flex;
+    }}
+    .folio-col {{
+      flex: 1;
+      border-right: 1px dashed #d97706;
+    }}
+    .desk-quill {{
+      font-size: 10px;
+    }}
+
     /* Actor Tokens & Theatrical Speech Balloons */
     .actor-token {{
       position: absolute;
