@@ -242,7 +242,132 @@ class FragmentPlacementEngine:
             )
         )
 
-        # 8. Outdoor Frontier Props
+        # 8. Imperial Clearance Statutes Board (Customs entrance law & tariff proclamation)
+        statute_frag_path = REPO_ROOT / "library" / "fragments" / "customs-house" / "statutes.json"
+        statute_desc = ""
+        if statute_frag_path.exists():
+            s_data = json.loads(statute_frag_path.read_text(encoding="utf-8"))
+            statute_desc = s_data.get("detail", "")
+
+        self.fragment_assets.append(
+            FragmentAsset(
+                id="imperial_statute_board",
+                fragment_id="customs-house/statutes",
+                label="Imperial Clearance Statutes & Tariff Board",
+                salience="moderate",
+                obstacle_type="solid_furniture",
+                mass_kg=85.0,
+                world_x=45.0,
+                world_y=42.0,
+                world_z=anc_z,
+                bounds={"width": 1.4, "depth": 0.5, "height": 2.2},
+                visual_template="statute_board",
+                interactive_verbs=["read_statutes", "audit_tariffs", "inspect_seal"],
+                lore_snippet=statute_desc or "Posted Imperial clearance decrees, weights, and tariff schedules.",
+            )
+        )
+
+        # 9. Ancient Chained Grimoire on Lectern (Wizard-Tower mystical archive)
+        grimoire_frag_path = REPO_ROOT / "library" / "fragments" / "wizard-tower" / "the-grimoire.json"
+        grimoire_desc = ""
+        if grimoire_frag_path.exists():
+            g_data = json.loads(grimoire_frag_path.read_text(encoding="utf-8"))
+            grimoire_desc = g_data.get("detail", "")
+
+        self.fragment_assets.append(
+            FragmentAsset(
+                id="ancient_grimoire_lectern",
+                fragment_id="wizard-tower/the-grimoire",
+                label="Ancient Chained Grimoire on Carved Oak Lectern",
+                salience="major",
+                obstacle_type="solid_furniture",
+                mass_kg=48.0,
+                world_x=68.0,
+                world_y=73.0,
+                world_z=anc_z,
+                bounds={"width": 1.1, "depth": 1.0, "height": 1.6},
+                visual_template="grimoire_lectern",
+                interactive_verbs=["consult_arcana", "turn_page", "read_runes"],
+                lore_snippet=grimoire_desc or "Vellum grimoire inscribed with glyphs of structural generation.",
+            )
+        )
+
+        # 10. Monumental Living Atlas on Granite Pedestal (Cartographers Guild certified truth)
+        atlas_frag_path = REPO_ROOT / "library" / "fragments" / "cartographers" / "the-living-atlas.json"
+        atlas_desc = ""
+        if atlas_frag_path.exists():
+            a_data = json.loads(atlas_frag_path.read_text(encoding="utf-8"))
+            atlas_desc = a_data.get("detail", "")
+
+        self.fragment_assets.append(
+            FragmentAsset(
+                id="monumental_living_atlas",
+                fragment_id="cartographers/the-living-atlas",
+                label="Monumental Counterweighted Living Atlas Folio",
+                salience="monumental",
+                obstacle_type="solid_furniture",
+                mass_kg=450.0,
+                world_x=66.0,
+                world_y=64.0,
+                world_z=anc_z + 0.6,
+                bounds={"width": 2.5, "depth": 1.6, "height": 1.4},
+                visual_template="living_atlas",
+                interactive_verbs=["inspect_cartography", "verify_warrant", "turn_brass_crank"],
+                lore_snippet=atlas_desc or "Colossal pigskin-and-brass folio illuminating certified terrain and physical constants.",
+            )
+        )
+
+        # 11. Uninstalled Matte Backdrop Flat (Shared prompt/seam physical prop)
+        matte_frag_path = REPO_ROOT / "library" / "fragments" / "shared" / "matte-backdrop-uninstalled.json"
+        matte_desc = ""
+        if matte_frag_path.exists():
+            m_data = json.loads(matte_frag_path.read_text(encoding="utf-8"))
+            matte_desc = m_data.get("detail", "")
+
+        self.fragment_assets.append(
+            FragmentAsset(
+                id="uninstalled_matte_flat",
+                fragment_id="shared/matte-backdrop-uninstalled",
+                label="Uninstalled Painted Scenic Flat (Primed Canvas)",
+                salience="minor",
+                obstacle_type="physics_object",
+                mass_kg=22.0,
+                world_x=39.0,
+                world_y=44.0,
+                world_z=anc_z,
+                bounds={"width": 1.0, "depth": 0.4, "height": 2.6},
+                visual_template="matte_flat",
+                interactive_verbs=["push", "unroll_canvas", "inspect_cut_edge"],
+                lore_snippet=matte_desc or "Large primed canvas flat leaning in corner as physical object rather than scenery.",
+            )
+        )
+
+        # 12. Impounded Forfeit Chest (Customs-house forfeiture yard-stock)
+        forfeit_frag_path = REPO_ROOT / "library" / "fragments" / "customs-house" / "forfeit-corridor.json"
+        forfeit_desc = ""
+        if forfeit_frag_path.exists():
+            f_data = json.loads(forfeit_frag_path.read_text(encoding="utf-8"))
+            forfeit_desc = f_data.get("detail", "")
+
+        self.fragment_assets.append(
+            FragmentAsset(
+                id="impounded_forfeit_chest",
+                fragment_id="customs-house/forfeit-corridor",
+                label="Impounded Forfeit Consignment Chest",
+                salience="moderate",
+                obstacle_type="physics_object",
+                mass_kg=95.0,
+                world_x=56.0,
+                world_y=46.0,
+                world_z=anc_z,
+                bounds={"width": 1.4, "depth": 1.0, "height": 1.0},
+                visual_template="forfeit_chest",
+                interactive_verbs=["audit_impound", "inspect_forfeiture_lock", "push"],
+                lore_snippet=forfeit_desc or "Failed consignment cage impounded under draft flags: rough, waiting, absorbing.",
+            )
+        )
+
+        # 13. Outdoor Frontier Props
         for op in self.scene_engine.get_outdoor_props():
             if "cairn" in op.id:
                 self.fragment_assets.append(

@@ -59,6 +59,11 @@ export function initViewer(config) {
   const physicalPropsList = features?.physical_props || [];
   const physicalPropsMap = new Map();
   let playerStrength = 60.0;
+  let currentAtmosphere = 'day';
+  let particles = [];
+  let nextParticleId = 1;
+  let audioMuted = true;
+  let audioCtx = null;
 
   // Initialize physical props from fragments
   physicalPropsList.forEach((fp) => {
@@ -259,7 +264,9 @@ export function initViewer(config) {
       const widthPx = Math.max(12, (p.width / mapWidthM) * worldW);
 
       const portalEl = document.createElement('div');
-      portalEl.className = 'scene-portal-marker';
+      portalEl.className = 'scene-portal-marker' + (p.passable ? ' portal-opened' : '');
+      if (portalEl.dataset) portalEl.dataset.portalId = p.id;
+      if (typeof portalEl.setAttribute === 'function') portalEl.setAttribute('data-portal-id', p.id);
       portalEl.style.left = `${pxX}px`;
       portalEl.style.top = `${pxY}px`;
       portalEl.style.width = `${widthPx}px`;
@@ -366,6 +373,69 @@ export function initViewer(config) {
         promptLabel.textContent = '[Prompt Awaiting]';
         slab.appendChild(promptLabel);
         propEl.appendChild(slab);
+      } else if (pr.visual_template === 'statute_board') {
+        propEl.className = 'prop-statute-board scene-prop-token';
+        const board = document.createElement('div');
+        board.className = 'statute-board-timber';
+        const placard = document.createElement('div');
+        placard.className = 'statute-placard';
+        placard.textContent = 'LEX IMPERII';
+        const seal = document.createElement('div');
+        seal.className = 'statute-red-seal';
+        board.appendChild(placard);
+        board.appendChild(seal);
+        propEl.appendChild(board);
+      } else if (pr.visual_template === 'grimoire_lectern') {
+        propEl.className = 'prop-grimoire-lectern scene-prop-token';
+        const stand = document.createElement('div');
+        stand.className = 'grimoire-oak-stand';
+        const book = document.createElement('div');
+        book.className = 'grimoire-open-folio';
+        const rune = document.createElement('div');
+        rune.className = 'grimoire-floating-rune';
+        rune.textContent = '✧';
+        stand.appendChild(book);
+        stand.appendChild(rune);
+        propEl.appendChild(stand);
+      } else if (pr.visual_template === 'living_atlas') {
+        propEl.className = 'prop-living-atlas scene-prop-token';
+        const ped = document.createElement('div');
+        ped.className = 'atlas-granite-pedestal';
+        const folio = document.createElement('div');
+        folio.className = 'atlas-monumental-folio';
+        const mapFace = document.createElement('div');
+        mapFace.className = 'atlas-illuminated-face';
+        const cranks = document.createElement('div');
+        cranks.className = 'atlas-brass-cranks';
+        cranks.textContent = '⚙️';
+        folio.appendChild(mapFace);
+        ped.appendChild(folio);
+        ped.appendChild(cranks);
+        propEl.appendChild(ped);
+      } else if (pr.visual_template === 'matte_flat') {
+        propEl.className = 'prop-matte-flat scene-prop-token';
+        const cylinder = document.createElement('div');
+        cylinder.className = 'matte-canvas-cylinder';
+        const edge = document.createElement('div');
+        edge.className = 'matte-painted-edge';
+        const dowel = document.createElement('div');
+        dowel.className = 'matte-wooden-dowel';
+        cylinder.appendChild(edge);
+        cylinder.appendChild(dowel);
+        propEl.appendChild(cylinder);
+      } else if (pr.visual_template === 'forfeit_chest') {
+        propEl.className = 'prop-forfeit-chest scene-prop-token';
+        const cage = document.createElement('div');
+        cage.className = 'forfeit-iron-cage';
+        const padlock = document.createElement('div');
+        padlock.className = 'forfeit-lead-padlock';
+        padlock.textContent = '🔒';
+        const tagBox = document.createElement('div');
+        tagBox.className = 'forfeit-draft-tag';
+        tagBox.textContent = 'ROUGH';
+        cage.appendChild(padlock);
+        cage.appendChild(tagBox);
+        propEl.appendChild(cage);
       } else {
         propEl.className = 'scene-prop-token';
         const icon = document.createElement('div');
@@ -771,37 +841,72 @@ export function initViewer(config) {
       }
     }
 
+    // 2.5 Dynamic Point Lights (Braziers, Cryo Coffin, Lanterns)
+    const lightingState = getLightingState();
+    const pointLightBuffer = new Float32Array(rows * cols);
+    for (const pl of lightingState.pointLights) {
+      const radCells = Math.ceil(pl.radiusM / stepM);
+      const cc = Math.round((pl.x / mapWidthM) * (cols - 1));
+      const rc = Math.round((pl.y / mapLengthM) * (rows - 1));
+      const pr0 = Math.max(0, rc - radCells);
+      const pr1 = Math.min(rows - 1, rc + radCells);
+      const pc0 = Math.max(0, cc - radCells);
+      const pc1 = Math.min(cols - 1, cc + radCells);
+
+      for (let r = pr0; r <= pr1; r++) {
+        for (let c = pc0; c <= pc1; c++) {
+          const wx = (c / (cols - 1)) * mapWidthM;
+          const wy = (r / (rows - 1)) * mapLengthM;
+          const dist2D = Math.hypot(wx - pl.x, wy - pl.y);
+          if (dist2D <= pl.radiusM) {
+            const atten = (1.0 - (dist2D / pl.radiusM)) * (pl.intensity || 0.8);
+            const idx = r * cols + c;
+            pointLightBuffer[idx] = Math.max(pointLightBuffer[idx], atten);
+          }
+        }
+      }
+    }
+
     // 3. Assemble composite shadow mask:
-    // - Active daylight sight: alpha = 0 (crystal clear daylight)
-    // - Explored memory: alpha = 115 (subdued terrain features visible)
-    // - Unexplored shroud: alpha = 230 (dark fog)
-    // - Cursor probe subtracts shadow alpha in its local cone
+    // - Incorporates atmospheric color tinting and ambient darkness
     const d = imgData.data;
+    let baseR = 18, baseG = 16, baseB = 14;
+    if (lightingState.atmosphere === 'golden_hour') {
+      baseR = 36; baseG = 22; baseB = 8;
+    } else if (lightingState.atmosphere === 'night') {
+      baseR = 8; baseG = 10; baseB = 16;
+    } else if (lightingState.atmosphere === 'cryo') {
+      baseR = 6; baseG = 22; baseB = 28;
+    }
+
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
         const cellIdx = r * cols + c;
         const pxIdx = cellIdx * 4;
 
-        d[pxIdx] = 18;     // R
-        d[pxIdx + 1] = 16; // G
-        d[pxIdx + 2] = 14; // B
+        d[pxIdx] = baseR;
+        d[pxIdx + 1] = baseG;
+        d[pxIdx + 2] = baseB;
 
         const isExp = explored[cellIdx];
         const vis = activeVis[cellIdx];
         const pLit = probeLight[cellIdx];
+        const ptLit = pointLightBuffer[cellIdx];
 
         let baseAlpha;
-        if (vis > 0.0) {
-          // Transition from clear (0) to memory (115) based on visibility
-          baseAlpha = Math.round((1.0 - vis) * 115);
+        if (lightingState.atmosphere === 'night') {
+          const lightTotal = Math.min(1.0, vis * 0.35 + pLit * 0.85 + ptLit * 0.95);
+          baseAlpha = Math.round(245 * (1.0 - lightTotal));
+        } else if (vis > 0.0) {
+          baseAlpha = Math.round((1.0 - vis) * (lightingState.ambientDarkness * 255));
         } else if (isExp) {
-          baseAlpha = 115; // Explored memory shadow
+          baseAlpha = Math.round(lightingState.ambientDarkness * 220);
         } else {
-          baseAlpha = 230; // Unexplored shroud
+          baseAlpha = 240;
         }
 
-        if (pLit > 0.0) {
-          baseAlpha = Math.round(baseAlpha * (1.0 - pLit * 0.85));
+        if (pLit > 0.0 || ptLit > 0.0) {
+          baseAlpha = Math.round(baseAlpha * (1.0 - Math.min(1.0, pLit * 0.85 + ptLit * 0.9)));
         }
 
         d[pxIdx + 3] = baseAlpha;
@@ -814,6 +919,45 @@ export function initViewer(config) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.imageSmoothingEnabled = true;
     ctx.drawImage(offCanvas, 0, 0, canvas.width, canvas.height);
+
+    // Add specular glow for active point lights
+    for (const pl of lightingState.pointLights) {
+      const cx = (pl.x / mapWidthM) * canvas.width;
+      const cy = (pl.y / mapLengthM) * canvas.height;
+      const pxRad = (pl.radiusM / mapWidthM) * canvas.width;
+      const grad = ctx.createRadialGradient(cx, cy, 2, cx, cy, pxRad);
+      if (pl.color === 'amber') {
+        grad.addColorStop(0, 'rgba(251, 146, 60, 0.40)');
+        grad.addColorStop(0.4, 'rgba(217, 119, 6, 0.18)');
+      } else if (pl.color === 'cyan') {
+        grad.addColorStop(0, 'rgba(56, 189, 248, 0.45)');
+        grad.addColorStop(0.4, 'rgba(14, 165, 233, 0.20)');
+      } else {
+        grad.addColorStop(0, 'rgba(254, 240, 138, 0.35)');
+        grad.addColorStop(0.4, 'rgba(250, 204, 21, 0.15)');
+      }
+      grad.addColorStop(1, 'rgba(0, 0, 0, 0.0)');
+      ctx.save();
+      ctx.globalCompositeOperation = 'screen';
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(cx, cy, pxRad, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // Render active particles on canvas
+    for (const p of particles) {
+      const pxX = (p.x / mapWidthM) * canvas.width;
+      const pxY = (p.y / mapLengthM) * canvas.height;
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, Math.min(1, p.life / p.maxLife));
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(pxX, pxY, p.size, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
 
     // Add warm probe specular glow on canvas if active
     if (cursorX !== null && cursorY !== null) {
@@ -836,6 +980,263 @@ export function initViewer(config) {
     }
   }
 
+  function updateDepthSorting() {
+    if (playerEl) {
+      playerEl.style.zIndex = `${Math.round(playerY * 10) + 1}`;
+    }
+    for (const actor of actors.values()) {
+      if (actor.tokenEl) {
+        actor.tokenEl.style.zIndex = `${Math.round(actor.y * 10) + 1}`;
+      }
+    }
+    for (const prop of physicalPropsMap.values()) {
+      if (prop.tokenEl) {
+        prop.tokenEl.style.zIndex = `${Math.round(prop.world_y * 10)}`;
+      }
+    }
+  }
+
+  function getAtmosphereMode() {
+    return currentAtmosphere;
+  }
+
+  function setAtmosphereMode(mode) {
+    currentAtmosphere = mode;
+    const atmEl = typeof document !== 'undefined' ? document.getElementById('stat-atmosphere') : null;
+    if (atmEl) atmEl.innerText = mode.replace(/_/g, ' ').toUpperCase();
+    renderLightingOverlay();
+  }
+
+  function getLightingState() {
+    let ambientDarkness = 0.15;
+    if (currentAtmosphere === 'golden_hour') ambientDarkness = 0.40;
+    else if (currentAtmosphere === 'night') ambientDarkness = 0.78;
+    else if (currentAtmosphere === 'cryo') ambientDarkness = 0.50;
+
+    const pointLights = [];
+    for (const p of physicalPropsMap.values()) {
+      if (p.id.includes('brazier')) {
+        pointLights.push({
+          sourceId: p.id,
+          x: p.world_x,
+          y: p.world_y,
+          radiusM: 18.0,
+          color: 'amber',
+          intensity: currentAtmosphere === 'night' ? 1.0 : 0.6,
+        });
+      } else if (p.id.includes('glass_stasis_coffin') && !p.is_smashed) {
+        pointLights.push({
+          sourceId: p.id,
+          x: p.world_x,
+          y: p.world_y,
+          radiusM: 14.0,
+          color: 'cyan',
+          intensity: 0.8,
+        });
+      }
+    }
+
+    if (currentAtmosphere === 'night' || currentAtmosphere === 'cryo') {
+      pointLights.push({
+        sourceId: 'player_lantern',
+        x: playerX,
+        y: playerY,
+        radiusM: 16.0,
+        color: 'warm_white',
+        intensity: 0.9,
+      });
+    }
+
+    return {
+      atmosphere: currentAtmosphere,
+      ambientDarkness,
+      pointLights,
+    };
+  }
+
+  function getParticles() {
+    return particles;
+  }
+
+  function clearParticles() {
+    particles = [];
+  }
+
+  function spawnParticles(originX, originY, count = 16, type = 'glass_shards') {
+    for (let i = 0; i < count; i++) {
+      const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.5;
+      const speed = 2.0 + Math.random() * 5.0;
+      let maxLife = 1.2;
+      let color = '#7dd3fc';
+      let size = 3.0;
+
+      if (type === 'glass_shards') {
+        maxLife = 1.0 + Math.random() * 0.6;
+        color = Math.random() > 0.4 ? '#38bdf8' : '#e0f2fe';
+        size = 2.5 + Math.random() * 3.5;
+      } else if (type === 'embers') {
+        maxLife = 1.4 + Math.random() * 0.8;
+        color = Math.random() > 0.3 ? '#f97316' : '#fde047';
+        size = 2.0 + Math.random() * 2.0;
+      } else if (type === 'dust') {
+        maxLife = 0.7 + Math.random() * 0.4;
+        color = '#a8a29e';
+        size = 4.0 + Math.random() * 4.0;
+      }
+
+      particles.push({
+        id: nextParticleId++,
+        x: originX,
+        y: originY,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        life: maxLife,
+        maxLife,
+        type,
+        color,
+        size,
+      });
+    }
+  }
+
+  function stepParticles(dt = 0.016) {
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vx *= 0.92;
+      p.vy *= 0.92;
+      p.life -= dt;
+      if (p.life <= 0) {
+        particles.splice(i, 1);
+      }
+    }
+  }
+
+  function isAudioMuted() {
+    return audioMuted;
+  }
+
+  function setAudioMuted(val) {
+    audioMuted = Boolean(val);
+    const aBtn = typeof document !== 'undefined' ? document.getElementById('btn-audio-toggle') : null;
+    if (aBtn) aBtn.innerText = audioMuted ? '🔇 Audio: Muted' : '🔊 Audio: Active';
+  }
+
+  function getAudioContext() {
+    if (typeof window === 'undefined') return null;
+    const AudioCtor = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtor) return null;
+    if (!audioCtx) {
+      try {
+        audioCtx = new AudioCtor();
+      } catch (err) {
+        return null;
+      }
+    }
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume().catch(() => {});
+    }
+    return audioCtx;
+  }
+
+  function playAudioCue(cueType) {
+    if (audioMuted) return;
+    const actx = getAudioContext();
+    if (!actx) return;
+
+    try {
+      const now = actx.currentTime;
+      if (cueType === 'footstep') {
+        const osc = actx.createOscillator();
+        const gain = actx.createGain();
+        osc.frequency.setValueAtTime(95, now);
+        osc.frequency.exponentialRampToValueAtTime(45, now + 0.04);
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.04);
+        osc.connect(gain);
+        gain.connect(actx.destination);
+        osc.start(now);
+        osc.stop(now + 0.045);
+      } else if (cueType === 'push') {
+        const osc = actx.createOscillator();
+        const gain = actx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(110, now);
+        osc.frequency.linearRampToValueAtTime(80, now + 0.15);
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.15);
+        osc.connect(gain);
+        gain.connect(actx.destination);
+        osc.start(now);
+        osc.stop(now + 0.16);
+      } else if (cueType === 'smash') {
+        [1250, 1820, 2460].forEach((freq) => {
+          const osc = actx.createOscillator();
+          const gain = actx.createGain();
+          osc.frequency.setValueAtTime(freq, now);
+          osc.frequency.exponentialRampToValueAtTime(freq * 0.6, now + 0.4);
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+          osc.connect(gain);
+          gain.connect(actx.destination);
+          osc.start(now);
+          osc.stop(now + 0.42);
+        });
+      } else if (cueType === 'seal_stamp') {
+        const osc = actx.createOscillator();
+        const gain = actx.createGain();
+        osc.frequency.setValueAtTime(320, now);
+        osc.frequency.exponentialRampToValueAtTime(70, now + 0.08);
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.08);
+        osc.connect(gain);
+        gain.connect(actx.destination);
+        osc.start(now);
+        osc.stop(now + 0.09);
+      } else if (cueType === 'gate_open') {
+        const osc = actx.createOscillator();
+        const gain = actx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(85, now);
+        osc.frequency.exponentialRampToValueAtTime(175, now + 0.28);
+        gain.gain.setValueAtTime(0.25, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+        osc.connect(gain);
+        gain.connect(actx.destination);
+        osc.start(now);
+        osc.stop(now + 0.31);
+      }
+    } catch (err) {
+      // Audio playback safely ignored in restricted environments
+    }
+  }
+
+  function getPortalState(portalId) {
+    return portals.find((p) => p.id === portalId) || null;
+  }
+
+  function setPortalState(portalId, passable) {
+    const portal = portals.find((p) => p.id === portalId);
+    if (!portal) return false;
+    portal.passable = Boolean(passable);
+
+    const portalEl = typeof document !== 'undefined' ? document.querySelector(`[data-portal-id="${portalId}"]`) : null;
+    if (portalEl) {
+      if (portal.passable) {
+        portalEl.classList.add('portal-opened');
+      } else {
+        portalEl.classList.remove('portal-opened');
+      }
+    }
+
+    if (portal.passable) {
+      playAudioCue('gate_open');
+    }
+    renderLightingOverlay();
+    return true;
+  }
+
   function updatePlayerPosition(xm, ym) {
     playerX = Math.max(2, Math.min(mapWidthM - 2, xm));
     playerY = Math.max(2, Math.min(mapLengthM - 2, ym));
@@ -854,6 +1255,7 @@ export function initViewer(config) {
       playerEl.style.left = pxX + 'px';
       playerEl.style.top = pxY + 'px';
     }
+    updateDepthSorting();
 
     // Dynamic player-centric CSS perspective origin
     if (viewport && world) {
@@ -1253,6 +1655,8 @@ export function initViewer(config) {
     if (pEl) {
       pEl.classList.add('smashed');
     }
+    spawnParticles(prop.world_x, prop.world_y, 24, 'glass_shards');
+    playAudioCue('smash');
     return true;
   }
 
@@ -1280,6 +1684,7 @@ export function initViewer(config) {
       const wH = world.clientHeight || 700;
       p.tokenEl.style.left = `${(x / mapWidthM) * wW}px`;
       p.tokenEl.style.top = `${(y / mapLengthM) * wH}px`;
+      updateDepthSorting();
     }
   }
 
@@ -1330,10 +1735,12 @@ export function initViewer(config) {
         playerEl.style.left = `${(x / mapWidthM) * wW}px`;
         playerEl.style.top = `${(y / mapLengthM) * wH}px`;
       }
+      updateDepthSorting();
       renderLightingOverlay();
     } else if (actor.tokenEl) {
       actor.tokenEl.style.left = `${(x / mapWidthM) * wW}px`;
       actor.tokenEl.style.top = `${(y / mapLengthM) * wH}px`;
+      updateDepthSorting();
     }
   }
 
@@ -1406,6 +1813,7 @@ export function initViewer(config) {
         lastValidY = nextY;
         if (check.pushedProp) {
           pushedPropId = check.pushedProp;
+          playAudioCue('push');
           const p = physicalPropsMap.get(check.pushedProp);
           if (p) {
             const moveDx = toX - fromX;
@@ -1666,6 +2074,9 @@ export function initViewer(config) {
     } else if (vantageId === 'cam_proscenium_dialogue') {
       targetX = 55.0;
       targetY = 64.0;
+    } else if (vantageId === 'cam_barrier_gate') {
+      targetX = 61.0;
+      targetY = 80.0;
     } else if (vantageId === 'macro_exploration') {
       targetX = 45.0;
       targetY = 50.0;
@@ -1736,6 +2147,15 @@ export function initViewer(config) {
           status: res.status || (res.success ? 'executed' : 'refused'),
           stage_beat: res.stage_beat,
         });
+      } else if (beat.type === 'portal') {
+        const opened = setPortalState(beat.portalId, beat.state !== false);
+        executionLog.push({ type: 'portal', portalId: beat.portalId, state: opened, status: 'updated' });
+      } else if (beat.type === 'atmosphere') {
+        setAtmosphereMode(beat.mode);
+        executionLog.push({ type: 'atmosphere', mode: beat.mode, status: 'set' });
+      } else if (beat.type === 'audio') {
+        playAudioCue(beat.cue);
+        executionLog.push({ type: 'audio', cue: beat.cue, status: 'played' });
       } else if (beat.type === 'pause') {
         await new Promise((r) => setTimeout(r, (beat.durationMs || 500) / speedMultiplier));
       }
@@ -1744,7 +2164,7 @@ export function initViewer(config) {
     return executionLog;
   }
 
-  async function playBorderClearanceCutscene() {
+  async function playBorderClearanceCutscene(options = {}) {
     const script = {
       id: 'border-clearance-act-1',
       title: 'Act I: The Clearance at the Border March',
@@ -1766,9 +2186,16 @@ export function initViewer(config) {
         { type: 'speak', actor: 'hollis', text: 'Forty-two stone of unwritten freight. Your shipping slip bears no author, Understudy.', durationMs: 2800 },
         { type: 'affordance', actor: 'hollis', affordance: 'at-quartermaster-desk', verb: 'strike_seal' },
         { type: 'speak', actor: 'hollis', text: 'I strike a provisional transit seal. You may raise the boom, but the ledger records your unwritten standing.', durationMs: 3000 },
+        { type: 'audio', cue: 'seal_stamp' },
+        { type: 'portal', portalId: 'gate-cleared-barrier', state: true },
+        { type: 'camera', vantage: 'cam_barrier_gate' },
+        { type: 'speak', actor: 'pell', text: 'Clearance recorded. Raising transit barrier.', durationMs: 1800 },
+        { type: 'move', actor: 'pell', to: [61.0, 85.0], durationMs: 1600 },
+        { type: 'speak', actor: 'pell', text: 'Clearance granted. Onward across the frontier march.', durationMs: 2400 },
+        { type: 'camera', vantage: 'macro_exploration' },
       ],
     };
-    return await playCutscene(script);
+    return await playCutscene(script, options);
   }
 
   // Initial setup
@@ -1818,6 +2245,19 @@ export function initViewer(config) {
     getInteractableAt,
     handleMouseMove,
     handleClick,
+    updateDepthSorting,
+    getAtmosphereMode,
+    setAtmosphereMode,
+    getLightingState,
+    getParticles,
+    clearParticles,
+    spawnParticles,
+    stepParticles,
+    isAudioMuted,
+    setAudioMuted,
+    playAudioCue,
+    getPortalState,
+    setPortalState,
   };
 
   const globalRoot = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this);
@@ -1828,6 +2268,19 @@ export function initViewer(config) {
     globalRoot.getInteractableAt = getInteractableAt;
     globalRoot.handleMouseMove = handleMouseMove;
     globalRoot.handleClick = handleClick;
+    globalRoot.updateDepthSorting = updateDepthSorting;
+    globalRoot.getAtmosphereMode = getAtmosphereMode;
+    globalRoot.setAtmosphereMode = setAtmosphereMode;
+    globalRoot.getLightingState = getLightingState;
+    globalRoot.getParticles = getParticles;
+    globalRoot.clearParticles = clearParticles;
+    globalRoot.spawnParticles = spawnParticles;
+    globalRoot.stepParticles = stepParticles;
+    globalRoot.isAudioMuted = isAudioMuted;
+    globalRoot.setAudioMuted = setAudioMuted;
+    globalRoot.playAudioCue = playAudioCue;
+    globalRoot.getPortalState = getPortalState;
+    globalRoot.setPortalState = setPortalState;
     globalRoot.sampleElevation = sampleElevation;
     globalRoot.getSlope = getSlope;
     globalRoot.playerX = playerX;

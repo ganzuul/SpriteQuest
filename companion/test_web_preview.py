@@ -104,6 +104,8 @@ class TestWebPreviewGenerator(unittest.TestCase):
 
         const mockEl = {
           style: {},
+          dataset: {},
+          setAttribute: () => {},
           clientWidth: 600,
           clientHeight: 700,
           addEventListener: () => {},

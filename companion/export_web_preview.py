@@ -256,6 +256,13 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
       background: rgba(45, 212, 191, 0.25);
       pointer-events: none;
       z-index: 56;
+      transition: all 0.3s ease;
+    }}
+    .scene-portal-marker.portal-opened {{
+      border: 1px dashed #22c55e;
+      background: rgba(34, 197, 94, 0.45);
+      box-shadow: 0 0 14px rgba(34, 197, 94, 0.65);
+      opacity: 0.40;
     }}
     .scene-prop-token {{
       position: absolute;
@@ -682,6 +689,209 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
       font-weight: 700;
     }}
 
+    /* Imperial Clearance Statutes Noticeboard */
+    .prop-statute-board {{
+      position: absolute;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 55;
+    }}
+    .statute-board-timber {{
+      width: 32px; height: 38px;
+      background: linear-gradient(135deg, #451a03 0%, #78350f 100%);
+      border: 1.5px solid #b45309;
+      border-radius: 3px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.8);
+      position: relative;
+    }}
+    .statute-placard {{
+      width: 24px; height: 26px;
+      background: #fef3c7;
+      border: 1px solid #d97706;
+      font-family: serif;
+      font-size: 5px;
+      font-weight: 800;
+      color: #78350f;
+      text-align: center;
+      padding: 2px;
+      box-shadow: inset 0 0 4px rgba(0,0,0,0.2);
+    }}
+    .statute-red-seal {{
+      width: 8px; height: 8px;
+      background: #dc2626;
+      border-radius: 50%;
+      border: 1px solid #7f1d1d;
+      box-shadow: 0 0 4px rgba(220, 38, 38, 0.6);
+      position: absolute;
+      bottom: 4px;
+    }}
+
+    /* Ancient Chained Grimoire on Lectern */
+    .prop-grimoire-lectern {{
+      position: absolute;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 55;
+    }}
+    .grimoire-oak-stand {{
+      width: 26px; height: 32px;
+      background: linear-gradient(135deg, #271b12 0%, #3d291a 100%);
+      border: 1px solid #785233;
+      border-radius: 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.85);
+      position: relative;
+    }}
+    .grimoire-open-folio {{
+      width: 20px; height: 16px;
+      background: #fde68a;
+      border: 1px solid #b45309;
+      box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+    }}
+    .grimoire-floating-rune {{
+      position: absolute;
+      top: -8px;
+      font-size: 11px;
+      color: #38bdf8;
+      text-shadow: 0 0 6px rgba(56, 189, 248, 0.9);
+      animation: runeHover 2s ease-in-out infinite alternate;
+    }}
+    @keyframes runeHover {{
+      from {{ transform: translateY(0px); opacity: 0.7; }}
+      to {{ transform: translateY(-3px); opacity: 1.0; }}
+    }}
+
+    /* Monumental Living Atlas Folio */
+    .prop-living-atlas {{
+      position: absolute;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 55;
+    }}
+    .atlas-granite-pedestal {{
+      width: 44px; height: 32px;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      border: 1.5px solid #ca8a04;
+      border-radius: 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.9);
+      position: relative;
+    }}
+    .atlas-monumental-folio {{
+      width: 36px; height: 22px;
+      background: #713f12;
+      border: 1px solid #eab308;
+      border-radius: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 0 6px rgba(0,0,0,0.5);
+    }}
+    .atlas-illuminated-face {{
+      width: 30px; height: 16px;
+      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+      border: 1px solid #b45309;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.45);
+    }}
+    .atlas-brass-cranks {{
+      position: absolute;
+      right: -6px;
+      bottom: 2px;
+      font-size: 9px;
+      color: #eab308;
+      filter: drop-shadow(0 1px 2px #000);
+    }}
+
+    /* Uninstalled Primed Matte Backdrop Flat */
+    .prop-matte-flat {{
+      position: absolute;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 54;
+      cursor: grab;
+    }}
+    .matte-canvas-cylinder {{
+      width: 14px; height: 38px;
+      background: linear-gradient(90deg, #d4d4d8 0%, #a1a1aa 50%, #71717a 100%);
+      border: 1px solid #52525b;
+      border-radius: 6px;
+      transform: rotate(-12deg);
+      box-shadow: 2px 4px 10px rgba(0,0,0,0.7);
+      position: relative;
+    }}
+    .matte-painted-edge {{
+      position: absolute;
+      top: 4px; left: 0; right: 0; height: 6px;
+      background: linear-gradient(90deg, #38bdf8, #ca8a04);
+      opacity: 0.85;
+    }}
+    .matte-wooden-dowel {{
+      position: absolute;
+      top: -3px; left: 2px; width: 8px; height: 3px;
+      background: #78350f;
+      border-radius: 1px;
+    }}
+
+    /* Impounded Forfeit Consignment Chest */
+    .prop-forfeit-chest {{
+      position: absolute;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 55;
+      cursor: grab;
+    }}
+    .forfeit-iron-cage {{
+      width: 28px; height: 24px;
+      background: linear-gradient(135deg, #18181b 0%, #27272a 100%);
+      border: 1.5px solid #71717a;
+      border-radius: 3px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.85);
+      position: relative;
+    }}
+    .forfeit-lead-padlock {{
+      font-size: 8px;
+      color: #94a3b8;
+      position: absolute;
+      top: 2px;
+    }}
+    .forfeit-draft-tag {{
+      width: 20px; height: 9px;
+      background: #fef08a;
+      border: 1px solid #ca8a04;
+      font-size: 4.5px;
+      font-weight: 800;
+      color: #713f12;
+      text-align: center;
+      line-height: 9px;
+      position: absolute;
+      bottom: 3px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+    }}
+
     /* Actor Tokens & Theatrical Speech Balloons */
     .actor-token {{
       position: absolute;
@@ -939,6 +1149,20 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
         <div class="stage-direction-box" id="stat-stage-direction">[STAGE DIRECTION] Move onto stage or click a ★ Cue Mark.</div>
         <button class="btn-cutscene" id="btn-play-cutscene" onclick="window.viewer && window.viewer.playBorderClearanceCutscene && window.viewer.playBorderClearanceCutscene()">
           ▶ Play Cutscene: Border Clearance
+        </button>
+      </div>
+
+      <div class="panel-section">
+        <div class="section-title">Atmosphere & Audio Synthesizer</div>
+        <div class="stat-row"><span>Lighting Shroud:</span><span class="stat-val stat-accent" id="stat-atmosphere">DAY</span></div>
+        <div style="display: flex; gap: 4px; margin-top: 8px;">
+          <button style="flex: 1; padding: 4px; font-size: 9.5px; background: #26211c; border: 1px solid #786b59; color: #eed; border-radius: 3px; cursor: pointer;" onclick="window.viewer && window.viewer.setAtmosphereMode('day')">☀️ Day</button>
+          <button style="flex: 1; padding: 4px; font-size: 9.5px; background: #26211c; border: 1px solid #ca8a04; color: #fde047; border-radius: 3px; cursor: pointer;" onclick="window.viewer && window.viewer.setAtmosphereMode('golden_hour')">🌅 Dusk</button>
+          <button style="flex: 1; padding: 4px; font-size: 9.5px; background: #26211c; border: 1px solid #38bdf8; color: #7dd3fc; border-radius: 3px; cursor: pointer;" onclick="window.viewer && window.viewer.setAtmosphereMode('night')">🌙 Night</button>
+          <button style="flex: 1; padding: 4px; font-size: 9.5px; background: #26211c; border: 1px solid #2dd4bf; color: #99f6e4; border-radius: 3px; cursor: pointer;" onclick="window.viewer && window.viewer.setAtmosphereMode('cryo')">❄️ Cryo</button>
+        </div>
+        <button id="btn-audio-toggle" style="width: 100%; margin-top: 8px; padding: 5px; font-size: 10px; background: #241f1a; border: 1px solid #786b59; color: #d6cbbd; border-radius: 3px; cursor: pointer;" onclick="if (window.viewer) {{ window.viewer.setAudioMuted(!window.viewer.isAudioMuted()); this.innerText = window.viewer.isAudioMuted() ? '🔇 Audio: Muted' : '🔊 Audio: Active (Web Audio Synthesizer)'; }}">
+          🔇 Audio: Muted (Click to Enable Synthesizer)
         </button>
       </div>
 
