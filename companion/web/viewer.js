@@ -803,8 +803,15 @@ export function initViewer(config) {
     playerX = Math.max(2, Math.min(mapWidthM - 2, xm));
     playerY = Math.max(2, Math.min(mapLengthM - 2, ym));
 
-    const pxX = (playerX / mapWidthM) * world.clientWidth;
-    const pxY = (playerY / mapLengthM) * world.clientHeight;
+    const pActor = actors.get('player');
+    if (pActor) {
+      pActor.x = playerX;
+      pActor.y = playerY;
+      pActor.z = sampleElevation(playerX, playerY);
+    }
+
+    const pxX = (playerX / mapWidthM) * (world ? world.clientWidth || 600 : 600);
+    const pxY = (playerY / mapLengthM) * (world ? world.clientHeight || 700 : 700);
 
     if (playerEl) {
       playerEl.style.left = pxX + 'px';
@@ -959,7 +966,7 @@ export function initViewer(config) {
   // Keyboard movement (WASD & Arrows)
   if (typeof window !== 'undefined') {
     window.addEventListener('keydown', (e) => {
-      const step = 2.5;
+      const step = 1.25;
       if (e.key === 'w' || e.key === 'ArrowUp') tryMoveActor('player', playerX, playerY - step);
       if (e.key === 's' || e.key === 'ArrowDown') tryMoveActor('player', playerX, playerY + step);
       if (e.key === 'a' || e.key === 'ArrowLeft') tryMoveActor('player', playerX - step, playerY);
@@ -1132,8 +1139,8 @@ export function initViewer(config) {
     }
   }
 
-  function canMoveTo(fromX, fromY, toX, toY, actorRadius = 0.5, pushStrength = playerStrength) {
-    // 1. Check wall collisions
+  function checkSingleStepCollision(fromX, fromY, toX, toY, actorRadius = 0.5, pushStrength = playerStrength) {
+    // 1. Check wall intersection
     for (const w of walls) {
       const hit = segmentIntersect(fromX, fromY, toX, toY, w.start[0], w.start[1], w.end[0], w.end[1]);
       if (hit) {
@@ -1141,70 +1148,118 @@ export function initViewer(config) {
         for (const p of portals) {
           if (!p.passable) continue;
           const distToPortal = Math.hypot(hit.x - p.world_x, hit.y - p.world_y);
-          if (distToPortal <= p.width / 2.0 + 0.15) {
+          if (distToPortal <= (p.width / 2.0) + 0.20) {
             throughPortal = true;
             break;
           }
         }
         if (!throughPortal) {
-          const angle = Math.atan2(toY - fromY, toX - fromX);
-          const stopDist = Math.max(0, Math.hypot(hit.x - fromX, hit.y - fromY) - actorRadius);
-          const clampedX = fromX + Math.cos(angle) * stopDist;
-          const clampedY = fromY + Math.sin(angle) * stopDist;
-          return { allowed: false, x: clampedX, y: clampedY, reason: 'wall_collision', hit };
+          return { allowed: false, reason: 'wall_collision', hit };
         }
       }
     }
 
-    // 2. Check solid furniture & physical props (swept ray test)
-    const distTotal = Math.hypot(toX - fromX, toY - fromY);
-    const numSubsteps = Math.max(1, Math.ceil(distTotal / 0.35));
+    // 2. Check solid furniture & physical props at target point
+    for (const [id, prop] of physicalPropsMap.entries()) {
+      const bw = prop.bounds?.width || 1.2;
+      const bd = prop.bounds?.depth || 1.2;
+      const halfW = bw / 2.0 + actorRadius;
+      const halfD = bd / 2.0 + actorRadius;
 
-    for (let s = 1; s <= numSubsteps; s++) {
-      const st = s / numSubsteps;
-      const testX = fromX + (toX - fromX) * st;
-      const testY = fromY + (toY - fromY) * st;
+      const dx = Math.abs(toX - prop.world_x);
+      const dy = Math.abs(toY - prop.world_y);
 
-      for (const [id, prop] of physicalPropsMap.entries()) {
-        const bw = prop.bounds?.width || 1.2;
-        const bd = prop.bounds?.depth || 1.2;
-        const halfW = bw / 2.0 + actorRadius;
-        const halfD = bd / 2.0 + actorRadius;
-
-        const dx = Math.abs(testX - prop.world_x);
-        const dy = Math.abs(testY - prop.world_y);
-
-        if (dx < halfW && dy < halfD) {
-          if (prop.obstacle_type === 'solid_furniture' || prop.obstacle_type === 'wall') {
-            const signY = toY > fromY ? -1 : 1;
-            const clampedY = prop.world_y + signY * halfD;
-            const signX = toX > fromX ? -1 : 1;
-            const clampedX = Math.abs(toX - fromX) > 0.01 ? prop.world_x + signX * halfW : fromX;
-            return { allowed: false, x: clampedX, y: clampedY, reason: 'solid_obstacle', propId: id };
-          } else if (prop.obstacle_type === 'physics_object') {
-            if (pushStrength >= prop.mass_kg) {
-              const moveDx = toX - fromX;
-              const moveDy = toY - fromY;
-              const newPropX = prop.world_x + moveDx * 1.1;
-              const newPropY = prop.world_y + moveDy * 1.1;
-              setPropPosition(id, newPropX, newPropY);
-              evaluatePhysicalInteractions();
-              return { allowed: true, x: toX, y: toY, pushedProp: id };
-            } else {
-              return { allowed: false, x: fromX, y: fromY, reason: 'too_heavy', propId: id };
-            }
+      if (dx < halfW && dy < halfD) {
+        if (prop.obstacle_type === 'solid_furniture' || prop.obstacle_type === 'wall') {
+          return { allowed: false, reason: 'solid_obstacle', propId: id };
+        } else if (prop.obstacle_type === 'physics_object') {
+          if (pushStrength >= prop.mass_kg) {
+            return { allowed: true, pushedProp: id };
+          } else {
+            return { allowed: false, reason: 'too_heavy', propId: id };
           }
         }
       }
     }
 
-    return { allowed: true, x: toX, y: toY };
+    return { allowed: true };
+  }
+
+  function canMoveTo(fromX, fromY, toX, toY, actorRadius = 0.5, pushStrength = playerStrength) {
+    const distTotal = Math.hypot(toX - fromX, toY - fromY);
+    if (distTotal < 1e-4) return { allowed: true, x: fromX, y: fromY };
+
+    const numSubsteps = Math.max(1, Math.ceil(distTotal / 0.25));
+    let lastValidX = fromX;
+    let lastValidY = fromY;
+    let pushedPropId = null;
+
+    for (let s = 1; s <= numSubsteps; s++) {
+      const st = s / numSubsteps;
+      const nextX = fromX + (toX - fromX) * st;
+      const nextY = fromY + (toY - fromY) * st;
+
+      const check = checkSingleStepCollision(lastValidX, lastValidY, nextX, nextY, actorRadius, pushStrength);
+      if (check.allowed) {
+        lastValidX = nextX;
+        lastValidY = nextY;
+        if (check.pushedProp) {
+          pushedPropId = check.pushedProp;
+          const p = physicalPropsMap.get(check.pushedProp);
+          if (p) {
+            const moveDx = toX - fromX;
+            const moveDy = toY - fromY;
+            setPropPosition(p.id, p.world_x + moveDx * 1.05, p.world_y + moveDy * 1.05);
+            evaluatePhysicalInteractions();
+          }
+        }
+      } else {
+        // Obstructed along full vector; attempt axis-sliding along clear axis
+        // 1. Try sliding along X only
+        const checkX = checkSingleStepCollision(lastValidX, lastValidY, nextX, lastValidY, actorRadius, pushStrength);
+        if (checkX.allowed && Math.abs(nextX - lastValidX) > 1e-4) {
+          lastValidX = nextX;
+        } else {
+          // 2. Try sliding along Y only
+          const checkY = checkSingleStepCollision(lastValidX, lastValidY, lastValidX, nextY, actorRadius, pushStrength);
+          if (checkY.allowed && Math.abs(nextY - lastValidY) > 1e-4) {
+            lastValidY = nextY;
+          } else {
+            // Completely blocked on both axes
+            return {
+              allowed: false,
+              x: lastValidX,
+              y: lastValidY,
+              reason: check.reason,
+              propId: check.propId,
+              pushedProp: pushedPropId,
+            };
+          }
+        }
+      }
+    }
+
+    const reachedTarget = Math.hypot(lastValidX - toX, lastValidY - toY) <= 0.15;
+    return {
+      allowed: reachedTarget,
+      x: lastValidX,
+      y: lastValidY,
+      pushedProp: pushedPropId,
+    };
   }
 
   function tryMoveActor(actorId, targetX, targetY) {
-    const actor = actors.get(actorId) || { x: playerX, y: playerY, written: actorWritten };
+    let currentX, currentY;
+    if (actorId === 'player') {
+      currentX = playerX;
+      currentY = playerY;
+    } else {
+      const actor = actors.get(actorId);
+      currentX = actor ? actor.x : 0;
+      currentY = actor ? actor.y : 0;
+    }
     const str = actorId === 'player' ? playerStrength : 80.0;
-    const res = canMoveTo(actor.x, actor.y, targetX, targetY, 0.5, str);
+    const res = canMoveTo(currentX, currentY, targetX, targetY, 0.5, str);
 
     if (res.allowed) {
       if (actorId === 'player') {
@@ -1214,10 +1269,12 @@ export function initViewer(config) {
       }
       return { success: true, actualX: res.x, actualY: res.y, pushedProp: res.pushedProp };
     } else {
-      if (actorId === 'player') {
-        updatePlayerPosition(res.x, res.y);
-      } else {
-        setActorPosition(actorId, res.x, res.y);
+      if (Math.hypot(res.x - currentX, res.y - currentY) > 1e-3) {
+        if (actorId === 'player') {
+          updatePlayerPosition(res.x, res.y);
+        } else {
+          setActorPosition(actorId, res.x, res.y);
+        }
       }
       return { success: false, actualX: res.x, actualY: res.y, reason: res.reason };
     }
@@ -1537,10 +1594,13 @@ export function initViewer(config) {
     },
     getExploredGrid: () => explored,
     getPlayerPos: () => ({ x: playerX, y: playerY }),
+    getPlayerPosition: () => ({ x: playerX, y: playerY }),
   };
 
   const globalRoot = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this);
   if (globalRoot) {
+    globalRoot.getPlayerPos = () => ({ x: playerX, y: playerY });
+    globalRoot.getPlayerPosition = () => ({ x: playerX, y: playerY });
     globalRoot.sampleElevation = sampleElevation;
     globalRoot.getSlope = getSlope;
     globalRoot.playerX = playerX;

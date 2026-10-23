@@ -194,7 +194,7 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
       transform: translate(-50%, -50%) translateZ(150px);
       box-shadow: 0 0 15px var(--accent);
       pointer-events: none;
-      transition: left 0.18s ease-out, top 0.18s ease-out;
+      transition: left 0.06s linear, top 0.06s linear;
       z-index: 50;
     }}
     .player-arrow {{
@@ -217,23 +217,28 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
     }}
     .scene-zone-box {{
       position: absolute;
-      border: 1px solid rgba(245, 158, 11, 0.40);
-      background: rgba(32, 28, 24, 0.45);
-      box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.55);
+      border: 1px dashed rgba(245, 158, 11, 0.22);
+      background: rgba(32, 28, 24, 0.15);
+      box-shadow: inset 0 0 14px rgba(0, 0, 0, 0.45);
       pointer-events: none;
       display: flex;
       align-items: center;
       justify-content: center;
     }}
     .scene-zone-label {{
-      font-size: 8.5px;
-      letter-spacing: 0.06em;
+      font-size: 8px;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
-      color: rgba(245, 238, 223, 0.7);
+      color: rgba(245, 238, 223, 0.35);
       text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95);
       pointer-events: none;
       text-align: center;
       padding: 2px;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }}
+    .scene-zone-box:hover .scene-zone-label {{
+      opacity: 0.9;
     }}
     .scene-wall-line {{
       position: absolute;
@@ -280,14 +285,28 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
     .prop-tag {{
       font-size: 8.5px;
       white-space: nowrap;
-      background: rgba(18, 16, 14, 0.90);
+      background: rgba(18, 16, 14, 0.95);
       color: #f3ece2;
-      padding: 1px 4px;
+      padding: 2px 6px;
       border-radius: 3px;
-      border: 1px solid #4a3e34;
-      margin-top: 2px;
-      opacity: 0.9;
+      border: 1px solid #ca8a04;
+      position: absolute;
+      bottom: calc(100% + 4px);
+      left: 50%;
+      transform: translateX(-50%);
+      opacity: 0;
+      visibility: hidden;
       pointer-events: none;
+      transition: opacity 0.15s ease, visibility 0.15s ease;
+      z-index: 95;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.85);
+    }}
+    .scene-prop-token:hover .prop-tag,
+    .prop-r6-crate:hover .prop-tag,
+    .prop-weigh-scale:hover .prop-tag,
+    .prop-ledger-desk:hover .prop-tag {{
+      opacity: 1;
+      visibility: visible;
     }}
 
     /* Stagecraft Layer: Proscenium Line, Playing Area Rings, Actor Cue Marks */
@@ -317,6 +336,13 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
       padding: 1px 5px;
       border-radius: 3px;
       border: 1px solid rgba(239, 68, 68, 0.45);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.15s ease, visibility 0.15s ease;
+    }}
+    .stagecraft-proscenium-line:hover .stagecraft-proscenium-label {{
+      opacity: 1;
+      visibility: visible;
     }}
     .stagecraft-playing-ring {{
       position: absolute;
@@ -354,16 +380,30 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
       font-size: 12px;
       box-shadow: 0 0 10px rgba(56, 189, 248, 0.55);
     }}
-    .cue-tag {{
+    .cue-tag,
+    .cue-mark-label {{
       font-size: 8px;
       white-space: nowrap;
-      background: rgba(15, 23, 42, 0.92);
+      background: rgba(15, 23, 42, 0.95);
       color: #bae6fd;
-      padding: 1px 5px;
+      padding: 2px 6px;
       border-radius: 3px;
-      border: 1px solid rgba(56, 189, 248, 0.45);
-      margin-top: 2px;
+      border: 1px solid rgba(56, 189, 248, 0.6);
+      position: absolute;
+      bottom: calc(100% + 4px);
+      left: 50%;
+      transform: translateX(-50%);
+      opacity: 0;
+      visibility: hidden;
       pointer-events: none;
+      transition: opacity 0.15s ease, visibility 0.15s ease;
+      z-index: 95;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.85);
+    }}
+    .stagecraft-cue-mark:hover .cue-tag,
+    .stagecraft-cue-mark:hover .cue-mark-label {{
+      opacity: 1;
+      visibility: visible;
     }}
     .stage-direction-box {{
       margin-top: 6px;

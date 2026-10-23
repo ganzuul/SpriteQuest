@@ -162,4 +162,17 @@ describe('Fragment Assets, Navigation Collision & Physicality (TDD)', () => {
     const deskEl = worldEl.querySelector('.prop-ledger-desk');
     assert.ok(deskEl, 'DOM must render .prop-ledger-desk with open ledger folio');
   });
+
+  test('7. Doorway Navigation & Wall Sliding (No Rubber-Banding)', () => {
+    // 1. Move player smoothly through the portal at (61.0, 79.0)
+    viewer.setActorPosition('player', 61.0, 78.0);
+    const enterPortal = viewer.tryMoveActor('player', 61.0, 80.0);
+    assert.equal(enterPortal.success, true, 'Moving through portal must succeed');
+    assert.equal(enterPortal.actualY, 80.0);
+
+    // 2. From inside the doorway at (61.0, 80.0), step along/against the wall
+    // Wall sliding should cleanly preserve allowed movement without rubber-banding backwards
+    const moveAgainstWall = viewer.tryMoveActor('player', 56.0, 80.0);
+    assert.ok(moveAgainstWall.actualY >= 79.5, 'Player must not rubber-band back across the doorway threshold');
+  });
 });
