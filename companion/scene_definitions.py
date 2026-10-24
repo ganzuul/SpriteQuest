@@ -71,6 +71,11 @@ class ScenePrimitive:
     stage_role: str = ""
     world_pos: list[float] | None = None
     image_2d: str = ""
+    source_triangles: int = 0
+    coacd_pieces: str = ""
+    collage_url: str = ""
+    overhang_constrained: bool = False
+    overhang_angle_deg: float = 45.0
 
     def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
@@ -78,6 +83,10 @@ class ScenePrimitive:
             d["asset_id"] = self.id
         if not d["image_2d"]:
             d["image_2d"] = get_primitive_2d_data_url(self.id, d)
+        if not d["collage_url"]:
+            collage_file = REPO_ROOT / "renders" / "primitives" / f"{self.id}-collage.png"
+            if collage_file.is_file():
+                d["collage_url"] = f"renders/primitives/{self.id}-collage.png"
         return d
 
 
@@ -149,6 +158,40 @@ def load_all_campaigns(campaigns_dir: Path = CAMPAIGNS_DIR) -> dict[str, Campaig
     return campaigns
 
 
+RUIN_GEOMETRY_STATS: dict[str, dict[str, Any]] = {
+    "ancient-bastion": {
+        "source_triangles": 36647,
+        "coacd_pieces": "16 CoACD Boxes (192 tris)",
+        "overhang_constrained": True,
+        "overhang_angle_deg": 45.0,
+    },
+    "relic-cairn": {
+        "source_triangles": 49658,
+        "coacd_pieces": "7 CoACD Boxes (84 tris)",
+        "overhang_constrained": True,
+        "overhang_angle_deg": 45.0,
+    },
+    "wish-stone-slab": {
+        "source_triangles": 43844,
+        "coacd_pieces": "8 CoACD Boxes (96 tris)",
+        "overhang_constrained": True,
+        "overhang_angle_deg": 45.0,
+    },
+    "ruined-watchtower": {
+        "source_triangles": 58927,
+        "coacd_pieces": "12 CoACD Boxes (144 tris)",
+        "overhang_constrained": True,
+        "overhang_angle_deg": 45.0,
+    },
+    "ancient-ruin-terrace": {
+        "source_triangles": 29928,
+        "coacd_pieces": "9 CoACD Boxes (108 tris)",
+        "overhang_constrained": True,
+        "overhang_angle_deg": 45.0,
+    },
+}
+
+
 def load_scene_definition(scene_id: str, scenes_dir: Path = SCENES_DIR) -> SceneDefinition | None:
     """Load a specific scene definition by ID from library/scenes/<scene_id>.json."""
     scene_file = scenes_dir / f"{scene_id}.json"
@@ -160,6 +203,9 @@ def load_scene_definition(scene_id: str, scenes_dir: Path = SCENES_DIR) -> Scene
     for p_raw in data.get("primitives", []):
         pid = p_raw.get("id", "")
         img_url = p_raw.get("image_2d") or get_primitive_2d_data_url(pid, p_raw)
+        stats = RUIN_GEOMETRY_STATS.get(pid, {})
+        collage_p = REPO_ROOT / "renders" / "primitives" / f"{pid}-collage.png"
+        collage_url = f"renders/primitives/{pid}-collage.png" if collage_p.is_file() else ""
         prims.append(
             ScenePrimitive(
                 id=pid,
@@ -175,6 +221,11 @@ def load_scene_definition(scene_id: str, scenes_dir: Path = SCENES_DIR) -> Scene
                 stage_role=p_raw.get("stage_role", ""),
                 world_pos=p_raw.get("world_pos"),
                 image_2d=img_url,
+                source_triangles=p_raw.get("source_triangles", stats.get("source_triangles", 0)),
+                coacd_pieces=p_raw.get("coacd_pieces", stats.get("coacd_pieces", "")),
+                collage_url=p_raw.get("collage_url", collage_url),
+                overhang_constrained=p_raw.get("overhang_constrained", stats.get("overhang_constrained", False)),
+                overhang_angle_deg=float(p_raw.get("overhang_angle_deg", stats.get("overhang_angle_deg", 45.0))),
             )
         )
 

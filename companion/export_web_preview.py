@@ -1602,19 +1602,46 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
     }}
 
     .sidebar-scene-picker {{
-      padding: 10px 12px;
+      padding: 8px 10px;
       background: #1d1915;
       border-bottom: 1px solid #332b24;
       flex-shrink: 0;
       min-width: 0;
       overflow: hidden;
+      transition: all 0.2s ease;
     }}
     .sidebar-section-header {{
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       min-width: 0;
+      cursor: pointer;
+      user-select: none;
+    }}
+    .sidebar-section-header:hover .sidebar-section-title {{
+      color: #fff;
+    }}
+    .section-toggle-chevron {{
+      font-size: 9px;
+      color: #b5a899;
+      display: inline-block;
+      margin-right: 4px;
+      transition: transform 0.18s ease;
+    }}
+    .sidebar-section.is-collapsed .section-toggle-chevron {{
+      transform: rotate(-90deg);
+    }}
+    .sidebar-collapsible-body {{
+      transition: opacity 0.2s ease;
+    }}
+    .sidebar-section.is-collapsed .sidebar-collapsible-body {{
+      display: none !important;
+    }}
+    .sidebar-section.is-collapsed {{
+      flex: 0 0 auto !important;
+      min-height: auto !important;
+      padding-bottom: 6px !important;
     }}
     .sidebar-section-title {{
       font-size: 10px;
@@ -1829,13 +1856,55 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
     .sidebar-asset-preview {{
       border-top: 2px solid #383028;
       background: #181411;
-      padding: 8px 10px 10px 10px;
-      flex-shrink: 0;
+      padding: 6px 10px 8px 10px;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      overflow: hidden;
+      transition: all 0.2s ease;
+    }}
+    .sidebar-preview-body {{
       display: flex;
       flex-direction: column;
       gap: 5px;
+      overflow-y: auto;
       min-width: 0;
-      overflow: hidden;
+      max-height: calc(100vh - 220px);
+    }}
+    .sidebar-facet-tabs {{
+      display: flex;
+      gap: 3px;
+      background: #13100e;
+      padding: 3px;
+      border-radius: 5px;
+      border: 1px solid #332b24;
+      margin-bottom: 2px;
+      flex-shrink: 0;
+    }}
+    .facet-tab {{
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: #9c8e80;
+      font-size: 8.5px;
+      font-weight: 600;
+      padding: 4px 2px;
+      border-radius: 3px;
+      cursor: pointer;
+      font-family: inherit;
+      text-align: center;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+    }}
+    .facet-tab:hover {{
+      color: #f3ece2;
+      background: #231d18;
+    }}
+    .facet-tab.active {{
+      background: #2dd4bf;
+      color: #0d0b0a;
+      font-weight: 700;
+      box-shadow: 0 1px 4px rgba(45, 212, 191, 0.35);
     }}
     .sidebar-preview-img-wrap {{
       position: relative;
@@ -1850,6 +1919,7 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
       align-items: center;
       justify-content: center;
       box-sizing: border-box;
+      flex-shrink: 0;
     }}
     .sidebar-preview-img-wrap:hover {{
       border-color: var(--accent);
@@ -2148,84 +2218,110 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
     <!-- Left Sidebar: Asset Navigation Panel (1. Campaign/Act/Scene Picker -> 2. Tree View -> 3. Asset Preview) -->
     <aside class="asset-nav-sidebar" id="asset-nav-sidebar">
       <!-- 1. Top: Campaign -> Act -> Scene Cascade Picker -->
-      <div class="sidebar-scene-picker" id="sidebar-scene-picker">
-        <div class="sidebar-section-header">
-          <span class="sidebar-section-title">🗺️ Campaign & Staging</span>
+      <div class="sidebar-section sidebar-scene-picker" id="sidebar-scene-picker">
+        <div class="sidebar-section-header" onclick="window.viewer && window.viewer.toggleSidebarSection && window.viewer.toggleSidebarSection('sidebar-scene-picker')" title="Click to collapse / expand Campaign & Scene selection">
+          <div style="display: flex; align-items: center; gap: 4px; min-width: 0;">
+            <span class="section-toggle-chevron" id="chevron-sidebar-scene-picker">▼</span>
+            <span class="sidebar-section-title">🗺️ Campaign & Staging</span>
+          </div>
           <div style="display: flex; align-items: center; gap: 6px;">
             <span class="section-summary-badge"><span id="primitives-badge-count">6</span> Assets</span>
-            <button class="sidebar-collapse-btn" id="btn-sidebar-collapse" onclick="window.viewer && window.viewer.toggleSidebar && window.viewer.toggleSidebar(true)" title="Collapse asset navigation panel">◀</button>
+            <button class="sidebar-collapse-btn" id="btn-sidebar-collapse" onclick="event.stopPropagation(); window.viewer && window.viewer.toggleSidebar && window.viewer.toggleSidebar(true)" title="Collapse asset navigation panel">◀</button>
           </div>
         </div>
 
-        <!-- 3-level Hierarchy: Campaigns -> Acts -> Scenes -->
-        <div class="sidebar-picker-cascade">
-          <div class="sidebar-cascade-row">
-            <span class="sidebar-cascade-label">Campaign</span>
-            <select id="campaign-selector" class="scene-select" onchange="onCampaignSelectChange(this.value)">
-              <option value="tests">Tests & Verification</option>
-              <option value="unwritten-consignment" selected>The Unwritten Consignment</option>
-            </select>
+        <div class="sidebar-collapsible-body" id="body-sidebar-scene-picker">
+          <!-- 3-level Hierarchy: Campaigns -> Acts -> Scenes -->
+          <div class="sidebar-picker-cascade">
+            <div class="sidebar-cascade-row">
+              <span class="sidebar-cascade-label">Campaign</span>
+              <select id="campaign-selector" class="scene-select" onchange="onCampaignSelectChange(this.value)">
+                <option value="tests">Tests & Verification</option>
+                <option value="unwritten-consignment" selected>The Unwritten Consignment</option>
+              </select>
+            </div>
+
+            <div class="sidebar-cascade-row">
+              <span class="sidebar-cascade-label">Act</span>
+              <select id="act-selector" class="scene-select" onchange="onActSelectChange(this.value)">
+                <option value="act-1">Act I: The Cold Crate at the Customs House</option>
+                <option value="act-2" selected>Act II: The Watch on the Overhang & The Grey Wind's Bargain</option>
+                <option value="act-3">Act III: The Climb That Is Not On Any Plan</option>
+                <option value="act-4">Act IV: The Glass Cathedral in the Sky</option>
+              </select>
+            </div>
+
+            <div class="sidebar-cascade-row">
+              <span class="sidebar-cascade-label">Scene</span>
+              <select id="scene-selector" class="scene-select" onchange="onSceneSelectChange(this.value)">
+                <option value="consignment-border-pass" selected>The Mountain Pass & Eastern Ridge</option>
+                <option value="consignment-overhang-bastion">The 45° Bastion & Relic Cairn</option>
+                <option value="consignment-orom-shrine">East Pass Cliff & Orom's Station</option>
+              </select>
+            </div>
           </div>
 
-          <div class="sidebar-cascade-row">
-            <span class="sidebar-cascade-label">Act</span>
-            <select id="act-selector" class="scene-select" onchange="onActSelectChange(this.value)">
-              <option value="act-1">Act I: The Cold Crate at the Customs House</option>
-              <option value="act-2" selected>Act II: The Watch on the Overhang & The Grey Wind's Bargain</option>
-              <option value="act-3">Act III: The Climb That Is Not On Any Plan</option>
-              <option value="act-4">Act IV: The Glass Cathedral in the Sky</option>
-            </select>
+          <div class="sidebar-hierarchy-crumb" id="sidebar-hierarchy-crumb">The Unwritten Consignment › Act II › Mountain Pass</div>
+          <div class="sidebar-scene-desc" id="sidebar-scene-desc">
+            Steep stepped strata of slate and alpine scree between 22-meter granite peaks.
           </div>
-
-          <div class="sidebar-cascade-row">
-            <span class="sidebar-cascade-label">Scene</span>
-            <select id="scene-selector" class="scene-select" onchange="onSceneSelectChange(this.value)">
-              <option value="consignment-border-pass" selected>The Mountain Pass & Eastern Ridge</option>
-              <option value="consignment-overhang-bastion">The 45° Bastion & Relic Cairn</option>
-              <option value="consignment-orom-shrine">East Pass Cliff & Orom's Station</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="sidebar-hierarchy-crumb" id="sidebar-hierarchy-crumb">The Unwritten Consignment › Act II › Mountain Pass</div>
-        <div class="sidebar-scene-desc" id="sidebar-scene-desc">
-          Steep stepped strata of slate and alpine scree between 22-meter granite peaks.
         </div>
       </div>
 
-      <!-- 2. Middle: Hierarchical Tree View of Scene Assets -->
-      <div class="sidebar-tree-header">
-        <span class="sidebar-section-title" style="color: #d6cbbd;">📂 Scene Asset Tree</span>
-        <span style="font-size: 9.5px; color: #8c7e70;">Click to inspect & stage</span>
-      </div>
-      <div class="sidebar-asset-tree" id="sidebar-asset-tree">
-        <!-- Dynamically populated collapsible tree folders -->
+      <!-- 2. Middle: Hierarchical Tree View of Scene Assets & Staging Palette -->
+      <div class="sidebar-section sidebar-tree-section" id="sidebar-tree-section" style="flex: 1; display: flex; flex-direction: column; min-height: 0;">
+        <div class="sidebar-section-header sidebar-tree-header" id="sidebar-tree-header" onclick="window.viewer && window.viewer.toggleSidebarSection && window.viewer.toggleSidebarSection('sidebar-tree-section')" title="Click to collapse / expand Asset Tree">
+          <div style="display: flex; align-items: center; gap: 4px; min-width: 0;">
+            <span class="section-toggle-chevron" id="chevron-sidebar-tree-section">▼</span>
+            <span class="sidebar-section-title" style="color: #d6cbbd;">📂 Scene Asset Tree</span>
+          </div>
+          <span style="font-size: 9px; color: #8c7e70;">Click to inspect</span>
+        </div>
+        <div class="sidebar-collapsible-body" id="body-sidebar-tree-section" style="flex: 1; display: flex; flex-direction: column; min-height: 0;">
+          <div class="sidebar-asset-tree" id="sidebar-asset-tree">
+            <!-- Dynamically populated collapsible tree folders -->
+          </div>
+        </div>
       </div>
 
-      <!-- 3. Bottom: Selected Asset Preview -->
-      <div class="sidebar-asset-preview" id="sidebar-asset-preview">
-        <div class="sidebar-section-header" style="margin-bottom: 2px;">
-          <span class="sidebar-section-title">🖼️ 2D Asset Preview (From 3D STL)</span>
-          <button class="log-btn" onclick="window.viewer && window.viewer.openPrimitiveLightbox && window.viewer.openPrimitiveLightbox()" title="Enlarge 2D multi-view blueprint">🔍 Enlarge</button>
-        </div>
-        <div class="sidebar-preview-img-wrap" onclick="window.viewer && window.viewer.openPrimitiveLightbox && window.viewer.openPrimitiveLightbox()">
-          <img id="sidebar-preview-img" class="sidebar-preview-img" src="" alt="Selected Asset 2D Preview" />
-          <div class="sidebar-preview-zoom-hint">🔍 Click to Enlarge</div>
-        </div>
-        <div class="sidebar-preview-title" id="sidebar-preview-title">Select an asset</div>
-        <div class="sidebar-preview-role" id="sidebar-preview-role">Staging role</div>
-        <div class="sidebar-preview-meta" id="sidebar-preview-meta"></div>
-        <div class="sidebar-preview-desc" id="sidebar-preview-desc"></div>
-        <div class="sidebar-prompt-box" id="sidebar-prompt-box">
-          <div class="sidebar-prompt-header">
-            <span>⚡ Lattice Refined Prompt</span>
+      <!-- 3. Bottom: Selected Asset Preview & Depth Inspection -->
+      <div class="sidebar-section sidebar-asset-preview" id="sidebar-asset-preview">
+        <div class="sidebar-section-header" onclick="window.viewer && window.viewer.toggleSidebarSection && window.viewer.toggleSidebarSection('sidebar-asset-preview')" title="Click to collapse / expand Asset Inspection panel">
+          <div style="display: flex; align-items: center; gap: 4px; min-width: 0;">
+            <span class="section-toggle-chevron" id="chevron-sidebar-asset-preview">▼</span>
+            <span class="sidebar-section-title">🖼️ Inspection & Depth</span>
           </div>
-          <div class="sidebar-prompt-text" id="sidebar-preview-prompt">Awaiting compilation...</div>
+          <button class="log-btn" onclick="event.stopPropagation(); window.viewer && window.viewer.openPrimitiveLightbox && window.viewer.openPrimitiveLightbox()" title="Enlarge multi-view inspection sheet">🔍 Enlarge</button>
         </div>
-        <div class="sidebar-preview-actions">
-          <button class="prim-act-btn prim-btn-blueprint" onclick="window.viewer && window.viewer.focusSceneAssetOnMap && window.viewer.focusSceneAssetOnMap()" title="Pan & move probe to this asset on the map">📍 Focus Map</button>
-          <button class="prim-act-btn prim-btn-blueprint" onclick="window.viewer && window.viewer.compileSelectedAssetBrief && window.viewer.compileSelectedAssetBrief()" title="Compile Lattice prompt from fragments">⚡ Compile</button>
-          <button class="prim-act-btn prim-btn-forge" onclick="window.viewer && window.viewer.forgeScenePrimitive && window.viewer.forgeScenePrimitive()" title="Render 2D art via Flux 3 Klein">✨ Forge Art</button>
+
+        <div class="sidebar-collapsible-body sidebar-preview-body" id="body-sidebar-asset-preview">
+          <!-- Multi-Representation Facet Tabs -->
+          <div class="sidebar-facet-tabs" id="sidebar-facet-tabs">
+            <button class="facet-tab active" id="facet-tab-sprite" data-facet="sprite" onclick="window.viewer && window.viewer.setPreviewFacet && window.viewer.setPreviewFacet('sprite')">🖼️ Sprite</button>
+            <button class="facet-tab" id="facet-tab-depth" data-facet="depth" onclick="window.viewer && window.viewer.setPreviewFacet && window.viewer.setPreviewFacet('depth')">⛰️ 3D Depth</button>
+            <button class="facet-tab" id="facet-tab-collage" data-facet="collage" onclick="window.viewer && window.viewer.setPreviewFacet && window.viewer.setPreviewFacet('collage')">🔬 5-Cell</button>
+            <button class="facet-tab" id="facet-tab-collider" data-facet="collider" onclick="window.viewer && window.viewer.setPreviewFacet && window.viewer.setPreviewFacet('collider')">📦 Collider</button>
+          </div>
+
+          <div class="sidebar-preview-img-wrap" onclick="window.viewer && window.viewer.openPrimitiveLightbox && window.viewer.openPrimitiveLightbox()">
+            <img id="sidebar-preview-img" class="sidebar-preview-img" src="" alt="Selected Asset 2D Preview" />
+            <div class="sidebar-preview-zoom-hint" id="sidebar-preview-zoom-hint">🔍 Click to Enlarge</div>
+          </div>
+          <div class="sidebar-preview-title" id="sidebar-preview-title">Select an asset</div>
+          <div class="sidebar-preview-role" id="sidebar-preview-role">Staging role</div>
+          <div class="sidebar-preview-meta" id="sidebar-preview-meta"></div>
+          <div class="sidebar-preview-desc" id="sidebar-preview-desc"></div>
+          <div class="sidebar-prompt-box" id="sidebar-prompt-box">
+            <div class="sidebar-prompt-header">
+              <span>⚡ Lattice Refined Prompt</span>
+            </div>
+            <div class="sidebar-prompt-text" id="sidebar-preview-prompt">Awaiting compilation...</div>
+          </div>
+          <div class="sidebar-preview-actions">
+            <button class="prim-act-btn prim-btn-blueprint" onclick="window.viewer && window.viewer.focusSceneAssetOnMap && window.viewer.focusSceneAssetOnMap()" title="Pan & move probe to this asset on the map">📍 Focus Map</button>
+            <button class="prim-act-btn prim-btn-blueprint" onclick="window.viewer && window.viewer.compileSelectedAssetBrief && window.viewer.compileSelectedAssetBrief()" title="Compile Lattice prompt from fragments">⚡ Compile</button>
+            <button class="prim-act-btn prim-btn-forge" onclick="window.viewer && window.viewer.forgeScenePrimitive && window.viewer.forgeScenePrimitive()" title="Render 2D art via Flux 3 Klein">✨ Forge Art</button>
+          </div>
         </div>
       </div>
     </aside>

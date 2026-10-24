@@ -302,4 +302,80 @@ describe('Interface Connection with Lattice & Prompt Rewrite Pipeline (TDD)', ()
       assert.ok(promptEl.textContent.includes('45-degree cantilever overhang rule'), 'DOM must display refined prompt');
     }
   });
+
+  test('9. Left Sidebar Collapsibility, Staging Palette, & Multi-Representation Facet Inspection', () => {
+    // 1. Vertical section collapsibility
+    assert.equal(typeof viewer.toggleSidebarSection, 'function');
+    assert.equal(typeof viewer.isSidebarSectionCollapsed, 'function');
+
+    // Initially expanded
+    assert.equal(viewer.isSidebarSectionCollapsed('sidebar-scene-picker'), false);
+
+    // Toggle collapse
+    viewer.toggleSidebarSection('sidebar-scene-picker');
+    assert.equal(viewer.isSidebarSectionCollapsed('sidebar-scene-picker'), true);
+
+    const pickerEl = document.getElementById('sidebar-scene-picker');
+    if (pickerEl) {
+      assert.ok(pickerEl.classList.contains('is-collapsed'), 'DOM element must have is-collapsed class');
+    }
+
+    // Toggle back to expanded
+    viewer.toggleSidebarSection('sidebar-scene-picker');
+    assert.equal(viewer.isSidebarSectionCollapsed('sidebar-scene-picker'), false);
+
+    // 2. Staging Palette availability
+    assert.equal(typeof viewer.getStagingPalette, 'function');
+    const palette = viewer.getStagingPalette();
+    assert.equal(Array.isArray(palette), true);
+    assert.equal(palette.length, 5, 'Must provide all 5 outdoor ruin primitives in the staging palette');
+
+    const ruinKeys = palette.map((p) => p.id);
+    assert.ok(ruinKeys.includes('ancient-bastion'));
+    assert.ok(ruinKeys.includes('relic-cairn'));
+    assert.ok(ruinKeys.includes('wish-stone-slab'));
+    assert.ok(ruinKeys.includes('ruined-watchtower'));
+    assert.ok(ruinKeys.includes('ancient-ruin-terrace'));
+
+    // 3. Staging and inspecting an outdoor ruin before placement
+    const selected = viewer.selectScenePrimitive('ruined-watchtower');
+    assert.ok(selected, 'Must be able to select ruined-watchtower from staging catalogue');
+    assert.equal(selected.id, 'ruined-watchtower');
+    assert.equal(selected.overhang_constrained, true);
+
+    // 4. Multi-Representation Facet toggling
+    assert.equal(typeof viewer.setPreviewFacet, 'function');
+    assert.equal(typeof viewer.getPreviewFacet, 'function');
+
+    // Default facet is sprite
+    assert.equal(viewer.getPreviewFacet(), 'sprite');
+
+    // Toggle to 5-cell collage
+    viewer.setPreviewFacet('collage');
+    assert.equal(viewer.getPreviewFacet(), 'collage');
+    const previewImg = document.getElementById('sidebar-preview-img');
+    if (previewImg) {
+      assert.ok(previewImg.src.includes('collage.png'), 'Image src must point to 5-cell collage');
+    }
+
+    // Toggle to 3D depth template
+    viewer.setPreviewFacet('depth');
+    assert.equal(viewer.getPreviewFacet(), 'depth');
+
+    // Toggle to physics collider
+    viewer.setPreviewFacet('collider');
+    assert.equal(viewer.getPreviewFacet(), 'collider');
+
+    // Toggle back to sprite
+    viewer.setPreviewFacet('sprite');
+    assert.equal(viewer.getPreviewFacet(), 'sprite');
+
+    // 5. Quality & Slicing Metrics Badges in DOM
+    const metaEl = document.getElementById('sidebar-preview-meta');
+    if (metaEl) {
+      assert.ok(metaEl.innerHTML.includes('45° Overhang Rule'), 'Must verify 45-degree overhang constraint');
+      assert.ok(metaEl.innerHTML.includes('CoACD'), 'Must verify CoACD collision pieces');
+      assert.ok(metaEl.innerHTML.includes('Solid Skirt'), 'Must verify watertight base grounding skirt');
+    }
+  });
 });

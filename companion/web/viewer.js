@@ -2818,12 +2818,115 @@ export function initViewer(config) {
     return sc?.primitives || [];
   }
 
+  // --- Terrain Primitives Staging Catalogue (Available Outdoor Ruins) ---
+  const STAGING_PRIMITIVES_PALETTE = [
+    {
+      id: 'ancient-bastion',
+      asset_id: 'prop-ancient-bastion',
+      name: 'Ancient 45° Stepped Bastion',
+      category: 'ancient_ruin',
+      tree_group: 'Staging Palette (Available Ruins)',
+      stage_role: 'Non-Navigable Ancient Relic Rampart (≥45° overhang rule)',
+      fragment_id: 'grey-wind/named-ruins',
+      dimensions: [22.0, 22.0, 12.0],
+      source_triangles: 36647,
+      triangle_count: 1685,
+      coacd_pieces: '16 CoACD Boxes (192 tris)',
+      overhang_constrained: true,
+      overhang_angle_deg: 45.0,
+      stl_path: 'library/stl_primitives/ancient-bastion.stl',
+      image_2d: 'renders/primitives/ancient-bastion.png',
+      collage_url: 'renders/primitives/ancient-bastion-collage.png',
+      description: 'Cantilevered megalithic stone rampart obeying the 45-degree overhang rule. Dense stepped masonry tiers for F3K depth conditioning.'
+    },
+    {
+      id: 'relic-cairn',
+      asset_id: 'prop-relic-cairn',
+      name: 'Theodolite Station & Relic Cairn',
+      category: 'ancient_ruin',
+      tree_group: 'Staging Palette (Available Ruins)',
+      stage_role: 'Surveyor Vellum\'s Geodetic Triangulation Point',
+      fragment_id: 'cartographers/epistemic-survey',
+      dimensions: [1.8, 1.8, 1.6],
+      source_triangles: 49658,
+      triangle_count: 994,
+      coacd_pieces: '7 CoACD Boxes (84 tris)',
+      overhang_constrained: true,
+      overhang_angle_deg: 45.0,
+      stl_path: 'library/stl_primitives/relic-cairn.stl',
+      image_2d: 'renders/primitives/relic-cairn.png',
+      collage_url: 'renders/primitives/relic-cairn-collage.png',
+      description: 'Weathered stone cairn marking geodetic boundary. Provides tactile rock relief and boundary marker.'
+    },
+    {
+      id: 'wish-stone-slab',
+      asset_id: 'prop-wish-stone-slab',
+      name: 'Basalt Wish-Stone Offering Slab',
+      category: 'ancient_ruin',
+      tree_group: 'Staging Palette (Available Ruins)',
+      stage_role: 'Monolithic Inscription Altar of the Grey Wind Forge',
+      fragment_id: 'grey-wind/wish-granting',
+      dimensions: [3.0, 8.0, 0.8],
+      source_triangles: 43844,
+      triangle_count: 900,
+      coacd_pieces: '8 CoACD Boxes (96 tris)',
+      overhang_constrained: true,
+      overhang_angle_deg: 45.0,
+      stl_path: 'library/stl_primitives/wish-stone-slab.stl',
+      image_2d: 'renders/primitives/wish-stone-slab.png',
+      collage_url: 'renders/primitives/wish-stone-slab-collage.png',
+      description: 'Chiseled dark basalt offering slab with engraved glyph channels and flat offering plinth.'
+    },
+    {
+      id: 'ruined-watchtower',
+      asset_id: 'prop-ruined-watchtower',
+      name: 'North Flank Ruined Watchtower',
+      category: 'ancient_ruin',
+      tree_group: 'Staging Palette (Available Ruins)',
+      stage_role: 'Overwatch Lookout & Ancient Bastion Wall',
+      fragment_id: 'grey-wind/named-ruins',
+      dimensions: [6.5, 6.5, 14.0],
+      source_triangles: 58927,
+      triangle_count: 2579,
+      coacd_pieces: '12 CoACD Boxes (144 tris)',
+      overhang_constrained: true,
+      overhang_angle_deg: 45.0,
+      stl_path: 'library/stl_primitives/ruined-watchtower.stl',
+      image_2d: 'renders/primitives/ruined-watchtower.png',
+      collage_url: 'renders/primitives/ruined-watchtower-collage.png',
+      description: 'Hollow cylindrical stone tower with broken crenelations and 45-degree corbelled base.'
+    },
+    {
+      id: 'ancient-ruin-terrace',
+      asset_id: 'prop-ancient-ruin-terrace',
+      name: 'Ancient Overhang Ruin Buttress',
+      category: 'ancient_ruin',
+      tree_group: 'Staging Palette (Available Ruins)',
+      stage_role: 'Stepped Retaining Wall & Cantilever Terrace',
+      fragment_id: 'grey-wind/named-ruins',
+      dimensions: [22.0, 22.0, 16.0],
+      source_triangles: 29928,
+      triangle_count: 1000,
+      coacd_pieces: '9 CoACD Boxes (108 tris)',
+      overhang_constrained: true,
+      overhang_angle_deg: 45.0,
+      stl_path: 'library/stl_primitives/ancient-ruin-terrace.stl',
+      image_2d: 'renders/primitives/ancient-ruin-terrace.png',
+      collage_url: 'renders/primitives/ancient-ruin-terrace-collage.png',
+      description: 'Stepped cyclopean buttress and corbelled terrace from an ancient unwritten era.'
+    }
+  ];
+
   function _findItemInScene(sc, itemId) {
-    if (!sc || !itemId) return null;
-    const prim = (sc.primitives || []).find((p) => p.id === itemId || p.asset_id === itemId);
-    if (prim) return { ...prim, _kind: 'primitive' };
-    const cast = (sc.cast || []).find((c) => c.id === itemId);
-    if (cast) return { ...cast, _kind: 'cast' };
+    if (!itemId) return null;
+    if (sc) {
+      const prim = (sc.primitives || []).find((p) => p.id === itemId || p.asset_id === itemId);
+      if (prim) return { ...prim, _kind: 'primitive' };
+      const cast = (sc.cast || []).find((c) => c.id === itemId);
+      if (cast) return { ...cast, _kind: 'cast' };
+    }
+    const staged = STAGING_PRIMITIVES_PALETTE.find((p) => p.id === itemId || p.asset_id === itemId);
+    if (staged) return { ...staged, _kind: 'primitive', _staged: true };
     return null;
   }
 
@@ -3164,6 +3267,89 @@ export function initViewer(config) {
     return '🪑';
   }
 
+  // --- Left Sidebar Vertical Collapsibility ---
+  function toggleSidebarSection(sectionId) {
+    if (typeof document === 'undefined') return false;
+    const section = document.getElementById(sectionId);
+    if (!section) return false;
+    const isColl = section.classList.toggle('is-collapsed');
+    const chevron = document.getElementById(`chevron-${sectionId}`);
+    if (chevron) {
+      chevron.textContent = isColl ? '▶' : '▼';
+    }
+    const header = section.querySelector('.sidebar-section-header');
+    if (header) {
+      if (isColl) header.classList.add('is-collapsed');
+      else header.classList.remove('is-collapsed');
+    }
+    try {
+      localStorage.setItem(`sq_sidebar_${sectionId}`, isColl ? 'collapsed' : 'expanded');
+    } catch (e) {}
+    return isColl;
+  }
+
+  function isSidebarSectionCollapsed(sectionId) {
+    if (typeof document === 'undefined') return false;
+    const section = document.getElementById(sectionId);
+    return section ? section.classList.contains('is-collapsed') : false;
+  }
+
+  // --- Multi-Representation Preview Facets ---
+  let currentPreviewFacet = 'sprite';
+
+  function setPreviewFacet(facet) {
+    currentPreviewFacet = facet || 'sprite';
+    if (typeof document !== 'undefined') {
+      const tabs = document.querySelectorAll('.sidebar-facet-tabs .facet-tab');
+      tabs.forEach((tab) => {
+        const f = tab.getAttribute('data-facet') || tab.id.replace('facet-tab-', '');
+        if (f === currentPreviewFacet) {
+          tab.classList.add('active');
+        } else {
+          tab.classList.remove('active');
+        }
+      });
+      const activeItem = getSelectedScenePrimitive();
+      if (activeItem) {
+        renderSidebarPreviewDOM(activeItem);
+      }
+    }
+    return currentPreviewFacet;
+  }
+
+  function getPreviewFacet() {
+    return currentPreviewFacet;
+  }
+
+  function getFacetImageForItem(item, facet) {
+    if (!item) return '';
+    const pid = item.id;
+    if (facet === 'collage') {
+      if (item.collage_url) return item.collage_url;
+      if (['ancient-bastion', 'relic-cairn', 'wish-stone-slab', 'ruined-watchtower', 'ancient-ruin-terrace'].includes(pid)) {
+        return `renders/primitives/${pid}-collage.png`;
+      }
+      return item.image_2d || '';
+    }
+    if (facet === 'depth') {
+      if (item.depth_url) return item.depth_url;
+      if (['ancient-bastion', 'relic-cairn', 'wish-stone-slab', 'ruined-watchtower', 'ancient-ruin-terrace'].includes(pid)) {
+        return `renders/primitives/${pid}.png`;
+      }
+      return item.image_2d || '';
+    }
+    if (facet === 'collider') {
+      if (item.collider_url) return item.collider_url;
+      if (item.collage_url) return item.collage_url;
+      if (['ancient-bastion', 'relic-cairn', 'wish-stone-slab', 'ruined-watchtower', 'ancient-ruin-terrace'].includes(pid)) {
+        return `renders/primitives/${pid}-collage.png`;
+      }
+      return item.image_2d || '';
+    }
+    // Default 'sprite':
+    return item.sprite_url || item.image_2d || (item._kind === 'cast' ? synthesizeForgeRender({ id: item.id, kind: 'actor', label: item.name }) : '');
+  }
+
   function renderSidebarPreviewDOM(item) {
     if (typeof document === 'undefined') return;
     const activeItem = item || getSelectedScenePrimitive();
@@ -3174,8 +3360,9 @@ export function initViewer(config) {
     const previewRole = document.getElementById('sidebar-preview-role');
     const previewMeta = document.getElementById('sidebar-preview-meta');
     const previewDesc = document.getElementById('sidebar-preview-desc');
+    const zoomHint = document.getElementById('sidebar-preview-zoom-hint');
 
-    let imgUrl = activeItem.image_2d || '';
+    let imgUrl = getFacetImageForItem(activeItem, currentPreviewFacet);
     if (!imgUrl && activeItem._kind === 'cast') {
       imgUrl = synthesizeForgeRender({
         id: activeItem.id,
@@ -3186,8 +3373,21 @@ export function initViewer(config) {
 
     if (previewImg) {
       previewImg.src = imgUrl;
-      previewImg.alt = activeItem.name || activeItem.id;
+      previewImg.alt = `${activeItem.name || activeItem.id} (${currentPreviewFacet})`;
     }
+
+    if (zoomHint) {
+      if (currentPreviewFacet === 'collage') {
+        zoomHint.textContent = '🔬 5-Cell Pipeline Review (Click to Enlarge)';
+      } else if (currentPreviewFacet === 'depth') {
+        zoomHint.textContent = '⛰️ 3D Depth Template (Click to Enlarge)';
+      } else if (currentPreviewFacet === 'collider') {
+        zoomHint.textContent = '📦 CoACD Convex Collider (Click to Enlarge)';
+      } else {
+        zoomHint.textContent = '🖼️ 2D Sprite Cutout (Click to Enlarge)';
+      }
+    }
+
     if (previewTitle) {
       previewTitle.textContent = activeItem.name || activeItem.id;
     }
@@ -3196,17 +3396,42 @@ export function initViewer(config) {
     }
     if (previewMeta) {
       const dims = activeItem.dimensions
-        ? `${activeItem.dimensions[0]}m × ${activeItem.dimensions[1]}m × ${activeItem.dimensions[2]}m`
+        ? `${activeItem.dimensions[0]}×${activeItem.dimensions[1]}×${activeItem.dimensions[2]}m`
         : 'Actor';
-      const tris = activeItem.triangle_count ? `${activeItem.triangle_count} tris` : 'NPC Sheet';
+      const isAncient = activeItem.category === 'ancient_ruin' ||
+        activeItem.overhang_constrained ||
+        (activeItem.overhang_angle_deg && activeItem.overhang_angle_deg <= 45.0) ||
+        ['ancient-bastion', 'relic-cairn', 'wish-stone-slab', 'ruined-watchtower', 'ancient-ruin-terrace'].includes(activeItem.id);
+
+      const overhangBadge = isAncient
+        ? `<span class="prim-badge" style="color: #34d399; border-color: #059669;" title="Strictly conforms to the 45° FDM cantilever overhang constraint">✓ 45° Overhang Rule</span>`
+        : (activeItem._kind !== 'cast' ? `<span class="prim-badge" style="color: #fbbf24; border-color: #d97706;" title="Modern human construction">⚠️ Modern Cantilever</span>` : '');
+
+      const trisStr = activeItem.source_triangles
+        ? `🔺 ${Number(activeItem.source_triangles).toLocaleString()} Source / ${Number(activeItem.triangle_count || 1000).toLocaleString()} LOD`
+        : (activeItem.triangle_count ? `🔺 ${Number(activeItem.triangle_count).toLocaleString()} tris` : (activeItem._kind === 'cast' ? 'NPC Sheet' : '3D Mesh'));
+
+      const coacdPieces = activeItem.coacd_pieces || (isAncient ? '6–16 CoACD Boxes' : '');
+      const colliderBadge = coacdPieces
+        ? `<span class="prim-badge" style="color: #60a5fa; border-color: #2563eb;" title="Physics Collision Mesh">📦 ${escapeHtml(coacdPieces)}</span>`
+        : '';
+
+      const groundBadge = activeItem._kind !== 'cast'
+        ? `<span class="prim-badge" style="color: #a78bfa; border-color: #7c3aed;" title="Base Grounded at Z=0.0m with Watertight Solid Skirt">⚓ Z=0.0m Solid Skirt</span>`
+        : '';
+
       const posStr = Array.isArray(activeItem.world_pos)
         ? `📍 (${activeItem.world_pos[0]}, ${activeItem.world_pos[1]})m`
-        : '';
+        : '📦 Staged Palette';
+
       previewMeta.innerHTML = `
         <span class="prim-badge prim-badge-dim" title="Metric Bounding Box">📐 ${escapeHtml(dims)}</span>
-        <span class="prim-badge prim-badge-tris" title="3D STL Mesh Complexity">🔺 ${escapeHtml(tris)}</span>
+        ${overhangBadge}
+        <span class="prim-badge prim-badge-tris" title="Mesh Complexity">${escapeHtml(trisStr)}</span>
+        ${colliderBadge}
+        ${groundBadge}
         <span class="prim-badge prim-badge-frag" title="Source Lore Fragment">📜 ${escapeHtml(activeItem.fragment_id || '')}</span>
-        ${posStr ? `<span class="prim-badge" style="color:#34d399; border-color:#065f46;">${escapeHtml(posStr)}</span>` : ''}
+        <span class="prim-badge" style="color: #38bdf8; border-color: #0369a1;" title="Map Placement">${escapeHtml(posStr)}</span>
       `;
     }
     if (previewDesc) {
@@ -3376,6 +3601,35 @@ export function initViewer(config) {
         `;
       }
 
+      // Staging Palette (Available Outdoor Ruins Catalogue)
+      treeHtml += `
+        <details class="tree-folder" open>
+          <summary class="tree-folder-summary">
+            <span class="tree-folder-title">📦 Staging Palette (Outdoor Ruins)</span>
+            <span class="tree-folder-count">${STAGING_PRIMITIVES_PALETTE.length}</span>
+          </summary>
+          <div class="tree-folder-children">
+            ${STAGING_PRIMITIVES_PALETTE.map((p) => {
+              const placed = (sc.primitives || []).find((pr) => pr.id === p.id);
+              const isActive = p.id === selectedPrimitiveId;
+              const dims = p.dimensions ? `${p.dimensions[0]}×${p.dimensions[1]}×${p.dimensions[2]}m` : '';
+              const statusTag = placed && Array.isArray(placed.world_pos)
+                ? `📍 (${placed.world_pos[0]}, ${placed.world_pos[1]})m`
+                : `📦 Ready to Stage`;
+              return `
+                <div class="tree-node-item ${isActive ? 'active' : ''}" data-node-id="${escapeHtml(p.id)}" data-primitive-id="${escapeHtml(p.id)}" data-asset-id="${escapeHtml(p.asset_id || p.id)}" onclick="window.viewer && window.viewer.selectScenePrimitive && window.viewer.selectScenePrimitive('${escapeHtml(p.id)}')">
+                  <span class="tree-node-icon">🏛️</span>
+                  <div class="tree-node-text">
+                    <div class="tree-node-label">${escapeHtml(p.name)}</div>
+                    <div class="tree-node-sub">${escapeHtml(p.id)}.stl · ${escapeHtml(dims)} · ${statusTag}</div>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </details>
+      `;
+
       if (currentPrimitiveFilter === 'all' && Array.isArray(sc.cast) && sc.cast.length > 0) {
         treeHtml += `
           <details class="tree-folder" open>
@@ -3415,9 +3669,10 @@ export function initViewer(config) {
     renderSidebarPreviewDOM(getSelectedScenePrimitive());
   }
 
-  function openPrimitiveLightbox(primitiveId) {
+  function openPrimitiveLightbox(primitiveId, facet) {
     if (typeof document === 'undefined') return;
     const targetId = primitiveId || selectedPrimitiveId;
+    const activeFacet = facet || currentPreviewFacet || 'sprite';
     const sc = getCurrentScene();
     const prim = _findItemInScene(sc, targetId) ||
       Object.values(scenesManifest.scenes_by_id || {}).flatMap((s) => s.primitives).find((p) => p.id === targetId);
@@ -3429,25 +3684,42 @@ export function initViewer(config) {
     const detailsEl = document.getElementById('lightbox-details');
     if (!modal || !imgEl || !detailsEl) return;
 
-    const imgUrl = prim.image_2d || synthesizeForgeRender({ id: prim.id, kind: 'actor', label: prim.name });
+    const imgUrl = getFacetImageForItem(prim, activeFacet);
     imgEl.src = imgUrl;
-    imgEl.alt = prim.name;
+    imgEl.alt = `${prim.name} (${activeFacet})`;
 
     const dims = prim.dimensions ? `${prim.dimensions[0]}m × ${prim.dimensions[1]}m × ${prim.dimensions[2]}m` : 'Character Sheet';
+    const trisStr = prim.source_triangles
+      ? `${Number(prim.source_triangles).toLocaleString()} Source / ${Number(prim.triangle_count || 1000).toLocaleString()} LOD`
+      : `${prim.triangle_count || 'N/A'}`;
+    const coacdStr = prim.coacd_pieces || '6–16 CoACD Boxes';
+    const overhangStr = (prim.category === 'ancient_ruin' || prim.overhang_constrained || ['ancient-bastion', 'relic-cairn', 'wish-stone-slab', 'ruined-watchtower', 'ancient-ruin-terrace'].includes(prim.id))
+      ? '✓ 45° Cantilever Overhang Compliant'
+      : '⚠️ Modern Construction';
+
     detailsEl.innerHTML = `
-      <div class="lightbox-title">${escapeHtml(prim.name)}</div>
-      <div class="lightbox-meta">
-        <span class="prim-badge prim-badge-dim">📐 Dimensions: ${dims}</span>
-        <span class="prim-badge prim-badge-tris">🔺 Triangles: ${prim.triangle_count || 'N/A'}</span>
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; flex-wrap: wrap;">
+        <div class="lightbox-title">${escapeHtml(prim.name)}</div>
+        <div class="sidebar-facet-tabs" style="margin: 0; min-width: 260px;">
+          <button class="facet-tab ${activeFacet === 'sprite' ? 'active' : ''}" onclick="window.viewer && window.viewer.openPrimitiveLightbox('${escapeHtml(prim.id)}', 'sprite')">🖼️ Sprite</button>
+          <button class="facet-tab ${activeFacet === 'depth' ? 'active' : ''}" onclick="window.viewer && window.viewer.openPrimitiveLightbox('${escapeHtml(prim.id)}', 'depth')">⛰️ 3D Depth</button>
+          <button class="facet-tab ${activeFacet === 'collage' ? 'active' : ''}" onclick="window.viewer && window.viewer.openPrimitiveLightbox('${escapeHtml(prim.id)}', 'collage')">🔬 5-Cell Collage</button>
+          <button class="facet-tab ${activeFacet === 'collider' ? 'active' : ''}" onclick="window.viewer && window.viewer.openPrimitiveLightbox('${escapeHtml(prim.id)}', 'collider')">📦 Collider</button>
+        </div>
+      </div>
+      <div class="lightbox-meta" style="margin-top: 6px;">
+        <span class="prim-badge prim-badge-dim">📐 Dimensions: ${escapeHtml(dims)}</span>
+        <span class="prim-badge prim-badge-tris">🔺 Triangles: ${escapeHtml(trisStr)}</span>
+        <span class="prim-badge" style="color: #60a5fa; border-color: #2563eb;">📦 Collider: ${escapeHtml(coacdStr)}</span>
+        <span class="prim-badge" style="color: #34d399; border-color: #059669;">${escapeHtml(overhangStr)}</span>
         <span class="prim-badge prim-badge-frag">📜 Fragment: ${escapeHtml(prim.fragment_id || '')}</span>
-        <span class="prim-badge" style="color: #a855f7; border-color: #7e22ce;">🏷️ Role: ${escapeHtml(prim.stage_role || prim.role || prim.category || '')}</span>
       </div>
       <div class="lightbox-desc">${escapeHtml(prim.description)}</div>
       <div class="lightbox-prompt-box">
         <div class="prompt-box-label">BLACK FOREST LABS FLUX 3 KLEIN DIFFUSION PROMPT SPECIFICATION:</div>
-        <div class="prompt-box-content">orthographic top-down 2.5D isometric game asset cutout, ${escapeHtml(prim.name)}, ${escapeHtml(prim.description)}, source fragment: ${escapeHtml(prim.fragment_id || '')}, isolated on neutral solid grey background (#707070), subtle directional studio lighting, soft ground contact occlusion shadow, crisp 16-bit painterly texture, highly detailed tactile physical prop, Black Forest Labs Flux 3 Klein render, 1024x1024</div>
+        <div class="prompt-box-content">${escapeHtml(prim.diffusion_prompt || (selectedAsset?.diffusion_prompt) || 'Awaiting compile...')}</div>
       </div>
-      <div class="lightbox-actions">
+      <div class="lightbox-actions" style="margin-top: 10px; display: flex; gap: 8px;">
         <button class="header-btn" onclick="window.viewer && window.viewer.forgeScenePrimitive && window.viewer.forgeScenePrimitive('${escapeHtml(prim.id)}')">✨ Dispatch to Asset Forge (Flux 3 Klein)</button>
         <button class="header-btn" style="background: #2a241e; color: #e6dfd5;" onclick="window.viewer && window.viewer.closePrimitiveLightbox && window.viewer.closePrimitiveLightbox()">✕ Close Inspection</button>
       </div>
@@ -4388,6 +4660,11 @@ export function initViewer(config) {
     togglePrimitivesMenu,
     toggleSidebar,
     isSidebarCollapsed,
+    toggleSidebarSection,
+    isSidebarSectionCollapsed,
+    setPreviewFacet,
+    getPreviewFacet,
+    getStagingPalette: () => [...STAGING_PRIMITIVES_PALETTE],
     openPrimitivesMenu,
     closePrimitivesMenu,
     filterPrimitives,
@@ -4483,6 +4760,11 @@ export function initViewer(config) {
     globalRoot.togglePrimitivesMenu = togglePrimitivesMenu;
     globalRoot.toggleSidebar = toggleSidebar;
     globalRoot.isSidebarCollapsed = isSidebarCollapsed;
+    globalRoot.toggleSidebarSection = toggleSidebarSection;
+    globalRoot.isSidebarSectionCollapsed = isSidebarSectionCollapsed;
+    globalRoot.setPreviewFacet = setPreviewFacet;
+    globalRoot.getPreviewFacet = getPreviewFacet;
+    globalRoot.getStagingPalette = () => [...STAGING_PRIMITIVES_PALETTE];
     globalRoot.openPrimitivesMenu = openPrimitivesMenu;
     globalRoot.closePrimitivesMenu = closePrimitivesMenu;
     globalRoot.filterPrimitives = filterPrimitives;
