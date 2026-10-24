@@ -91,6 +91,10 @@ EVENT_KINDS = (
     "gate.verdict",      # the deterministic gate records a judgment
     "speak",             # a runtime turn: dialogue generated
     "demand",            # an NPC demands a well-written role
+    "fragment.synthesized", # cartographer/model mints a provisional field note
+    "fragment.curated",     # human edits fragment; grants Canon Warrant & standing
+    "fragment.criticized",  # human deletes fragment; records negative criticism tombstone
+    "domain.saturated",     # domain reaches saturation threshold; canon locked
 )
 
 #: The deterministic gate's answer. `unevaluated` is a first-class outcome and
@@ -271,8 +275,8 @@ class EventRecord:
             raise SchemaError(f"seq must be >= 0, got {self.seq}")
         _one_of(self.kind, EVENT_KINDS, "kind")
         _one_of(self.actor, ACTORS, "actor")
-        if not self.entity.startswith("npc/"):
-            raise SchemaError(f"entity must be 'npc/<slug>', got {self.entity!r}")
+        if not (self.entity.startswith("npc/") or self.entity.startswith("prop/") or self.entity.startswith("fragment/")):
+            raise SchemaError(f"entity must be 'npc/<slug>', 'prop/<slug>', or 'fragment/<slug>', got {self.entity!r}")
         if self.actor == "model" and not self.provenance:
             raise SchemaError("a model-authored event must carry provenance (sidecar)")
         if self.kind == "role.authored" and self.gate is None:
@@ -285,7 +289,7 @@ class EventRecord:
 
 #: Kinds that change entity state. Everything else is a record. Kept explicit
 #: so adding a kind cannot silently start mutating state.
-FOLDERS = ("entity.seeded", "role.authored", "grudge.changed", "standing.granted", "heal")
+FOLDERS = ("entity.seeded", "role.authored", "grudge.changed", "standing.granted", "heal", "fragment.curated")
 
 
 def fold_events(events) -> NPCEntity:
@@ -326,7 +330,7 @@ def fold_events(events) -> NPCEntity:
                         text=ev.data.get("text", ""))
         elif ev.kind == "grudge.changed":
             grudge = _require(ev.data, "grudge", (int, float))
-        elif ev.kind == "standing.granted":
+        elif ev.kind in ("standing.granted", "fragment.curated"):
             role = replace(role, state="restored")
 
     if state is None:

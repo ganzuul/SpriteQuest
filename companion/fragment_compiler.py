@@ -493,7 +493,7 @@ def audit_scene_coherence(
     asset_id = getattr(asset, "id", None) or (asset.get("id") if isinstance(asset, dict) else "unknown_asset")
     label = getattr(asset, "label", None) or (asset.get("label") if isinstance(asset, dict) else asset_id)
     mass_kg = getattr(asset, "mass_kg", None) if not isinstance(asset, dict) else asset.get("mass_kg")
-    fragment_id = getattr(asset, "fragment_id", None) or (asset.get("fragment_id") if isinstance(asset, dict) else "")
+    fragment_id = getattr(asset, "fragment_id", None) or (asset.get("fragment_id") if isinstance(asset, dict) else "") or ""
 
     backpressure_clauses = [
         f"grounded upon {zone_ctx.substrate_material} in {zone_ctx.zone_name}",
@@ -911,7 +911,7 @@ def select_asset_recipe(asset: Any) -> tuple[str, dict[str, Any]]:
     asset_id = getattr(asset, "id", None) or (asset.get("id") if isinstance(asset, dict) else "")
     label = getattr(asset, "label", None) or (asset.get("label") if isinstance(asset, dict) else "")
     template = getattr(asset, "visual_template", None) or (asset.get("visual_template") if isinstance(asset, dict) else "")
-    fragment_id = getattr(asset, "fragment_id", None) or (asset.get("fragment_id") if isinstance(asset, dict) else "")
+    fragment_id = getattr(asset, "fragment_id", None) or (asset.get("fragment_id") if isinstance(asset, dict) else "") or ""
 
     combined = f"{template} {asset_id} {label} {fragment_id}".lower()
 
@@ -1065,7 +1065,7 @@ def compile_asset_brief(
 
     asset_id = getattr(asset, "id", None) or (asset.get("id") if isinstance(asset, dict) else "unknown_asset")
     label = getattr(asset, "label", None) or (asset.get("label") if isinstance(asset, dict) else asset_id)
-    fragment_id = getattr(asset, "fragment_id", None) or (asset.get("fragment_id") if isinstance(asset, dict) else "")
+    fragment_id = getattr(asset, "fragment_id", None) or (asset.get("fragment_id") if isinstance(asset, dict) else "") or ""
     mass_kg = getattr(asset, "mass_kg", None) if not isinstance(asset, dict) else asset.get("mass_kg")
     bounds = getattr(asset, "bounds", None) if not isinstance(asset, dict) else asset.get("bounds", {})
     verbs = getattr(asset, "interactive_verbs", None) if not isinstance(asset, dict) else asset.get("interactive_verbs", [])

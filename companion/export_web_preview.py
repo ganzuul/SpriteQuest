@@ -1464,6 +1464,17 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
           <button class="btn-forge-render" id="btn-forge-render" onclick="window.viewer && window.viewer.renderSelectedAssetInForge && window.viewer.renderSelectedAssetInForge()">
             ✨ Render in Asset Forge
           </button>
+          <div class="cartographer-actions" style="display: flex; gap: 6px; margin-top: 6px;">
+            <button class="btn-forge-render btn-secondary" id="btn-cartographer-survey" style="font-size: 10px; padding: 5px 8px; flex: 1;" onclick="window.viewer && window.viewer.surveyAssetCoherence && window.viewer.surveyAssetCoherence()">
+              🧭 Survey
+            </button>
+            <button class="btn-forge-render btn-secondary" id="btn-cartographer-curate" style="font-size: 10px; padding: 5px 8px; flex: 1;" onclick="window.viewer && window.viewer.curateAssetFragment && window.viewer.curateAssetFragment()">
+              ✒️ Curate
+            </button>
+            <button class="btn-forge-render btn-secondary" id="btn-cartographer-criticize" style="font-size: 10px; padding: 5px 8px; flex: 1;" onclick="window.viewer && window.viewer.criticizeAssetFragment && window.viewer.criticizeAssetFragment()">
+              🗑️ Criticize
+            </button>
+          </div>
         </div>
       </div>
 

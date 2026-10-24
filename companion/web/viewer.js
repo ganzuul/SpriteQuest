@@ -2291,6 +2291,20 @@ export function initViewer(config) {
     if (selectedAsset && selectedAsset.id === id) {
       selectAsset(id);
     }
+
+    if (typeof fetch === 'function') {
+      try {
+        fetch('http://127.0.0.1:8788/cartographers/survey', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prop_id: id, scene_id: p.zone_context?.scene_id || 'customs-house', asset: p }),
+          signal: typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(1500) : undefined,
+        }).then((r) => r.json()).then((data) => {
+          if (data && data.ok) log('CARTOGRAPHER', `Synced survey for '${id}' with Companion Forge Service.`);
+        }).catch(() => {});
+      } catch (_) {}
+    }
+
     return {
       success: true,
       assetId: id,
@@ -2334,6 +2348,20 @@ export function initViewer(config) {
     if (selectedAsset && selectedAsset.id === id) {
       selectAsset(id);
     }
+
+    if (typeof fetch === 'function') {
+      try {
+        fetch('http://127.0.0.1:8788/cartographers/curate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fragment_id: fid, detail: refinedDetail }),
+          signal: typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(1500) : undefined,
+        }).then((r) => r.json()).then((data) => {
+          if (data && data.ok) log('CARTOGRAPHER', `Synced curation for '${fid}' with Companion Forge Service.`);
+        }).catch(() => {});
+      } catch (_) {}
+    }
+
     return {
       success: true,
       assetId: id,
@@ -2376,6 +2404,20 @@ export function initViewer(config) {
     if (selectedAsset && selectedAsset.id === id) {
       selectAsset(id);
     }
+
+    if (typeof fetch === 'function') {
+      try {
+        fetch('http://127.0.0.1:8788/cartographers/criticize', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fragment_id: fid, constraint: critMsg }),
+          signal: typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(1500) : undefined,
+        }).then((r) => r.json()).then((data) => {
+          if (data && data.ok) log('CARTOGRAPHER', `Synced criticism for '${fid}' with Companion Forge Service.`);
+        }).catch(() => {});
+      } catch (_) {}
+    }
+
     return {
       success: true,
       assetId: id,

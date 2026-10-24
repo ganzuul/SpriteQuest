@@ -35,10 +35,20 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
+REPO_ROOT = HERE.parent
 sys.path.insert(0, str(HERE))
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 from schemas import (  # noqa: E402  (path first, by design)
     EventRecord, Gate, SchemaError, fold_events,
+)
+from companion.fragment_compiler import (
+    CartographersLedger,
+    audit_scene_coherence,
+    load_fragment,
+    resolve_scene_zone_context,
+    select_asset_recipe,
 )
 
 DEFAULT_STATE = Path.home() / ".local" / "state" / "spritequest" / "hollis-ledger.jsonl"
@@ -238,7 +248,18 @@ def _record(data: dict) -> EventRecord:
         raise Refused(str(exc)) from exc
 
 
-def make_handler(ledger: Ledger):
+def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | None = None):
+    if cartographers_ledger is None:
+        cart_path = REPO_ROOT / "library" / "cartographers_ledger.json"
+        frags_path = REPO_ROOT / "library" / "fragments"
+        cartographers_ledger = CartographersLedger(ledger_path=cart_path, fragments_dir=frags_path)
+
+    known_routes = [
+        "/health", "/roster", "/guidance", "/ledger", "/events",
+        "/cartographers/status", "/cartographers/ledger",
+        "/cartographers/survey", "/cartographers/curate", "/cartographers/criticize",
+    ]
+
     class Handler(BaseHTTPRequestHandler):
         protocol_version = "HTTP/1.1"
 
@@ -272,35 +293,224 @@ def make_handler(ledger: Ledger):
             elif route == "/ledger":
                 self._send(200, {"count": len(ledger.events),
                                  "events": [asdict(e) for e in ledger.events]})
+            elif route == "/cartographers/status":
+                entries = cartographers_ledger.entries
+                counts = {"field_note": 0, "curated": 0, "criticized": 0, "canon": 0}
+                for e in entries.values():
+                    m = e.get("maturity", "field_note")
+                    counts[m] = counts.get(m, 0) + 1
+                active_criticisms = [
+                    e.get("criticism_constraint") for e in entries.values()
+                    if e.get("maturity") == "criticized" and e.get("criticism_constraint")
+                ]
+                self._send(200, {
+                    "ok": True,
+                    "total_entries": len(entries),
+                    "counts": counts,
+                    "active_criticisms": active_criticisms,
+                    "parsimony_config": cartographers_ledger.data.get("parsimony_config", {}),
+                })
+            elif route == "/cartographers/ledger":
+                warrants = [e.get("warrant_id") for e in cartographers_ledger.entries.values() if e.get("warrant_id")]
+                self._send(200, {
+                    "ok": True,
+                    "entries": cartographers_ledger.entries,
+                    "warrants": warrants,
+                    "parsimony_config": cartographers_ledger.data.get("parsimony_config", {}),
+                })
             else:
                 self._send(404, {"error": "unknown route",
                                  "route": route,
-                                 "known": ["/health", "/roster", "/guidance",
-                                           "/ledger", "/events"]})
+                                 "known": known_routes})
 
         def do_POST(self):
             route = self.path.split("?", 1)[0].rstrip("/")
-            if route != "/events":
-                self._send(404, {"error": "unknown route", "route": route,
-                                 "known": ["/events"]})
-                return
-            try:
-                length = int(self.headers.get("Content-Length") or 0)
-                payload = json.loads(self.rfile.read(length) or b"{}")
-                receipts = ledger.append(payload)
-            except Refused as exc:
-                self._send(400, {"error": "event refused", "reason": str(exc),
-                                 "law": "every event must be a record the "
-                                        "schema can trust; a role needs a gate "
-                                        "verdict, a model needs provenance"})
-            except Conflict as exc:
-                self._send(409, {"error": "append refused", "reason": str(exc)})
-            except (json.JSONDecodeError, ValueError) as exc:
-                self._send(400, {"error": "unreadable body", "reason": str(exc)})
+            if route == "/events":
+                try:
+                    length = int(self.headers.get("Content-Length") or 0)
+                    payload = json.loads(self.rfile.read(length) or b"{}")
+                    receipts = ledger.append(payload)
+                except Refused as exc:
+                    self._send(400, {"error": "event refused", "reason": str(exc),
+                                     "law": "every event must be a record the "
+                                            "schema can trust; a role needs a gate "
+                                            "verdict, a model needs provenance"})
+                except Conflict as exc:
+                    self._send(409, {"error": "append refused", "reason": str(exc)})
+                except (json.JSONDecodeError, ValueError) as exc:
+                    self._send(400, {"error": "unreadable body", "reason": str(exc)})
+                else:
+                    self._send(200, {"appended": len(receipts),
+                                     "receipts": receipts,
+                                     "lines": len(ledger.events)})
+            elif route == "/cartographers/survey":
+                try:
+                    length = int(self.headers.get("Content-Length") or 0)
+                    payload = json.loads(self.rfile.read(length) or b"{}")
+                    prop_id = payload.get("prop_id")
+                    scene_id = payload.get("scene_id", "customs-house")
+                    asset_data = payload.get("asset", {})
+                    if prop_id:
+                        fp_path = REPO_ROOT / "library" / "floorplans" / f"{scene_id}.json"
+                        if fp_path.is_file():
+                            fp_json = json.loads(fp_path.read_text(encoding="utf-8"))
+                            for sock in fp_json.get("prop_sockets", []):
+                                if sock.get("id") == prop_id:
+                                    merged = dict(sock)
+                                    merged.update(asset_data)
+                                    asset_data = merged
+                                    break
+                    if not asset_data:
+                        asset_data = {
+                            "id": prop_id or "unknown_prop",
+                            "label": prop_id or "Unknown Prop",
+                            "mass_kg": 50.0,
+                            "world_x": 45.0,
+                            "world_y": 55.0,
+                            "world_z": 6.0,
+                            "bounds": {"width": 1.0, "depth": 1.0, "height": 1.0},
+                            "visual_template": "generic_prop",
+                        }
+
+                    zone_ctx = resolve_scene_zone_context(asset_data, scene_id=scene_id)
+                    recipe_name, recipe = select_asset_recipe(asset_data)
+                    frag_id = asset_data.get("fragment_id", "")
+                    primary_frag = load_fragment(frag_id, fragments_dir=cartographers_ledger.fragments_dir) if frag_id in recipe.get("allowed_fragments", set()) else None
+                    scene_backpressure, conflicts = audit_scene_coherence(asset_data, recipe_name, primary_frag, zone_ctx)
+
+                    synthesized = []
+                    for c in conflicts:
+                        can_mint, reason, sat = cartographers_ledger.can_mint_fragment(c, recipe_name, recipe)
+                        if can_mint:
+                            new_frag = cartographers_ledger.synthesize_field_note_fragment(
+                                conflict=c,
+                                asset=asset_data,
+                                recipe_name=recipe_name,
+                                recipe=recipe,
+                                zone_ctx=zone_ctx,
+                            )
+                            if new_frag:
+                                synthesized.append(new_frag)
+                                ledger.append({
+                                    "kind": "fragment.synthesized",
+                                    "entity": f"fragment/{new_frag['id']}",
+                                    "actor": "model",
+                                    "data": {
+                                        "prop_id": prop_id or asset_data.get("id"),
+                                        "fragment_id": new_frag["id"],
+                                        "conflict_id": c.conflict_id,
+                                        "standing_tier": "provisional",
+                                        "standing_score": 0.40,
+                                    },
+                                    "gate": {"rule": "cartographer_parsimony", "verdict": "pass"},
+                                    "provenance": {"source": "cartographers/survey", "zone": zone_ctx.zone_id},
+                                })
+
+                    sat = cartographers_ledger.compute_archetype_saturation(recipe_name, recipe)
+                    self._send(200, {
+                        "ok": True,
+                        "prop_id": prop_id or asset_data.get("id"),
+                        "zone_context": asdict(zone_ctx),
+                        "conflicts": [asdict(c) for c in conflicts],
+                        "synthesized": synthesized,
+                        "saturation": sat,
+                    })
+                except Exception as exc:
+                    self._send(400, {"error": "survey failure", "reason": str(exc)})
+            elif route == "/cartographers/curate":
+                try:
+                    length = int(self.headers.get("Content-Length") or 0)
+                    payload = json.loads(self.rfile.read(length) or b"{}")
+                    frag_id = payload.get("fragment_id")
+                    if not frag_id:
+                        self._send(400, {"error": "missing fragment_id"})
+                        return
+
+                    curated_detail = payload.get("detail")
+                    frag_path = cartographers_ledger.fragments_dir / f"{frag_id}.json"
+                    if curated_detail and frag_path.is_file():
+                        f_data = json.loads(frag_path.read_text(encoding="utf-8"))
+                        f_data["detail"] = curated_detail
+                        frag_path.write_text(json.dumps(f_data, indent=2) + "\n", encoding="utf-8")
+
+                    cartographers_ledger.sync_with_filesystem(persist=True)
+                    entry = cartographers_ledger.entries.get(frag_id, {})
+                    warrant_id = entry.get("warrant_id") or f"WARRANT-{frag_id.replace('/', '-').upper()}-CURATED"
+                    entry["warrant_id"] = warrant_id
+                    entry["maturity"] = "curated"
+                    cartographers_ledger.save()
+
+                    ledger.append({
+                        "kind": "fragment.curated",
+                        "entity": f"fragment/{frag_id}",
+                        "actor": "human",
+                        "data": {
+                            "fragment_id": frag_id,
+                            "warrant_id": warrant_id,
+                            "standing_tier": "warranted",
+                            "standing_score": 0.90,
+                        },
+                        "gate": {"rule": "human_authorial_curation", "verdict": "pass"},
+                        "provenance": {"curator": "human"},
+                    })
+
+                    self._send(200, {
+                        "ok": True,
+                        "fragment_id": frag_id,
+                        "warrant_id": warrant_id,
+                        "maturity": "curated",
+                        "standing_score": 0.90,
+                        "entry": entry,
+                    })
+                except Exception as exc:
+                    self._send(400, {"error": "curation failure", "reason": str(exc)})
+            elif route == "/cartographers/criticize":
+                try:
+                    length = int(self.headers.get("Content-Length") or 0)
+                    payload = json.loads(self.rfile.read(length) or b"{}")
+                    frag_id = payload.get("fragment_id")
+                    if not frag_id:
+                        self._send(400, {"error": "missing fragment_id"})
+                        return
+
+                    constraint = payload.get("constraint") or f"Criticized by author: reject {frag_id} formulation"
+                    frag_path = cartographers_ledger.fragments_dir / f"{frag_id}.json"
+                    if frag_path.is_file():
+                        frag_path.unlink()
+
+                    cartographers_ledger.sync_with_filesystem(persist=True)
+                    entry = cartographers_ledger.entries.get(frag_id, {})
+                    entry["maturity"] = "criticized"
+                    entry["criticism_constraint"] = constraint
+                    cartographers_ledger.save()
+
+                    ledger.append({
+                        "kind": "fragment.criticized",
+                        "entity": f"fragment/{frag_id}",
+                        "actor": "human",
+                        "data": {
+                            "fragment_id": frag_id,
+                            "standing_tier": "criticized",
+                            "standing_score": 0.55,
+                            "constraint": constraint,
+                        },
+                        "gate": {"rule": "human_authorial_criticism", "verdict": "pass"},
+                        "provenance": {"critic": "human"},
+                    })
+
+                    self._send(200, {
+                        "ok": True,
+                        "fragment_id": frag_id,
+                        "maturity": "criticized",
+                        "standing_score": 0.55,
+                        "constraint": constraint,
+                        "entry": entry,
+                    })
+                except Exception as exc:
+                    self._send(400, {"error": "criticism failure", "reason": str(exc)})
             else:
-                self._send(200, {"appended": len(receipts),
-                                 "receipts": receipts,
-                                 "lines": len(ledger.events)})
+                self._send(404, {"error": "unknown route", "route": route,
+                                 "known": known_routes})
 
     return Handler
 

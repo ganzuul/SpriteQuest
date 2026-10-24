@@ -9,6 +9,7 @@ file in a temp dir -- no mocks of the log, because the log is the thing.
 from __future__ import annotations
 
 import json
+import shutil
 import sys
 import tempfile
 import threading
@@ -18,9 +19,13 @@ from http.server import ThreadingHTTPServer
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
+REPO_ROOT = HERE.parent
 sys.path.insert(0, str(HERE))
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 from forge_service import Ledger, make_handler  # noqa: E402
+from companion.fragment_compiler import CartographersLedger
 
 
 def _request(url: str, payload: dict | None = None) -> tuple[int, dict]:
@@ -43,10 +48,19 @@ class ForgeCase(unittest.TestCase):
     def setUpClass(cls):
         cls.tmp = tempfile.TemporaryDirectory(prefix="forge-test-")
         cls.state = Path(cls.tmp.name) / "ledger.jsonl"
+        cls.cart_ledger_path = Path(cls.tmp.name) / "cartographers_ledger.json"
+        cls.frags_dir = Path(cls.tmp.name) / "fragments"
+        real_frags = REPO_ROOT / "library" / "fragments"
+        if real_frags.is_dir():
+            shutil.copytree(real_frags, cls.frags_dir)
+        else:
+            cls.frags_dir.mkdir(parents=True)
+        cls.cart_ledger = CartographersLedger(ledger_path=cls.cart_ledger_path, fragments_dir=cls.frags_dir)
+
         seed_dir = HERE / "npcs" if (HERE / "npcs").exists() else HERE.parent / "npcs"
         cls.ledger = Ledger(cls.state, seed_dir=seed_dir)
         cls.server = ThreadingHTTPServer(("127.0.0.1", 0),
-                                         make_handler(cls.ledger))
+                                         make_handler(cls.ledger, cartographers_ledger=cls.cart_ledger))
         cls.port = cls.server.server_address[1]
         threading.Thread(target=cls.server.serve_forever,
                          daemon=True).start()
@@ -245,6 +259,80 @@ class TestRefusalsAreLines(ForgeCase):
         guidance = ledger.guidance()            # the call that raised KeyError
         self.assertIn("The Unregistered", guidance["guidance"])
         self.assertIn("cannot be folded", guidance["guidance"])
+
+
+class TestCartographersLedgerBridge(ForgeCase):
+    """The Bureau of the Unwritten Atlas bridge: survey, curate, and criticize over HTTP."""
+
+    def test_cartographers_status_and_ledger(self):
+        code, body = self.get("/cartographers/status")
+        self.assertEqual(code, 200)
+        self.assertTrue(body["ok"])
+        self.assertIn("counts", body)
+        self.assertIn("parsimony_config", body)
+
+        code, ledger_body = self.get("/cartographers/ledger")
+        self.assertEqual(code, 200)
+        self.assertTrue(ledger_body["ok"])
+        self.assertIn("entries", ledger_body)
+
+    def test_survey_curate_criticize_lifecycle(self):
+        # 1. Survey the glass stasis coffin in customs house
+        code, survey_body = self.post("/cartographers/survey", {
+            "prop_id": "glass_stasis_coffin",
+            "scene_id": "customs-house",
+            "asset": {
+                "id": "glass_stasis_coffin",
+                "fragment_id": "space-vampires/glass-stasis-coffin",
+                "label": "Hexagonal Borosilicate Glass Stasis Coffin",
+                "mass_kg": 280.0,
+                "world_x": 44.0,
+                "world_y": 84.0,
+                "world_z": 6.0,
+                "bounds": {"width": 0.8, "depth": 2.3, "height": 0.9},
+                "visual_template": "glass_coffin",
+            }
+        })
+        self.assertEqual(code, 200)
+        self.assertTrue(survey_body["ok"])
+        conflicts = survey_body["conflicts"]
+        self.assertGreaterEqual(len(conflicts), 1)
+
+        frag_id = "cartographers/bridge-glass-stasis-coffin-forfeit-corridor"
+        # 2. Curate the fragment
+        code, curate_body = self.post("/cartographers/curate", {
+            "fragment_id": frag_id,
+            "detail": "Carefully calibrated borosilicate glass stasis coffin with brass imperial clearance seal.",
+        })
+        self.assertEqual(code, 200)
+        self.assertTrue(curate_body["ok"])
+        self.assertEqual(curate_body["maturity"], "curated")
+        self.assertEqual(curate_body["standing_score"], 0.90)
+        self.assertIn("WARRANT-", curate_body["warrant_id"])
+
+        # Check that Hollis ledger recorded the curation
+        code, ledger_res = self.get("/ledger")
+        self.assertEqual(code, 200)
+        curated_event = next((e for e in ledger_res["events"] if e.get("kind") == "fragment.curated"), None)
+        self.assertIsNotNone(curated_event)
+        self.assertEqual(curated_event["entity"], f"fragment/{frag_id}")
+
+        # 3. Criticize the fragment
+        code, crit_body = self.post("/cartographers/criticize", {
+            "fragment_id": frag_id,
+            "constraint": "Rejected by author: no redundant space relics in customs house",
+        })
+        self.assertEqual(code, 200)
+        self.assertTrue(crit_body["ok"])
+        self.assertEqual(crit_body["maturity"], "criticized")
+        self.assertEqual(crit_body["standing_score"], 0.55)
+
+        # Check that Hollis ledger recorded the criticism
+        code, ledger_res2 = self.get("/ledger")
+        self.assertEqual(code, 200)
+        crit_event = next((e for e in ledger_res2["events"] if e.get("kind") == "fragment.criticized"), None)
+        self.assertIsNotNone(crit_event)
+        self.assertEqual(crit_event["entity"], f"fragment/{frag_id}")
 
 
 if __name__ == "__main__":
