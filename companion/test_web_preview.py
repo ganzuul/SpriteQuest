@@ -105,6 +105,12 @@ class TestWebPreviewGenerator(unittest.TestCase):
         const mockEl = {
           style: {},
           dataset: {},
+          classList: { add: () => {}, remove: () => {}, contains: () => false },
+          innerHTML: '',
+          innerText: '',
+          textContent: '',
+          querySelector: () => mockEl,
+          querySelectorAll: () => [],
           setAttribute: () => {},
           clientWidth: 600,
           clientHeight: 700,

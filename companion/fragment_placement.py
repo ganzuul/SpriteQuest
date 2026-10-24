@@ -41,6 +41,8 @@ class FragmentAsset:
     destructible: bool = False
     is_smashed: bool = False
     smash_threshold_kg: float = 80.0
+    image_url: str | None = None
+    diffusion_prompt: str = ""
 
 
 class FragmentPlacementEngine:
@@ -86,6 +88,8 @@ class FragmentPlacementEngine:
                 visual_template="r6_crate",
                 interactive_verbs=["push", "heft", "weigh_cargo", "inspect"],
                 lore_snippet=r6_desc,
+                image_url=None,
+                diffusion_prompt="orthographic top-down game asset, standardized rectangular wooden bounding crate with stencil lettering 'R6-SHIP', black iron reinforcement corner brackets, arithmetic customs clearance seal stamped on pine slats, pure white background, pixel-perfect isometric asset, 1024x1024",
             )
         )
 
@@ -111,6 +115,8 @@ class FragmentPlacementEngine:
                 visual_template="ledger_desk",
                 interactive_verbs=["inscribe_ledger", "strike_seal", "read_columns"],
                 lore_snippet=hollis_desc,
+                image_url="../../floorplans/furniture-room/ortho_gt/mattes/table.png",
+                diffusion_prompt="heavy oak customs quartermaster desk with open two-column vellum ledger folio, brass inkwell, and goose quill",
             )
         )
 
@@ -136,6 +142,8 @@ class FragmentPlacementEngine:
                 visual_template="weigh_scale",
                 interactive_verbs=["weigh_cargo", "present_manifest", "strike_level"],
                 lore_snippet=beats_desc,
+                image_url=None,
+                diffusion_prompt="heavy timber inspection weigh table bearing large twin-pan brass balance scale, counterweights, and stamped lead calibration marks",
             )
         )
 
@@ -161,6 +169,8 @@ class FragmentPlacementEngine:
                 visual_template="heavy_locker",
                 interactive_verbs=["inspect_seizures"],
                 lore_snippet=forfeit_desc,
+                image_url="../../floorplans/furniture-room/ortho_gt/mattes/wardrobe.png",
+                diffusion_prompt="heavy iron customs impounded wardrobe with heavy padlock and confiscation seal",
             )
         )
 
@@ -189,6 +199,8 @@ class FragmentPlacementEngine:
                 destructible=True,
                 is_smashed=False,
                 smash_threshold_kg=80.0,
+                image_url=None,
+                diffusion_prompt="hexagonal borosilicate glass stasis coffin, pressurized cryo-chamber with luminescent teal liquid coolant and sealed carbon-composite rim, Flux 3 Klein isometric render",
             )
         )
 
@@ -214,6 +226,8 @@ class FragmentPlacementEngine:
                 visual_template="warrant_pedestal",
                 interactive_verbs=["audit_warrant", "read_seal"],
                 lore_snippet=warrant_desc,
+                image_url=None,
+                diffusion_prompt="carved stone pedestal displaying a polished brass surveyor warrant disc with stamped imperial wax ribbon, Flux 3 Klein render",
             )
         )
 
@@ -239,6 +253,8 @@ class FragmentPlacementEngine:
                 visual_template="unmodelled_slab",
                 interactive_verbs=["inspect_wireframe", "push", "author_prompt"],
                 lore_snippet=unmod_desc,
+                image_url=None,
+                diffusion_prompt="untextured digital clay wireframe bounding slab awaiting text prompt specification, orthographic bounding box",
             )
         )
 
@@ -264,6 +280,8 @@ class FragmentPlacementEngine:
                 visual_template="statute_board",
                 interactive_verbs=["read_statutes", "audit_tariffs", "inspect_seal"],
                 lore_snippet=statute_desc or "Posted Imperial clearance decrees, weights, and tariff schedules.",
+                image_url=None,
+                diffusion_prompt="weathered timber noticeboard with posted imperial clearance decrees, red wax seals, and tariff schedule placards",
             )
         )
 
@@ -289,6 +307,8 @@ class FragmentPlacementEngine:
                 visual_template="grimoire_lectern",
                 interactive_verbs=["consult_arcana", "turn_page", "read_runes"],
                 lore_snippet=grimoire_desc or "Vellum grimoire inscribed with glyphs of structural generation.",
+                image_url=None,
+                diffusion_prompt="ancient chained vellum grimoire open on a carved dark oak lectern with glowing cyan arcane glyphs, Flux 3 Klein render",
             )
         )
 
@@ -314,6 +334,8 @@ class FragmentPlacementEngine:
                 visual_template="living_atlas",
                 interactive_verbs=["inspect_cartography", "verify_warrant", "turn_brass_crank"],
                 lore_snippet=atlas_desc or "Colossal pigskin-and-brass folio illuminating certified terrain and physical constants.",
+                image_url=None,
+                diffusion_prompt="monumental counterweighted living atlas folio bound in pigskin and brass mesh, colossal open vellum leaves on a canted granite pedestal illuminating certified terrain and cartographic warrants",
             )
         )
 
@@ -339,6 +361,8 @@ class FragmentPlacementEngine:
                 visual_template="matte_flat",
                 interactive_verbs=["push", "unroll_canvas", "inspect_cut_edge"],
                 lore_snippet=matte_desc or "Large primed canvas flat leaning in corner as physical object rather than scenery.",
+                image_url=None,
+                diffusion_prompt="large rolled heavy primed canvas flat leaning as a physical object against a wall, cut canvas edge and painted scenic face visible with pine dowel rods",
             )
         )
 
@@ -364,6 +388,8 @@ class FragmentPlacementEngine:
                 visual_template="forfeit_chest",
                 interactive_verbs=["audit_impound", "inspect_forfeiture_lock", "push"],
                 lore_snippet=forfeit_desc or "Failed consignment cage impounded under draft flags: rough, waiting, absorbing.",
+                image_url=None,
+                diffusion_prompt="iron-banded forfeiture consignment lockbox with heavy lead padlock and yellow draft inspection tag reading DRAFT/ROUGH",
             )
         )
 
@@ -385,6 +411,8 @@ class FragmentPlacementEngine:
                         visual_template="cairn",
                         interactive_verbs=["read_cairn_mark"],
                         lore_snippet="Survey cairn marking the threshold between territory chunks.",
+                        image_url="../../terrain/demo-plateau/terrain_relief.png",
+                        diffusion_prompt="rough stone survey cairn marking threshold between mountain territories, weathered lichen and carved survey glyphs",
                     )
                 )
             elif "brazier" in op.id:
@@ -403,6 +431,8 @@ class FragmentPlacementEngine:
                         visual_template="brazier",
                         interactive_verbs=["warm_hands"],
                         lore_snippet="Hearth brazier keeping watch over the customs approach.",
+                        image_url=None,
+                        diffusion_prompt="cast iron hearth brazier with glowing amber charcoal embers",
                     )
                 )
             elif "signpost" in op.id:
@@ -421,6 +451,8 @@ class FragmentPlacementEngine:
                         visual_template="signpost",
                         interactive_verbs=["read_sign"],
                         lore_snippet="Weathered timber signpost pointing toward the border march.",
+                        image_url=None,
+                        diffusion_prompt="weathered timber signpost pointing toward the border march",
                     )
                 )
 

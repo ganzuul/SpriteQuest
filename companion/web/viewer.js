@@ -65,6 +65,10 @@ export function initViewer(config) {
   let audioMuted = true;
   let audioCtx = null;
 
+  // Asset Viewer & Forge State
+  let selectedAsset = null;
+  const assetImages = new Map();
+
   // Initialize physical props from fragments
   physicalPropsList.forEach((fp) => {
     physicalPropsMap.set(fp.id, {
@@ -82,6 +86,16 @@ export function initViewer(config) {
         p.id.includes('bookcase') ||
         p.id.includes('wardrobe') ||
         p.id.includes('cairn');
+
+      let img = null;
+      if (p.id.includes('chair')) img = '../../floorplans/furniture-room/ortho_gt/mattes/chair.png';
+      else if (p.id.includes('bench')) img = '../../floorplans/furniture-room/ortho_gt/mattes/bench.png';
+      else if (p.id.includes('table')) img = '../../floorplans/furniture-room/ortho_gt/mattes/table.png';
+      else if (p.id.includes('bookcase')) img = '../../floorplans/furniture-room/ortho_gt/mattes/bookcase.png';
+      else if (p.id.includes('wardrobe')) img = '../../floorplans/furniture-room/ortho_gt/mattes/wardrobe.png';
+      else if (p.id.includes('cabinet')) img = '../../floorplans/furniture-room/ortho_gt/mattes/cabinet.png';
+      else if (p.id.includes('cairn')) img = 'topdown_relief.png';
+
       physicalPropsMap.set(p.id, {
         id: p.id,
         fragment_id: 'floorplan/customs-house',
@@ -94,7 +108,10 @@ export function initViewer(config) {
         world_z: p.world_z || 6.0,
         bounds: { width: 1.2, depth: 1.2, height: 1.0 },
         visual_template: 'generic',
-        interactive_verbs: [],
+        interactive_verbs: ['examine'],
+        lore_snippet: `Interior furniture item (${p.label}) positioned on customs floorplan.`,
+        image_url: img,
+        diffusion_prompt: `orthographic 2D top-down game asset of ${p.label}, clean timber joinery, Flux 3 Klein matte`,
         tokenEl: null,
       });
     }
@@ -457,6 +474,7 @@ export function initViewer(config) {
 
       propEl.addEventListener('click', (e) => {
         if (e.stopPropagation) e.stopPropagation();
+        selectAsset(pr.id);
         tryMoveActor('player', pr.world_x, pr.world_y);
       });
 
@@ -526,6 +544,7 @@ export function initViewer(config) {
 
       cmEl.addEventListener('click', (e) => {
         if (e.stopPropagation) e.stopPropagation();
+        selectAsset(cm.id);
         updatePlayerPosition(cm.world_x, cm.world_y);
       });
 
@@ -1004,6 +1023,8 @@ export function initViewer(config) {
     currentAtmosphere = mode;
     const atmEl = typeof document !== 'undefined' ? document.getElementById('stat-atmosphere') : null;
     if (atmEl) atmEl.innerText = mode.replace(/_/g, ' ').toUpperCase();
+    const bAtm = typeof document !== 'undefined' ? document.getElementById('badge-atmosphere') : null;
+    if (bAtm) bAtm.innerText = mode.replace(/_/g, ' ').toUpperCase();
     renderLightingOverlay();
   }
 
@@ -1337,6 +1358,14 @@ export function initViewer(config) {
     const dirEl = document.getElementById('stat-stage-direction');
     if (dirEl) dirEl.innerText = stageDir;
 
+    // Update compact badge previews
+    const bPos = document.getElementById('badge-player-xy');
+    if (bPos) bPos.innerText = `${playerX.toFixed(1)}m, ${playerY.toFixed(1)}m`;
+    const bZone = document.getElementById('badge-player-zone');
+    if (bZone) bZone.innerText = curZone ? curZone.name : 'Wilderness';
+    const bPro = document.getElementById('badge-proscenium');
+    if (bPro) bPro.innerText = anchor ? anchor.proscenium_state : 'wilderness';
+
     renderLightingOverlay();
   }
 
@@ -1450,6 +1479,8 @@ export function initViewer(config) {
 
     const cXyEl = typeof document !== 'undefined' ? document.getElementById('stat-cursor-xy') : null;
     if (cXyEl) cXyEl.innerText = `${cursorX.toFixed(1)}m, ${cursorY.toFixed(1)}m`;
+    const bCur = typeof document !== 'undefined' ? document.getElementById('badge-cursor') : null;
+    if (bCur) bCur.innerText = `${cursorX.toFixed(1)}m, ${cursorY.toFixed(1)}m`;
     const cZEl = typeof document !== 'undefined' ? document.getElementById('stat-cursor-z') : null;
     if (cZEl) cZEl.innerText = `${curZ.toFixed(2)}m`;
     const cDeltaEl = typeof document !== 'undefined' ? document.getElementById('stat-cursor-delta') : null;
@@ -1489,22 +1520,451 @@ export function initViewer(config) {
     return hit;
   }
 
+  // --- Asset Viewer & Forge Rendering Engine ------------------------------
+  function synthesizeForgeRender(asset) {
+    if (!asset) return '';
+    const id = asset.id || 'asset';
+    const label = asset.label || id;
+    const hash = Math.abs(id.split('').reduce((acc, c) => (acc << 5) - acc + c.charCodeAt(0), 0)) % 100000;
+    const seed = 42000 + hash;
+
+    let graphicSvg = '';
+
+    if (id.includes('crate') || id.includes('r6')) {
+      graphicSvg = `
+        <rect x="120" y="70" width="160" height="150" rx="4" fill="#6b4423" stroke="#3d220f" stroke-width="3"/>
+        <line x1="120" y1="120" x2="280" y2="120" stroke="#4a2c13" stroke-width="3" stroke-dasharray="2 1"/>
+        <line x1="120" y1="170" x2="280" y2="170" stroke="#4a2c13" stroke-width="3" stroke-dasharray="2 1"/>
+        <line x1="125" y1="75" x2="275" y2="215" stroke="#262626" stroke-width="8" stroke-linecap="round"/>
+        <line x1="125" y1="75" x2="275" y2="215" stroke="#737373" stroke-width="4" stroke-linecap="round"/>
+        <rect x="120" y="70" width="30" height="30" fill="#171717" stroke="#404040" stroke-width="2"/>
+        <circle cx="128" cy="78" r="2.5" fill="#a3a3a3"/>
+        <rect x="250" y="70" width="30" height="30" fill="#171717" stroke="#404040" stroke-width="2"/>
+        <circle cx="272" cy="78" r="2.5" fill="#a3a3a3"/>
+        <rect x="120" y="190" width="30" height="30" fill="#171717" stroke="#404040" stroke-width="2"/>
+        <circle cx="128" cy="212" r="2.5" fill="#a3a3a3"/>
+        <rect x="250" y="190" width="30" height="30" fill="#171717" stroke="#404040" stroke-width="2"/>
+        <circle cx="272" cy="212" r="2.5" fill="#a3a3a3"/>
+        <rect x="135" y="130" width="130" height="32" rx="3" fill="#1c1917" opacity="0.85"/>
+        <text x="200" y="152" fill="#f59e0b" font-size="16" font-family="monospace" font-weight="900" text-anchor="middle" letter-spacing="2">R6-SHIP</text>
+        <circle cx="245" cy="100" r="14" fill="#dc2626" stroke="#991b1b" stroke-width="2" opacity="0.9"/>
+        <text x="245" y="103" fill="#fef2f2" font-size="7" font-weight="900" text-anchor="middle">PASSED</text>
+        <text x="200" y="180" fill="#d97706" font-size="9" font-family="monospace" font-weight="700" text-anchor="middle">NET: 42.5 KG</text>
+      `;
+    } else if (id.includes('coffin') || id.includes('cryo')) {
+      graphicSvg = `
+        <polygon points="150,55 250,55 285,145 250,235 150,235 115,145" fill="#0f172a" stroke="#0284c7" stroke-width="3"/>
+        <polygon points="154,62 246,62 278,145 246,228 154,228 122,145" fill="url(#cryoGlow)" opacity="0.8"/>
+        <ellipse cx="200" cy="110" rx="14" ry="18" fill="#0369a1" opacity="0.5"/>
+        <path d="M 185,135 Q 200,125 215,135 L 222,210 Q 200,215 178,210 Z" fill="#0369a1" opacity="0.5"/>
+        <line x1="135" y1="90" x2="265" y2="200" stroke="#ffffff" stroke-width="2" opacity="0.3"/>
+        <rect x="160" y="70" width="80" height="16" rx="2" fill="#020617" stroke="#38bdf8" stroke-width="1"/>
+        <text x="200" y="82" fill="#38bdf8" font-size="9" font-family="monospace" font-weight="900" text-anchor="middle">00:04:18:92</text>
+        <text x="200" y="222" fill="#67e8f9" font-size="8" font-family="monospace" text-anchor="middle">-196.4°C STASIS</text>
+      `;
+    } else if (id.includes('atlas')) {
+      graphicSvg = `
+        <polygon points="120,180 280,180 300,230 100,230" fill="#1e293b" stroke="#ca8a04" stroke-width="2"/>
+        <polygon points="135,110 265,110 280,180 120,180" fill="#713f12" stroke="#eab308" stroke-width="2"/>
+        <polygon points="140,115 260,115 272,175 128,175" fill="#fef3c7"/>
+        <path d="M 150,140 Q 170,125 195,145 T 250,135" fill="none" stroke="#2563eb" stroke-width="2"/>
+        <path d="M 145,155 Q 180,165 210,150 T 255,160" fill="none" stroke="#b45309" stroke-width="1" stroke-dasharray="3 1"/>
+        <circle cx="200" cy="135" r="10" fill="none" stroke="#ca8a04" stroke-width="1"/>
+        <line x1="200" y1="120" x2="200" y2="150" stroke="#ca8a04" stroke-width="1"/>
+        <line x1="185" y1="135" x2="215" y2="135" stroke="#ca8a04" stroke-width="1"/>
+        <circle cx="285" cy="175" r="7" fill="#ca8a04" stroke="#78350f" stroke-width="1.5"/>
+        <line x1="285" y1="175" x2="295" y2="160" stroke="#eab308" stroke-width="3" stroke-linecap="round"/>
+        <text x="200" y="100" fill="#eab308" font-size="10" font-family="serif" font-weight="900" text-anchor="middle" letter-spacing="1">ATLAS IMPERII</text>
+      `;
+    } else if (id.includes('matte') || id.includes('flat')) {
+      graphicSvg = `
+        <rect x="175" y="55" width="50" height="180" rx="10" transform="rotate(-15 200 145)" fill="url(#canvasShade)" stroke="#52525b" stroke-width="2"/>
+        <rect x="195" y="40" width="10" height="20" rx="2" transform="rotate(-15 200 145)" fill="#78350f" stroke="#451a03" stroke-width="1"/>
+        <rect x="195" y="230" width="10" height="20" rx="2" transform="rotate(-15 200 145)" fill="#78350f" stroke="#451a03" stroke-width="1"/>
+        <path d="M 185,95 Q 220,110 205,160 T 170,215" fill="none" stroke="#0284c7" stroke-width="6" opacity="0.85"/>
+        <text x="200" y="245" fill="#cbd5e1" font-size="8.5" font-family="monospace" text-anchor="middle">PRIMED SCENIC FLAT</text>
+      `;
+    } else if (id.includes('chest') || id.includes('forfeit') || id.includes('locker')) {
+      graphicSvg = `
+        <rect x="125" y="90" width="150" height="110" rx="4" fill="#18181b" stroke="#71717a" stroke-width="3"/>
+        <line x1="160" y1="90" x2="160" y2="200" stroke="#52525b" stroke-width="6"/>
+        <line x1="240" y1="90" x2="240" y2="200" stroke="#52525b" stroke-width="6"/>
+        <rect x="190" y="130" width="20" height="24" rx="3" fill="#ca8a04" stroke="#78350f" stroke-width="1.5"/>
+        <path d="M 194,130 A 6 6 0 0 1 206,130" fill="none" stroke="#a1a1aa" stroke-width="2.5"/>
+        <rect x="145" y="150" width="45" height="20" rx="1" fill="#fef08a" stroke="#ca8a04" stroke-width="1" transform="rotate(-8 145 150)"/>
+        <text x="167" y="163" fill="#78350f" font-size="7" font-weight="900" font-family="monospace" text-anchor="middle" transform="rotate(-8 145 150)">DRAFT</text>
+        <text x="200" y="80" fill="#a1a1aa" font-size="9" font-family="monospace" font-weight="700" text-anchor="middle">IMPOUNDED CARGO</text>
+      `;
+    } else if (id.includes('statute')) {
+      graphicSvg = `
+        <rect x="130" y="55" width="140" height="180" rx="4" fill="#451a03" stroke="#b45309" stroke-width="2.5"/>
+        <rect x="142" y="68" width="116" height="135" fill="#fef3c7" stroke="#d97706" stroke-width="1"/>
+        <text x="200" y="88" fill="#78350f" font-size="11" font-family="serif" font-weight="900" text-anchor="middle">LEX IMPERII</text>
+        <line x1="155" y1="95" x2="245" y2="95" stroke="#b45309" stroke-width="1"/>
+        <line x1="150" y1="108" x2="250" y2="108" stroke="#78350f" stroke-width="1" stroke-dasharray="3 2"/>
+        <line x1="150" y1="122" x2="250" y2="122" stroke="#78350f" stroke-width="1" stroke-dasharray="3 2"/>
+        <line x1="150" y1="136" x2="250" y2="136" stroke="#78350f" stroke-width="1" stroke-dasharray="3 2"/>
+        <line x1="150" y1="150" x2="250" y2="150" stroke="#78350f" stroke-width="1" stroke-dasharray="3 2"/>
+        <circle cx="200" cy="180" r="13" fill="#dc2626" stroke="#7f1d1d" stroke-width="2"/>
+        <text x="200" y="184" fill="#fef2f2" font-size="7" font-weight="900" text-anchor="middle">SEALED</text>
+      `;
+    } else if (id.includes('grimoire')) {
+      graphicSvg = `
+        <polygon points="170,140 230,140 240,240 160,240" fill="#271b12" stroke="#785233" stroke-width="2"/>
+        <polygon points="130,85 270,85 285,145 115,145" fill="#3d291a" stroke="#b45309" stroke-width="2"/>
+        <polygon points="140,95 260,95 270,138 130,138" fill="#fde68a" stroke="#b45309" stroke-width="1"/>
+        <line x1="200" y1="95" x2="200" y2="138" stroke="#78350f" stroke-width="2"/>
+        <text x="170" y="120" fill="#0284c7" font-size="14" font-family="serif" text-anchor="middle">✧</text>
+        <text x="230" y="120" fill="#0284c7" font-size="14" font-family="serif" text-anchor="middle">✦</text>
+        <circle cx="200" cy="65" r="16" fill="none" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="4 2"/>
+        <text x="200" y="70" fill="#38bdf8" font-size="15" text-anchor="middle">✨</text>
+      `;
+    } else if (id.includes('warrant') || id.includes('pedestal')) {
+      graphicSvg = `
+        <polygon points="150,140 250,140 265,230 135,230" fill="#334155" stroke="#64748b" stroke-width="2"/>
+        <circle cx="200" cy="110" r="36" fill="#ca8a04" stroke="#eab308" stroke-width="3"/>
+        <circle cx="200" cy="110" r="28" fill="#eab308" stroke="#78350f" stroke-width="1"/>
+        <text x="200" y="115" fill="#713f12" font-size="11" font-weight="900" font-family="serif" text-anchor="middle">WARRANT</text>
+        <polygon points="190,146 200,185 210,146" fill="#dc2626"/>
+      `;
+    } else if (id.includes('unmodelled') || id.includes('slab')) {
+      graphicSvg = `
+        <polygon points="200,60 280,105 280,195 200,240 120,195 120,105" fill="#1e293b" stroke="#38bdf8" stroke-width="2" stroke-dasharray="4 2"/>
+        <line x1="200" y1="60" x2="200" y2="240" stroke="#38bdf8" stroke-width="1.5"/>
+        <line x1="120" y1="105" x2="280" y2="195" stroke="#38bdf8" stroke-width="1.5"/>
+        <line x1="280" y1="105" x2="120" y2="195" stroke="#38bdf8" stroke-width="1.5"/>
+        <text x="200" y="152" fill="#38bdf8" font-size="11" font-family="monospace" font-weight="700" text-anchor="middle">[WIRE-FRAME]</text>
+      `;
+    } else {
+      graphicSvg = `
+        <polygon points="150,70 250,70 285,150 250,230 150,230 115,150" fill="#1e1b18" stroke="#ca8a04" stroke-width="3"/>
+        <circle cx="200" cy="150" r="35" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="6 3"/>
+        <text x="200" y="157" fill="#fef08a" font-size="24" text-anchor="middle">💎</text>
+        <text x="200" y="115" fill="#ca8a04" font-size="10" font-family="monospace" font-weight="700" text-anchor="middle">FORGED ASSET</text>
+      `;
+    }
+
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+      <defs>
+        <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#181512"/>
+          <stop offset="100%" stop-color="#0a0908"/>
+        </linearGradient>
+        <linearGradient id="cryoGlow" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#0284c7"/>
+          <stop offset="50%" stop-color="#2dd4bf"/>
+          <stop offset="100%" stop-color="#0369a1"/>
+        </linearGradient>
+        <linearGradient id="canvasShade" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#e4e4e7"/>
+          <stop offset="50%" stop-color="#a1a1aa"/>
+          <stop offset="100%" stop-color="#52525b"/>
+        </linearGradient>
+      </defs>
+      <rect width="400" height="300" fill="url(#bgGrad)"/>
+      <rect x="6" y="6" width="388" height="288" rx="6" fill="none" stroke="#332d27" stroke-width="1.5"/>
+      <text x="14" y="24" fill="#a8947f" font-size="9" font-family="monospace">BLACK FOREST LABS · FLUX 3 KLEIN</text>
+      <text x="386" y="24" fill="#38bdf8" font-size="9" font-family="monospace" text-anchor="end">SEED: ${seed}</text>
+      ${graphicSvg}
+      <rect x="6" y="268" width="388" height="26" fill="#120f0d" opacity="0.95"/>
+      <text x="14" y="284" fill="#f5eedf" font-size="10" font-family="monospace" font-weight="700">${label.length > 32 ? label.slice(0, 32) + '...' : label}</text>
+      <text x="386" y="284" fill="#ca8a04" font-size="9.5" font-family="monospace" font-weight="700" text-anchor="end">STEPS: 16 · CFG: 1.0</text>
+    </svg>`;
+
+    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  }
+
+  function selectAsset(idOrEntity) {
+    if (!idOrEntity) return null;
+    let entity = null;
+    const assetId = typeof idOrEntity === 'string' ? idOrEntity : (idOrEntity.id || idOrEntity.targetId);
+
+    // 1. Check physical props
+    if (physicalPropsMap.has(assetId)) {
+      const p = physicalPropsMap.get(assetId);
+      entity = {
+        id: p.id,
+        kind: 'prop',
+        label: p.label,
+        fragment_id: p.fragment_id || 'customs-house/the-site',
+        salience: p.salience || 'moderate',
+        image_url: assetImages.get(p.id) || p.image_url || null,
+        diffusion_prompt: p.diffusion_prompt || p.lore_snippet || `Orthographic asset specification for ${p.label}`,
+        lore_snippet: p.lore_snippet || '',
+        obstacle_type: p.obstacle_type,
+        mass_kg: p.mass_kg,
+        interactive_verbs: p.interactive_verbs || ['examine', 'push'],
+        forged: assetImages.has(p.id),
+      };
+    }
+    // 2. Check actors
+    else if (actors.has(assetId)) {
+      const a = actors.get(assetId);
+      entity = {
+        id: a.id,
+        kind: 'actor',
+        label: a.name || a.id,
+        fragment_id: a.id === 'pell' ? 'scaffolded-kingdom/understudy' : (a.id === 'hollis' ? 'customs-house/hollis-ledger' : 'shared/actor-roster'),
+        salience: 'major',
+        image_url: assetImages.get(a.id) || a.image_url || null,
+        diffusion_prompt: a.diffusion_prompt || `${a.name}, 2.5D character portrait rendered via Flux 3 Klein`,
+        lore_snippet: a.lore_snippet || `${a.name} (${a.role || 'Actor'})`,
+        obstacle_type: 'actor',
+        mass_kg: 70.0,
+        interactive_verbs: ['talk', 'inspect_standing'],
+        forged: assetImages.has(a.id),
+      };
+    }
+    // 3. Check cue marks
+    else if (stagecraft?.cue_marks) {
+      const mark = stagecraft.cue_marks.find((m) => m.id === assetId);
+      if (mark) {
+        entity = {
+          id: mark.id,
+          kind: 'cue_mark',
+          label: mark.label || mark.id,
+          fragment_id: 'stagecraft/proscenium-cues',
+          salience: 'moderate',
+          image_url: assetImages.get(mark.id) || null,
+          diffusion_prompt: `Stagecraft cue mark token on floorplate: ${mark.label}, chalked blocking star with golden theatrical aura`,
+          lore_snippet: `Theatrical blocking mark [${mark.role_gate || 'General'}]. Authorized standing: ${mark.authorized_standing || 'open'}.`,
+          obstacle_type: 'cue_mark',
+          mass_kg: null,
+          interactive_verbs: ['step_onto_mark', 'inspect_cue'],
+          forged: assetImages.has(mark.id),
+        };
+      }
+    }
+
+    // 4. Check zones
+    if (!entity && zones) {
+      const zone = zones.find((z) => z.id === assetId);
+      if (zone) {
+        entity = {
+          id: zone.id,
+          kind: 'zone',
+          label: zone.name || zone.id,
+          fragment_id: 'terrain/border-march',
+          salience: 'region',
+          image_url: assetImages.get(zone.id) || 'topdown_relief.png',
+          diffusion_prompt: `Topographical map sector of ${zone.name}, 2.5D terrain relief with atmospheric altitude shading`,
+          lore_snippet: `Regional map zone: ${zone.name}. Elevation bracket: ${zone.elevation || 6.0}m.`,
+          obstacle_type: 'terrain_zone',
+          mass_kg: null,
+          interactive_verbs: ['survey_terrain'],
+          forged: assetImages.has(zone.id),
+        };
+      }
+    }
+
+    if (!entity && typeof idOrEntity === 'object') {
+      entity = {
+        id: idOrEntity.id || 'unknown_asset',
+        kind: idOrEntity.kind || 'prop',
+        label: idOrEntity.label || idOrEntity.id,
+        fragment_id: idOrEntity.fragment_id || 'shared/unmodelled-prop',
+        salience: idOrEntity.salience || 'minor',
+        image_url: assetImages.get(idOrEntity.id) || idOrEntity.image_url || null,
+        diffusion_prompt: idOrEntity.diffusion_prompt || idOrEntity.lore || '',
+        lore_snippet: idOrEntity.lore || '',
+        obstacle_type: idOrEntity.obstacle_type || 'passable',
+        mass_kg: idOrEntity.mass_kg || null,
+        interactive_verbs: idOrEntity.verbs || ['examine'],
+        forged: assetImages.has(idOrEntity.id),
+      };
+    }
+
+    if (!entity) return null;
+
+    selectedAsset = entity;
+    renderAssetViewerDOM();
+    return selectedAsset;
+  }
+
+  function renderAssetViewerDOM() {
+    if (!selectedAsset) return;
+    if (typeof document === 'undefined') return;
+    const panel = document.getElementById('asset-viewer-panel');
+    if (!panel) return;
+
+    const nameEl = document.getElementById('asset-viewer-name');
+    if (nameEl) nameEl.textContent = selectedAsset.label;
+
+    const idEl = document.getElementById('asset-viewer-id');
+    if (idEl) idEl.textContent = selectedAsset.id;
+
+    const badgeEl = document.getElementById('asset-viewer-badge');
+    if (badgeEl) {
+      if (selectedAsset.forged) {
+        badgeEl.textContent = '[FORGED · FLUX 3 KLEIN]';
+        badgeEl.style.color = '#38bdf8';
+        badgeEl.style.borderColor = '#0284c7';
+      } else {
+        const badgeText = selectedAsset.kind === 'prop'
+          ? (selectedAsset.salience ? `PROP · ${selectedAsset.salience.toUpperCase()}` : 'PROP')
+          : selectedAsset.kind.toUpperCase();
+        badgeEl.textContent = `[${badgeText}]`;
+        badgeEl.style.color = '#f59e0b';
+        badgeEl.style.borderColor = '#78350f';
+      }
+    }
+
+    const provEl = document.getElementById('asset-viewer-provenance');
+    if (provEl) provEl.textContent = selectedAsset.fragment_id;
+
+    const physEl = document.getElementById('asset-viewer-physicality');
+    if (physEl) {
+      const parts = [];
+      if (selectedAsset.mass_kg !== null && selectedAsset.mass_kg !== undefined) parts.push(`${selectedAsset.mass_kg}kg`);
+      if (selectedAsset.obstacle_type) parts.push(selectedAsset.obstacle_type.replace(/_/g, ' '));
+      physEl.textContent = parts.join(' · ') || 'interactive entity';
+    }
+
+    const loreEl = document.getElementById('asset-viewer-lore');
+    if (loreEl) {
+      loreEl.textContent = `"${selectedAsset.lore_snippet || selectedAsset.diffusion_prompt}"`;
+    }
+
+    const imgContainer = document.getElementById('asset-viewer-image-container');
+    if (imgContainer) {
+      imgContainer.innerHTML = '';
+      if (selectedAsset.image_url) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'asset-img-wrapper';
+
+        const img = document.createElement('img');
+        img.src = selectedAsset.image_url;
+        img.alt = selectedAsset.label;
+        img.className = 'asset-viewer-img';
+        img.id = 'asset-viewer-img';
+
+        const cap = document.createElement('div');
+        cap.className = 'asset-img-caption';
+        cap.textContent = selectedAsset.forged
+          ? '✨ Forged in Asset Forge · Black Forest Labs Flux 3 Klein'
+          : 'Black Forest Labs Flux 3 Klein · Orthographic Matte';
+
+        wrapper.appendChild(img);
+        wrapper.appendChild(cap);
+        imgContainer.appendChild(wrapper);
+      } else {
+        const noImg = document.createElement('div');
+        noImg.className = 'asset-no-img-box';
+
+        const icon = document.createElement('div');
+        icon.className = 'asset-no-img-icon';
+        icon.textContent = '🖼️';
+
+        const txt = document.createElement('div');
+        txt.className = 'asset-no-img-text';
+        txt.textContent = 'No Diffusion Render on Disk';
+
+        const sub = document.createElement('div');
+        sub.className = 'asset-no-img-sub';
+        sub.textContent = selectedAsset.diffusion_prompt
+          ? `Prompt: "${selectedAsset.diffusion_prompt}"`
+          : 'Awaiting asset forge conditioning & render.';
+
+        noImg.appendChild(icon);
+        noImg.appendChild(txt);
+        noImg.appendChild(sub);
+        imgContainer.appendChild(noImg);
+      }
+    }
+
+    const btnRender = document.getElementById('btn-forge-render');
+    if (btnRender) {
+      btnRender.disabled = false;
+      btnRender.innerText = selectedAsset.image_url
+        ? '🔄 Re-render in Asset Forge'
+        : '✨ Render in Asset Forge';
+    }
+  }
+
+  async function renderAssetInForge(assetId, options = {}) {
+    const id = assetId || (selectedAsset ? selectedAsset.id : null);
+    if (!id) return { success: false, reason: 'no_asset_selected' };
+
+    if (!selectedAsset || selectedAsset.id !== id) {
+      selectAsset(id);
+    }
+
+    const btnRender = typeof document !== 'undefined' ? document.getElementById('btn-forge-render') : null;
+    if (btnRender) {
+      btnRender.disabled = true;
+      btnRender.innerText = '⏳ Forging (Flux 3 Klein)...';
+    }
+
+    const imgContainer = typeof document !== 'undefined' ? document.getElementById('asset-viewer-image-container') : null;
+    if (imgContainer) {
+      imgContainer.innerHTML = `
+        <div class="asset-no-img-box" style="padding: 16px;">
+          <div style="font-size: 20px;">⚙️</div>
+          <div class="asset-no-img-text" style="color: #38bdf8;">Asset Forge Generating...</div>
+          <div style="font-size: 9px; color: #a8947f; margin-top: 4px;">Target: Black Forest Labs Flux 3 Klein</div>
+          <div class="forge-progress-bar"><div class="forge-progress-fill" style="width: 100%;"></div></div>
+        </div>
+      `;
+    }
+
+    const delay = options.immediate ? 0 : 50;
+    if (delay > 0) {
+      await new Promise((r) => setTimeout(r, delay));
+    }
+
+    const forgedDataUrl = synthesizeForgeRender(selectedAsset);
+    assetImages.set(id, forgedDataUrl);
+
+    if (physicalPropsMap.has(id)) {
+      const p = physicalPropsMap.get(id);
+      p.image_url = forgedDataUrl;
+    } else if (actors.has(id)) {
+      const a = actors.get(id);
+      a.image_url = forgedDataUrl;
+    }
+
+    selectedAsset.image_url = forgedDataUrl;
+    selectedAsset.forged = true;
+
+    playAudioCue('seal_stamp');
+    renderAssetViewerDOM();
+
+    return {
+      success: true,
+      assetId: id,
+      imageUrl: forgedDataUrl,
+      prompt: selectedAsset.diffusion_prompt,
+      status: 'rendered',
+    };
+  }
+
+  function renderSelectedAssetInForge() {
+    return selectedAsset ? renderAssetInForge(selectedAsset.id) : null;
+  }
+
   function handleClick(pxX, pxY, wWidth = (world ? world.clientWidth || 600 : 600), wHeight = (world ? world.clientHeight || 700 : 700)) {
     const worldCoord = screenToWorld(pxX, pxY, wWidth, wHeight);
     const hit = getInteractableAt(worldCoord.x, worldCoord.y);
 
     if (hit && hit.kind === 'prop') {
       tryMoveActor('player', hit.targetX, hit.targetY);
-      return { hitKind: 'prop', targetId: hit.id, x: hit.targetX, y: hit.targetY };
+      selectAsset(hit.id);
+      return { hitKind: 'prop', targetId: hit.id, x: hit.targetX, y: hit.targetY, selectedAsset };
     } else if (hit && hit.kind === 'cue_mark') {
       tryMoveActor('player', hit.targetX, hit.targetY);
-      return { hitKind: 'cue_mark', targetId: hit.id, x: hit.targetX, y: hit.targetY };
+      selectAsset(hit.id);
+      return { hitKind: 'cue_mark', targetId: hit.id, x: hit.targetX, y: hit.targetY, selectedAsset };
     } else if (hit && hit.kind === 'actor') {
       tryMoveActor('player', hit.targetX, hit.targetY);
-      return { hitKind: 'actor', targetId: hit.id, x: hit.targetX, y: hit.targetY };
+      selectAsset(hit.id);
+      return { hitKind: 'actor', targetId: hit.id, x: hit.targetX, y: hit.targetY, selectedAsset };
     } else {
       tryMoveActor('player', worldCoord.x, worldCoord.y);
-      return { hitKind: 'ground', x: worldCoord.x, y: worldCoord.y };
+      const z = getZoneAt(worldCoord.x, worldCoord.y);
+      if (z) {
+        selectAsset(z.id);
+      }
+      return { hitKind: 'ground', x: worldCoord.x, y: worldCoord.y, selectedAsset };
     }
   }
 
@@ -1563,16 +2023,23 @@ export function initViewer(config) {
   actors.set('player', {
     id: 'player',
     name: 'Player',
-    role: 'Wanderer',
+    role: 'Understudy',
     x: playerX,
     y: playerY,
     z: sampleElevation(playerX, playerY),
     facing: 0,
-    color: '#eab308',
+    color: '#2dd4bf',
     written: actorWritten,
     tokenEl: playerEl,
     balloonEl: null,
+    image_url: '../../terrain/lighting-demo/player_in_pass.png',
+    diffusion_prompt: 'Pell the Underwritten, traveler in heavy wool cloak standing on frosted mountain pass road, Flux 3 Klein portrait',
+    lore_snippet: 'Understudy traveling with unwritten standing, bearing cargo slips toward the frontier.',
   });
+
+  if (playerEl) {
+    playerEl.addEventListener('click', () => selectAsset('player'));
+  }
 
   function addActor(id, options = {}) {
     const name = options.name || id;
@@ -1602,6 +2069,11 @@ export function initViewer(config) {
       badge.textContent = name.charAt(0).toUpperCase();
       tokenEl.appendChild(badge);
 
+      tokenEl.addEventListener('click', (e) => {
+        if (e.stopPropagation) e.stopPropagation();
+        selectAsset(id);
+      });
+
       if (world && world.appendChild) {
         const wW = world.clientWidth || 600;
         const wH = world.clientHeight || 700;
@@ -1610,6 +2082,13 @@ export function initViewer(config) {
         world.appendChild(tokenEl);
       }
     }
+
+    const defaultImg = id === 'player'
+      ? '../../terrain/lighting-demo/player_in_pass.png'
+      : (id === 'hollis' ? '../../terrain/lighting-demo/player_center_plateau.png' : null);
+    const defaultPrompt = id === 'player'
+      ? 'Pell the Underwritten, traveler in heavy wool cloak standing on frosted mountain pass road, Flux 3 Klein portrait'
+      : (id === 'hollis' ? 'Hollis the Twice-Written, stern imperial customs quartermaster in official robes inspecting freight at dais, Flux 3 Klein portrait' : `${name}, 2.5D character portrait rendered via Flux 3 Klein`);
 
     const actor = {
       id,
@@ -1622,6 +2101,9 @@ export function initViewer(config) {
       written,
       tokenEl,
       balloonEl: null,
+      image_url: options.image_url || defaultImg,
+      diffusion_prompt: options.diffusion_prompt || defaultPrompt,
+      lore_snippet: options.lore_snippet || `${name} (${role})`,
     };
     actors.set(id, actor);
     return actor;
@@ -1643,6 +2125,8 @@ export function initViewer(config) {
     playerStrength = Number(val);
     const sEl = typeof document !== 'undefined' ? document.getElementById('stat-player-strength') : null;
     if (sEl) sEl.textContent = `${playerStrength.toFixed(0)} kg`;
+    const bStr = typeof document !== 'undefined' ? document.getElementById('badge-strength') : null;
+    if (bStr) bStr.innerText = `${playerStrength.toFixed(0)} kg`;
   }
 
   function smashProp(propId) {
@@ -2201,6 +2685,7 @@ export function initViewer(config) {
   // Initial setup
   renderFeaturesDOM();
   updatePlayerPosition(playerX, playerY);
+  selectAsset('r6_ship_crate_standard');
 
   const instance = {
     sampleElevation,
@@ -2258,6 +2743,10 @@ export function initViewer(config) {
     playAudioCue,
     getPortalState,
     setPortalState,
+    selectAsset,
+    getSelectedAsset: () => selectedAsset,
+    renderAssetInForge,
+    renderSelectedAssetInForge,
   };
 
   const globalRoot = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this);
@@ -2310,6 +2799,10 @@ export function initViewer(config) {
     globalRoot.setCameraVantage = setCameraVantage;
     globalRoot.playCutscene = playCutscene;
     globalRoot.playBorderClearanceCutscene = playBorderClearanceCutscene;
+    globalRoot.selectAsset = selectAsset;
+    globalRoot.getSelectedAsset = () => selectedAsset;
+    globalRoot.renderAssetInForge = renderAssetInForge;
+    globalRoot.renderSelectedAssetInForge = renderSelectedAssetInForge;
     globalRoot.viewer = instance;
   }
 

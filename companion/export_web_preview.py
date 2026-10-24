@@ -1031,47 +1031,271 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
       margin-top: 4px;
     }}
 
-    /* Telemetry HUD Panel */
+    /* Telemetry HUD Panel - Compact layout with custom scrolling */
     .telemetry-panel {{
-      width: 320px;
+      width: 330px;
       background: var(--panel);
       border-left: 1px solid #332d27;
-      padding: 16px;
+      padding: 12px 10px;
       display: flex;
       flex-direction: column;
-      gap: 14px;
-      font-size: 12px;
+      gap: 7px;
+      font-size: 11px;
       z-index: 100;
+      max-height: calc(100vh - 46px);
+      overflow-y: auto;
+      overflow-x: hidden;
+      scrollbar-width: thin;
+      scrollbar-color: #554433 #151311;
     }}
     .panel-section {{
       background: #151311;
       border: 1px solid #2d2620;
-      border-radius: 6px;
-      padding: 12px;
+      border-radius: 5px;
+      padding: 7px 9px;
+    }}
+    .panel-section-collapsible {{
+      width: 100%;
+    }}
+    .section-summary {{
+      cursor: pointer;
+      user-select: none;
+      outline: none;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }}
+    .section-summary::-webkit-details-marker {{
+      display: none;
     }}
     .section-title {{
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.05em;
       color: #b09f8e;
-      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }}
+    .section-summary .section-title::before {{
+      content: '▶';
+      font-size: 7.5px;
+      color: #786b59;
+      transition: transform 0.18s ease;
+      display: inline-block;
+    }}
+    details[open] > .section-summary .section-title::before {{
+      transform: rotate(90deg);
+      color: var(--accent);
+    }}
+    .section-summary-badge {{
+      font-size: 8.5px;
+      font-weight: 600;
+      color: #a8947f;
+      background: #241f1a;
+      padding: 1px 5px;
+      border-radius: 3px;
+      border: 1px solid #3d332a;
+      max-width: 140px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }}
+    .section-body {{
+      margin-top: 7px;
+      padding-top: 5px;
+      border-top: 1px dashed #261f19;
     }}
     .stat-row {{
       display: flex;
       justify-content: space-between;
-      margin-bottom: 5px;
+      margin-bottom: 3.5px;
       color: #c4b5a5;
+      font-size: 10.5px;
     }}
     .stat-val {{ font-weight: 600; color: #f5eedf; }}
     .stat-accent {{ color: var(--accent); }}
     .stat-gold {{ color: var(--gold); }}
 
     .legend-bar {{
-      height: 10px;
-      border-radius: 4px;
+      height: 8px;
+      border-radius: 3px;
       background: linear-gradient(to right, #4a3e34 0%, #a8947f 50%, #f5ecd9 100%);
+      margin-top: 5px;
+    }}
+
+    /* Asset & Diffusion Viewer in Sidebar */
+    .asset-viewer-section {{
+      background: #181512;
+      border: 1.5px solid #4a3b2c;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.65);
+    }}
+    .asset-viewer-header {{
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 5px;
+    }}
+    .asset-badge {{
+      font-size: 8px;
+      font-weight: 800;
+      color: #f59e0b;
+      background: #291d0e;
+      border: 1px solid #78350f;
+      border-radius: 3px;
+      padding: 1px 5px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }}
+    .asset-title-row {{
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 7px;
+    }}
+    .asset-name {{
+      font-size: 12px;
+      font-weight: 700;
+      color: #fef08a;
+      line-height: 1.25;
+    }}
+    .asset-id {{
+      font-size: 9px;
+      color: #8b7d6b;
+      font-family: monospace;
+    }}
+    .asset-image-container {{
+      width: 100%;
+      min-height: 130px;
+      background: #0c0b09;
+      border: 1px solid #382e24;
+      border-radius: 4px;
+      margin-bottom: 7px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }}
+    .asset-img-wrapper {{
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }}
+    .asset-viewer-img {{
+      max-width: 100%;
+      max-height: 175px;
+      object-fit: contain;
+      border-radius: 3px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.85);
+    }}
+    .asset-img-caption {{
+      width: 100%;
+      background: rgba(12, 10, 8, 0.92);
+      font-size: 8px;
+      color: #ca8a04;
+      text-align: center;
+      padding: 2.5px 4px;
+      border-top: 1px solid #33271d;
+    }}
+    .asset-no-img-box {{
+      padding: 12px 8px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+    }}
+    .asset-no-img-icon {{
+      font-size: 22px;
+      color: #786b59;
+    }}
+    .asset-no-img-text {{
+      font-size: 10px;
+      font-weight: 600;
+      color: #d6cbbd;
+    }}
+    .asset-no-img-sub {{
+      font-size: 8.5px;
+      color: #8c7e70;
+      line-height: 1.3;
+      max-width: 250px;
+      font-style: italic;
+    }}
+    .asset-lore-box {{
+      font-size: 9.5px;
+      color: #c5b8a5;
+      background: #110f0d;
+      border-left: 2px solid var(--accent);
+      padding: 5px 7px;
+      border-radius: 0 3px 3px 0;
+      margin-bottom: 7px;
+      line-height: 1.3;
+      font-style: italic;
+    }}
+    .btn-forge-render {{
+      width: 100%;
+      padding: 6px 9px;
+      background: linear-gradient(135deg, #78350f 0%, #b45309 100%);
+      border: 1px solid #f59e0b;
+      border-radius: 4px;
+      color: #fef3c7;
+      font-weight: 700;
+      font-size: 10.5px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      box-shadow: 0 2px 8px rgba(180, 83, 9, 0.4);
+      transition: all 0.2s ease;
+    }}
+    .btn-forge-render:hover {{
+      background: linear-gradient(135deg, #92400e 0%, #d97706 100%);
+      box-shadow: 0 3px 12px rgba(245, 158, 11, 0.6);
+      transform: translateY(-1px);
+    }}
+    .btn-forge-render.btn-secondary {{
+      background: #231d17;
+      border-color: #786b59;
+      color: #eed;
+      box-shadow: none;
+      margin-top: 4px;
+    }}
+    .btn-forge-render.btn-secondary:hover {{
+      background: #2f271f;
+      border-color: #ca8a04;
+      color: #fef08a;
+    }}
+    .btn-forge-render:disabled {{
+      background: #2b231c;
+      border-color: #554433;
+      color: #887766;
+      cursor: wait;
+      transform: none;
+      box-shadow: none;
+    }}
+    .forge-progress-bar {{
+      width: 100%;
+      height: 4px;
+      background: #221c17;
+      border-radius: 2px;
+      overflow: hidden;
       margin-top: 6px;
+    }}
+    .forge-progress-fill {{
+      height: 100%;
+      background: linear-gradient(90deg, #ca8a04, #38bdf8);
+      width: 0%;
+      animation: forgeAnim 1.2s ease-in-out infinite alternate;
+    }}
+    @keyframes forgeAnim {{
+      from {{ width: 20%; }}
+      to {{ width: 95%; }}
     }}
   </style>
 </head>
@@ -1113,78 +1337,173 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
 
     <!-- Right-Hand Telemetry HUD -->
     <div class="telemetry-panel">
-      <div class="panel-section">
-        <div class="section-title">Player Perspective Origin</div>
-        <div class="stat-row"><span>World Coord:</span><span class="stat-val stat-accent" id="stat-player-xy">{player_x:.1f}m, {player_y:.1f}m</span></div>
-        <div class="stat-row"><span>Ground Elevation:</span><span class="stat-val stat-accent" id="stat-player-z">6.00m</span></div>
-        <div class="stat-row"><span>Vanishing Point:</span><span class="stat-val" id="stat-vanishing">50%, 50%</span></div>
-        <div class="stat-row"><span>Sightline Status:</span><span class="stat-val" style="color: #4ade80;">Active (Clear)</span></div>
-      </div>
-
-      <div class="panel-section">
-        <div class="section-title">Scene Zone & Interactables</div>
-        <div class="stat-row"><span>Current Zone:</span><span class="stat-val stat-accent" id="stat-player-zone">Border Approach (Wilderness)</span></div>
-        <div class="stat-row"><span>Nearest Prop:</span><span class="stat-val stat-gold" id="stat-nearest-prop">--</span></div>
-      </div>
-
-      <div class="panel-section">
-        <div class="section-title">Physicality & Push Strength</div>
-        <div class="stat-row"><span>Push Strength:</span><span class="stat-val stat-gold" id="stat-player-strength">60 kg</span></div>
-        <div style="display: flex; gap: 4px; margin-top: 8px;">
-          <button style="flex: 1; padding: 4px; font-size: 10px; background: #26211c; border: 1px solid #786b59; color: #eed; border-radius: 3px; cursor: pointer;" onclick="window.viewer && window.viewer.setPlayerStrength(60)">60kg (Norm)</button>
-          <button style="flex: 1; padding: 4px; font-size: 10px; background: #26211c; border: 1px solid #786b59; color: #eed; border-radius: 3px; cursor: pointer;" onclick="window.viewer && window.viewer.setPlayerStrength(160)">160kg (Locker)</button>
-          <button style="flex: 1; padding: 4px; font-size: 10px; background: #26211c; border: 1px solid #ca8a04; color: #fde047; border-radius: 3px; cursor: pointer;" onclick="window.viewer && window.viewer.setPlayerStrength(320)">320kg (Cryo)</button>
+      <!-- 1. Asset & Diffusion Viewer Panel (Pinned at Top) -->
+      <div class="panel-section asset-viewer-section" id="asset-viewer-panel">
+        <div class="asset-viewer-header">
+          <div class="section-title">
+            <span>🎨 Asset & Diffusion Viewer</span>
+          </div>
+          <span class="asset-badge" id="asset-viewer-badge">[PROP · MAJOR]</span>
         </div>
-        <div style="margin-top: 6px; font-size: 9.5px; color: #9c8e80; line-height: 1.3;">
-          Push objects with mass &le; strength. Fragile borosilicate glass artifacts shatter when impacted into stone walls.
+        <div class="asset-title-row">
+          <span class="asset-name" id="asset-viewer-name">R6-SHIP Standard Bounding Crate</span>
+          <span class="asset-id" id="asset-viewer-id">r6_ship_crate_standard</span>
+        </div>
+
+        <div class="asset-image-container" id="asset-viewer-image-container">
+          <!-- Populated dynamically: <img> with caption, or placeholder + prompt + Render button -->
+        </div>
+
+        <div class="asset-meta-row" id="asset-viewer-meta">
+          <div class="stat-row"><span>Provenance:</span><span class="stat-val stat-accent" id="asset-viewer-provenance">customs-house/r6-ship</span></div>
+          <div class="stat-row"><span>Physicality:</span><span class="stat-val" id="asset-viewer-physicality">42.5kg · physics object</span></div>
+          <div class="stat-row"><span>Diffusion Model:</span><span class="stat-val stat-gold" id="asset-viewer-model">Black Forest Labs Flux 3 Klein</span></div>
+        </div>
+
+        <div class="asset-lore-box" id="asset-viewer-lore">
+          "Standardized rectangular shipping crate demanding arithmetic clearance."
+        </div>
+
+        <div class="asset-actions" id="asset-viewer-actions">
+          <button class="btn-forge-render" id="btn-forge-render" onclick="window.viewer && window.viewer.renderSelectedAssetInForge && window.viewer.renderSelectedAssetInForge()">
+            ✨ Render in Asset Forge
+          </button>
         </div>
       </div>
 
+      <!-- 2. Player Perspective Origin (Collapsible) -->
       <div class="panel-section">
-        <div class="section-title">Stagecraft Semantic Blackboard</div>
-        <div class="stat-row"><span>Proscenium State:</span><span class="stat-val stat-accent" id="stat-proscenium">wilderness</span></div>
-        <div class="stat-row"><span>Anchored Cue Mark:</span><span class="stat-val stat-gold" id="stat-semantic-anchor">None</span></div>
-        <div class="stat-row"><span>Camera Vantage:</span><span class="stat-val" id="stat-camera-vantage">macro_exploration</span></div>
-        <div class="stat-row"><span>Affordances:</span><span class="stat-val stat-gold" id="stat-affordances">None</span></div>
-        <div class="stage-direction-box" id="stat-stage-direction">[STAGE DIRECTION] Move onto stage or click a ★ Cue Mark.</div>
-        <button class="btn-cutscene" id="btn-play-cutscene" onclick="window.viewer && window.viewer.playBorderClearanceCutscene && window.viewer.playBorderClearanceCutscene()">
-          ▶ Play Cutscene: Border Clearance
-        </button>
+        <details class="panel-section-collapsible" open>
+          <summary class="section-summary">
+            <span class="section-title">Player Perspective</span>
+            <span class="section-summary-badge" id="badge-player-xy">{player_x:.1f}m, {player_y:.1f}m</span>
+          </summary>
+          <div class="section-body">
+            <div class="stat-row"><span>World Coord:</span><span class="stat-val stat-accent" id="stat-player-xy">{player_x:.1f}m, {player_y:.1f}m</span></div>
+            <div class="stat-row"><span>Ground Elevation:</span><span class="stat-val stat-accent" id="stat-player-z">6.00m</span></div>
+            <div class="stat-row"><span>Vanishing Point:</span><span class="stat-val" id="stat-vanishing">50%, 50%</span></div>
+            <div class="stat-row"><span>Sightline Status:</span><span class="stat-val" style="color: #4ade80;">Active (Clear)</span></div>
+          </div>
+        </details>
       </div>
 
+      <!-- 3. Scene Zone & Interactables (Collapsible) -->
       <div class="panel-section">
-        <div class="section-title">Atmosphere & Audio Synthesizer</div>
-        <div class="stat-row"><span>Lighting Shroud:</span><span class="stat-val stat-accent" id="stat-atmosphere">DAY</span></div>
-        <div style="display: flex; gap: 4px; margin-top: 8px;">
-          <button style="flex: 1; padding: 4px; font-size: 9.5px; background: #26211c; border: 1px solid #786b59; color: #eed; border-radius: 3px; cursor: pointer;" onclick="window.viewer && window.viewer.setAtmosphereMode('day')">☀️ Day</button>
-          <button style="flex: 1; padding: 4px; font-size: 9.5px; background: #26211c; border: 1px solid #ca8a04; color: #fde047; border-radius: 3px; cursor: pointer;" onclick="window.viewer && window.viewer.setAtmosphereMode('golden_hour')">🌅 Dusk</button>
-          <button style="flex: 1; padding: 4px; font-size: 9.5px; background: #26211c; border: 1px solid #38bdf8; color: #7dd3fc; border-radius: 3px; cursor: pointer;" onclick="window.viewer && window.viewer.setAtmosphereMode('night')">🌙 Night</button>
-          <button style="flex: 1; padding: 4px; font-size: 9.5px; background: #26211c; border: 1px solid #2dd4bf; color: #99f6e4; border-radius: 3px; cursor: pointer;" onclick="window.viewer && window.viewer.setAtmosphereMode('cryo')">❄️ Cryo</button>
-        </div>
-        <button id="btn-audio-toggle" style="width: 100%; margin-top: 8px; padding: 5px; font-size: 10px; background: #241f1a; border: 1px solid #786b59; color: #d6cbbd; border-radius: 3px; cursor: pointer;" onclick="if (window.viewer) {{ window.viewer.setAudioMuted(!window.viewer.isAudioMuted()); this.innerText = window.viewer.isAudioMuted() ? '🔇 Audio: Muted' : '🔊 Audio: Active (Web Audio Synthesizer)'; }}">
-          🔇 Audio: Muted (Click to Enable Synthesizer)
-        </button>
+        <details class="panel-section-collapsible" open>
+          <summary class="section-summary">
+            <span class="section-title">Zone & Interactables</span>
+            <span class="section-summary-badge" id="badge-player-zone">Wilderness</span>
+          </summary>
+          <div class="section-body">
+            <div class="stat-row"><span>Current Zone:</span><span class="stat-val stat-accent" id="stat-player-zone">Border Approach (Wilderness)</span></div>
+            <div class="stat-row"><span>Nearest Prop:</span><span class="stat-val stat-gold" id="stat-nearest-prop">--</span></div>
+          </div>
+        </details>
       </div>
 
+      <!-- 4. Physicality & Push Strength (Collapsible) -->
       <div class="panel-section">
-        <div class="section-title">Cursor Depth Probe</div>
-        <div class="stat-row"><span>Cursor Coord:</span><span class="stat-val stat-gold" id="stat-cursor-xy">--</span></div>
-        <div class="stat-row"><span>Probed Height:</span><span class="stat-val stat-gold" id="stat-cursor-z">--</span></div>
-        <div class="stat-row"><span>Delta to Player:</span><span class="stat-val" id="stat-cursor-delta">--</span></div>
-        <div class="stat-row"><span>Surface Slope:</span><span class="stat-val" id="stat-cursor-slope">--</span></div>
+        <details class="panel-section-collapsible" open>
+          <summary class="section-summary">
+            <span class="section-title">Physicality & Push</span>
+            <span class="section-summary-badge" id="badge-strength">60 kg</span>
+          </summary>
+          <div class="section-body">
+            <div class="stat-row"><span>Push Strength:</span><span class="stat-val stat-gold" id="stat-player-strength">60 kg</span></div>
+            <div style="display: flex; gap: 4px; margin-top: 6px;">
+              <button style="flex: 1; padding: 4px; font-size: 9.5px; background: #26211c; border: 1px solid #786b59; color: #eed; border-radius: 3px; cursor: pointer;" onclick="window.viewer && window.viewer.setPlayerStrength(60)">60kg (Norm)</button>
+              <button style="flex: 1; padding: 4px; font-size: 9.5px; background: #26211c; border: 1px solid #786b59; color: #eed; border-radius: 3px; cursor: pointer;" onclick="window.viewer && window.viewer.setPlayerStrength(160)">160kg (Locker)</button>
+              <button style="flex: 1; padding: 4px; font-size: 9.5px; background: #26211c; border: 1px solid #ca8a04; color: #fde047; border-radius: 3px; cursor: pointer;" onclick="window.viewer && window.viewer.setPlayerStrength(320)">320kg (Cryo)</button>
+            </div>
+          </div>
+        </details>
       </div>
 
+      <!-- 5. Stagecraft Semantic Blackboard (Collapsible) -->
       <div class="panel-section">
-        <div class="section-title">Parallax Strata Stack</div>
-        <div id="strata-list"></div>
-        <div class="legend-bar"></div>
+        <details class="panel-section-collapsible" open>
+          <summary class="section-summary">
+            <span class="section-title">Stagecraft Blackboard</span>
+            <span class="section-summary-badge" id="badge-proscenium">wilderness</span>
+          </summary>
+          <div class="section-body">
+            <div class="stat-row"><span>Proscenium State:</span><span class="stat-val stat-accent" id="stat-proscenium">wilderness</span></div>
+            <div class="stat-row"><span>Anchored Cue Mark:</span><span class="stat-val stat-gold" id="stat-semantic-anchor">None</span></div>
+            <div class="stat-row"><span>Camera Vantage:</span><span class="stat-val" id="stat-camera-vantage">macro_exploration</span></div>
+            <div class="stat-row"><span>Affordances:</span><span class="stat-val stat-gold" id="stat-affordances">None</span></div>
+            <div class="stage-direction-box" id="stat-stage-direction" style="font-size: 9.5px; padding: 5px 8px; margin: 6px 0;">[STAGE DIRECTION] Move onto stage or click a ★ Cue Mark.</div>
+            <button class="btn-cutscene" id="btn-play-cutscene" style="padding: 5px; font-size: 10px;" onclick="window.viewer && window.viewer.playBorderClearanceCutscene && window.viewer.playBorderClearanceCutscene()">
+              ▶ Play Cutscene: Border Clearance
+            </button>
+          </div>
+        </details>
       </div>
 
+      <!-- 6. Atmosphere & Audio Synthesizer (Collapsible) -->
       <div class="panel-section">
-        <div class="section-title">Ancient Overhang Lore Rule</div>
-        <p style="font-size: 11px; line-height: 1.4; color: #9c8e80;">
-          Slopes &ge; 45° with strict cantilever bounds represent ancient non-navigable relics. Modern habitable structures sit on level build plates.
-        </p>
+        <details class="panel-section-collapsible" open>
+          <summary class="section-summary">
+            <span class="section-title">Atmosphere & Audio</span>
+            <span class="section-summary-badge" id="badge-atmosphere">DAY</span>
+          </summary>
+          <div class="section-body">
+            <div class="stat-row"><span>Lighting Shroud:</span><span class="stat-val stat-accent" id="stat-atmosphere">DAY</span></div>
+            <div style="display: flex; gap: 4px; margin-top: 6px;">
+              <button style="flex: 1; padding: 3px; font-size: 9px; background: #26211c; border: 1px solid #786b59; color: #eed; border-radius: 3px; cursor: pointer;" onclick="window.viewer && window.viewer.setAtmosphereMode('day')">☀️ Day</button>
+              <button style="flex: 1; padding: 3px; font-size: 9px; background: #26211c; border: 1px solid #ca8a04; color: #fde047; border-radius: 3px; cursor: pointer;" onclick="window.viewer && window.viewer.setAtmosphereMode('golden_hour')">🌅 Dusk</button>
+              <button style="flex: 1; padding: 3px; font-size: 9px; background: #26211c; border: 1px solid #38bdf8; color: #7dd3fc; border-radius: 3px; cursor: pointer;" onclick="window.viewer && window.viewer.setAtmosphereMode('night')">🌙 Night</button>
+              <button style="flex: 1; padding: 3px; font-size: 9px; background: #26211c; border: 1px solid #2dd4bf; color: #99f6e4; border-radius: 3px; cursor: pointer;" onclick="window.viewer && window.viewer.setAtmosphereMode('cryo')">❄️ Cryo</button>
+            </div>
+            <button id="btn-audio-toggle" style="width: 100%; margin-top: 6px; padding: 4px; font-size: 9.5px; background: #241f1a; border: 1px solid #786b59; color: #d6cbbd; border-radius: 3px; cursor: pointer;" onclick="if (window.viewer) {{ window.viewer.setAudioMuted(!window.viewer.isAudioMuted()); this.innerText = window.viewer.isAudioMuted() ? '🔇 Audio: Muted' : '🔊 Audio: Active (Web Audio Synthesizer)'; }}">
+              🔇 Audio: Muted (Click to Enable Synthesizer)
+            </button>
+          </div>
+        </details>
+      </div>
+
+      <!-- 7. Cursor Depth Probe (Collapsed by Default) -->
+      <div class="panel-section">
+        <details class="panel-section-collapsible">
+          <summary class="section-summary">
+            <span class="section-title">Cursor Depth Probe</span>
+            <span class="section-summary-badge" id="badge-cursor">Hover Map</span>
+          </summary>
+          <div class="section-body">
+            <div class="stat-row"><span>Cursor Coord:</span><span class="stat-val stat-gold" id="stat-cursor-xy">--</span></div>
+            <div class="stat-row"><span>Probed Height:</span><span class="stat-val stat-gold" id="stat-cursor-z">--</span></div>
+            <div class="stat-row"><span>Delta to Player:</span><span class="stat-val" id="stat-cursor-delta">--</span></div>
+            <div class="stat-row"><span>Surface Slope:</span><span class="stat-val" id="stat-cursor-slope">--</span></div>
+          </div>
+        </details>
+      </div>
+
+      <!-- 8. Parallax Strata Stack (Collapsed by Default) -->
+      <div class="panel-section">
+        <details class="panel-section-collapsible">
+          <summary class="section-summary">
+            <span class="section-title">Parallax Strata Stack</span>
+            <span class="section-summary-badge">4 Layers</span>
+          </summary>
+          <div class="section-body">
+            <div id="strata-list"></div>
+            <div class="legend-bar"></div>
+          </div>
+        </details>
+      </div>
+
+      <!-- 9. Ancient Overhang Lore Rule (Collapsed by Default) -->
+      <div class="panel-section">
+        <details class="panel-section-collapsible">
+          <summary class="section-summary">
+            <span class="section-title">Ancient Overhang Rule</span>
+            <span class="section-summary-badge">&ge; 45°</span>
+          </summary>
+          <div class="section-body">
+            <p style="font-size: 10px; line-height: 1.35; color: #9c8e80;">
+              Slopes &ge; 45° represent ancient non-navigable relics. Habitable structures sit on level build plates.
+            </p>
+          </div>
+        </details>
       </div>
     </div>
   </div>
