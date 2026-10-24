@@ -139,8 +139,13 @@ def assemble(style: str, body: str, facet: str | None = None) -> str:
     return ". ".join(p.strip().rstrip(".") for p in parts if p) + "."
 
 
-def full_prompt(sheet: dict, fragment: str, facet: str | None = None) -> str:
-    return assemble(sheet.get("style", DEFAULT_STYLE), brief_for(sheet, fragment), facet)
+def full_prompt(sheet: dict, fragment: str, facet: str | None = None, scene_id: str = "customs-house") -> str:
+    try:
+        from companion.fragment_compiler import compile_npc_facet_brief
+        brief = compile_npc_facet_brief(sheet, facet or "portrait", fragment, scene_id=scene_id)
+        return brief.rewritten_prompt
+    except Exception:
+        return assemble(sheet.get("style", DEFAULT_STYLE), brief_for(sheet, fragment), facet)
 
 
 def facets_of(sheet: dict) -> list[tuple[str, list[str]]]:
@@ -323,6 +328,8 @@ def main():
     parser.add_argument("--server", default="http://127.0.0.1:8188", help="ComfyUI server URL (default: http://127.0.0.1:8188)")
     parser.add_argument("--dry-run", action="store_true", help="Print prompt assembly and graph without calling ComfyUI")
     parser.add_argument("--facets", nargs="*", help="Limit rendering to specific facets (e.g. portrait, home)")
+    parser.add_argument("--scene", default="customs-house", help="Host floorplan scene ID for coherence backpressure (default: customs-house)")
+    parser.add_argument("--live-llm", action="store_true", help="Enable live local LLM synthesis for unresolved facet prompts")
     parser.add_argument("--steps", type=int, default=DEFAULT_STEPS, help=f"Sampling steps (default: {DEFAULT_STEPS})")
     parser.add_argument("--cfg", type=float, default=DEFAULT_CFG, help=f"CFG scale (default: {DEFAULT_CFG})")
     parser.add_argument("--seed", type=int, help="Fixed random seed (random if omitted)")
@@ -379,7 +386,7 @@ def main():
         for facet, fragments in all_facets:
             for idx, frag in enumerate(fragments):
                 dim = FACET_SIZES.get(facet, (1024, 1024))
-                prompt = full_prompt(sheet, frag, facet)
+                prompt = full_prompt(sheet, frag, facet, scene_id=args.scene)
                 seed = args.seed if args.seed is not None else random.randint(1, 2**32 - 1)
                 prefix = f"spritequest/{slug}/{facet}_{idx + 1}"
 

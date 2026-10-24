@@ -238,6 +238,49 @@ class TestFactionCompiler(unittest.TestCase):
         self.assertIn("enemy-faction", tags)
         self.assertIn("technology", tags)
 
+    def test_cartographers_governance_filtering_and_warrants(self):
+        """
+        Cartographers Ledger governance in compile_tavern_card:
+        - Criticized fragments are omitted as negative constraint tombstones.
+        - Curated fragments inject their Canon Warrant into the entry comment and extensions.
+        """
+        from companion.fragment_compiler import CartographersLedger
+
+        composed = compose_npc(self.hollis, self.faction)
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_ledger = Path(tmp_dir) / "test_ledger.json"
+            ledger = CartographersLedger(ledger_path=tmp_ledger)
+            ledger.entries["space-vampires/glass-stasis-coffin"] = {
+                "fragment_id": "space-vampires/glass-stasis-coffin",
+                "maturity": "criticized",
+                "criticism_constraint": "Author rejected glass stasis coffin",
+            }
+            ledger.entries["space-vampires/anti-life-entropy"] = {
+                "fragment_id": "space-vampires/anti-life-entropy",
+                "maturity": "curated",
+                "warrant_id": "WARRANT-ENTROPY-CURATED",
+            }
+
+            card = compile_tavern_card(composed, self.faction, include_base_lore=True, ledger=ledger)
+            data = card.get("data", {})
+            cb = data.get("character_book", {})
+            entries = cb.get("entries", [])
+            entry_keys = [e["key"] for e in entries]
+
+            # Criticized fragment is omitted!
+            self.assertNotIn("space-vampires/glass-stasis-coffin", entry_keys)
+            gov = cb.get("extensions", {}).get("cartographers_governance", {})
+            self.assertIn("space-vampires/glass-stasis-coffin", gov.get("omitted_criticisms", []))
+
+            # Curated fragment has Canon Warrant!
+            self.assertIn("space-vampires/anti-life-entropy", entry_keys)
+            entropy_entry = next(e for e in entries if e["key"] == "space-vampires/anti-life-entropy")
+            self.assertIn("[Canon Warrant: WARRANT-ENTROPY-CURATED]", entropy_entry["comment"])
+            self.assertEqual(entropy_entry["extensions"]["warrant_id"], "WARRANT-ENTROPY-CURATED")
+            self.assertEqual(entropy_entry["extensions"]["standing"], "warranted")
+            self.assertIn("WARRANT-ENTROPY-CURATED", gov.get("curated_warrants", []))
+
 
 if __name__ == "__main__":
     unittest.main()

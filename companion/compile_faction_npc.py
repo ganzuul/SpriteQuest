@@ -212,11 +212,26 @@ def compose_npc(base_npc: dict, faction_plan: dict) -> dict:
     return composed
 
 
-def compile_tavern_card(composed_npc: dict, faction_plan: dict, include_base_lore: bool = True) -> dict:
+def compile_tavern_card(
+    composed_npc: dict,
+    faction_plan: dict,
+    include_base_lore: bool = True,
+    ledger: Any | None = None,
+) -> dict:
     """
     Compile a composed NPC dictionary and faction plan into a Tavern v2 character card.
-    Embeds faction fragments and base world fragments into character_book.entries.
+    Embeds faction fragments and base world fragments into character_book.entries,
+    filtering through the CartographersLedger to omit criticized fragments and enrich
+    curated fragments with their Canon Warrant provenance.
     """
+    if ledger is None:
+        try:
+            from companion.fragment_compiler import CartographersLedger
+            ledger = CartographersLedger()
+            ledger.sync_with_filesystem()
+        except Exception:
+            ledger = None
+
     name = composed_npc.get("name", "")
     role = composed_npc.get("role", "")
     world = composed_npc.get("world", "")
@@ -268,16 +283,43 @@ def compile_tavern_card(composed_npc: dict, faction_plan: dict, include_base_lor
                     collected_fragments.append(frag)
                     seen_frag_ids.add(fid)
 
+    # Filter through CartographersLedger
+    filtered_fragments = []
+    curated_warrants = []
+    omitted_criticisms = []
+
+    for frag in collected_fragments:
+        fid = frag.get("id", "")
+        if ledger and fid in ledger.entries:
+            entry = ledger.entries[fid]
+            mat = entry.get("maturity")
+            if mat == "criticized":
+                omitted_criticisms.append(fid)
+                continue
+            if mat == "curated":
+                wid = entry.get("warrant_id")
+                if wid:
+                    curated_warrants.append(wid)
+                    frag = dict(frag)
+                    frag["warrant_id"] = wid
+        filtered_fragments.append(frag)
+
     # Build character_book entries
     entries = []
-    for idx, frag in enumerate(collected_fragments):
-        entries.append({
+    for idx, frag in enumerate(filtered_fragments):
+        wid = frag.get("warrant_id")
+        note = frag.get("note", "")
+        comment = f"[Canon Warrant: {wid}] {note}" if wid else note
+        entry_dict = {
             "key": frag.get("id", ""),
             "value": frag.get("detail", ""),
-            "comment": frag.get("note", ""),
+            "comment": comment,
             "enabled": True,
             "insertion_order": idx,
-        })
+        }
+        if wid:
+            entry_dict["extensions"] = {"warrant_id": wid, "standing": "warranted"}
+        entries.append(entry_dict)
 
     character_book = {
         "name": f"{name} Lorebook ({faction_plan.get('name', 'Faction')})",
@@ -287,6 +329,10 @@ def compile_tavern_card(composed_npc: dict, faction_plan: dict, include_base_lor
         "recursive_scanning": False,
         "extensions": {
             "faction_id": faction_plan.get("id", ""),
+            "cartographers_governance": {
+                "curated_warrants": curated_warrants,
+                "omitted_criticisms": omitted_criticisms,
+            },
         },
         "entries": entries,
     }

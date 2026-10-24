@@ -114,6 +114,88 @@ class TestFluxRenderer(unittest.TestCase):
         self.assertTrue(any("qwen" in c or "t5" in c for c in CLIP_CANDIDATES))
         self.assertTrue(any("flux" in v or "ae" in v for v in VAE_CANDIDATES))
 
+    def test_npc_facet_compilation_and_ortho_cutout_doctrine(self):
+        """
+        Verify that NPC facet compilation enforces single-face orthographic 2.5D doctrine
+        on 'cutout' facets and scene substrate backpressure on portraits.
+        """
+        from companion.fragment_compiler import compile_npc_facet_brief
+
+        # 1. Cutout facet must enforce orthographic top-down 2.5D and neutral grey #707070
+        cutout_brief = compile_npc_facet_brief(
+            self.sample_sheet,
+            facet="cutout",
+            fragment_text="standing figure holding manifest",
+            scene_id="customs-house",
+        )
+        self.assertEqual(cutout_brief.recipe_archetype, "npc_cutout")
+        self.assertIn("orthographic top-down 2.5D isometric game character sprite cutout", cutout_brief.rewritten_prompt)
+        self.assertIn("#707070", cutout_brief.rewritten_prompt)
+        self.assertIn("clean silhouette", cutout_brief.rewritten_prompt)
+        self.assertIn("grounded in Weigh & Inspection Hall", cutout_brief.rewritten_prompt)
+        self.assertEqual(cutout_brief.standing_tier, "provisional")  # sample_sheet lacks written: True
+
+        # If written: True, standing tier promotes to verified
+        written_sheet = dict(self.sample_sheet, written=True)
+        written_cutout = compile_npc_facet_brief(
+            written_sheet,
+            facet="cutout",
+            fragment_text="standing figure holding manifest",
+            scene_id="customs-house",
+        )
+        self.assertEqual(written_cutout.standing_tier, "verified")
+
+        # 2. Portrait facet must apply portrait bust framing and character style
+        portrait_brief = compile_npc_facet_brief(
+            self.sample_sheet,
+            facet="portrait",
+            fragment_text=self.sample_sheet["portrait"],
+            scene_id="customs-house",
+        )
+        self.assertEqual(portrait_brief.recipe_archetype, "npc_portrait")
+        self.assertIn("character portrait bust", portrait_brief.rewritten_prompt)
+        self.assertIn("Hollis the Twice-Written", portrait_brief.rewritten_prompt)
+        self.assertIn("Retro JRPG 16-bit aesthetic", portrait_brief.rewritten_prompt)
+
+    def test_cross_domain_scene_backpressure_on_npc_facets(self):
+        """
+        When an out-of-domain NPC (e.g. Space Vampires) is stationed in customs-house,
+        scene backpressure detects domain tension and injects environmental adjustments.
+        """
+        from companion.fragment_compiler import compile_npc_facet_brief
+
+        vampire_sheet = {
+            "name": "Hollis the Thermoelectric",
+            "role": "factor to the Mercantile Houses",
+            "world_id": "space-vampires",
+            "style": "Retro JRPG 16-bit aesthetic, sterile technology",
+            "portrait": "bleached porcelain skin with thermoelectric conduits",
+            "written": True,
+        }
+
+        brief = compile_npc_facet_brief(
+            vampire_sheet,
+            facet="portrait",
+            fragment_text=vampire_sheet["portrait"],
+            scene_id="customs-house",
+        )
+        self.assertTrue(any("thermoelectric conduits frosted" in bp for bp in brief.scene_backpressure))
+        self.assertIn("Weigh & Inspection Hall", brief.zone_context["zone_name"])
+
+    def test_query_live_local_llm_offline_fallback(self):
+        """
+        The query_live_local_llm HTTP adapter must cleanly return None without crashing
+        when the model endpoint is offline or unreachable.
+        """
+        from companion.fragment_compiler import query_live_local_llm
+
+        res = query_live_local_llm(
+            context={"conflict": {"kind": "test_anomaly"}},
+            endpoint_url="http://127.0.0.1:59999/v1/chat/completions",
+            timeout=0.1,
+        )
+        self.assertIsNone(res, "Offline LLM server must cleanly return None")
+
 
 if __name__ == "__main__":
     unittest.main()

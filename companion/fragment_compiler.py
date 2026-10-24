@@ -27,9 +27,11 @@ Follows the QWEN.md 4th-wall translation rule and the library/README.md specific
 
 from __future__ import annotations
 
+import argparse
 import hashlib
 import json
 import re
+import sys
 import urllib.error
 import urllib.request
 from dataclasses import asdict, dataclass, field
@@ -192,6 +194,78 @@ ASSET_RECIPES: dict[str, dict[str, Any]] = {
         ],
         "target_capacity": 3,
         "derive_physics": lambda mass_kg, bounds, verbs: _derive_unmodelled_physics(mass_kg, bounds, verbs),
+    },
+    # NPC Facet Recipes
+    "npc_portrait": {
+        "archetype": "npc_portrait",
+        "description": "Character portrait bust with expression and role framing",
+        "allowed_fragments": {
+            "scaffolded-kingdom/quartermaster-ledger",
+            "neighboring-kingdom/blank-script",
+            "cartographers/canon-warrant",
+            "shared/brief-faces-are-themes",
+        },
+        "doctrine_fragments": [
+            "shared/brief-faces-are-themes",
+        ],
+        "target_capacity": 4,
+        "derive_physics": lambda mass_kg, bounds, verbs: ["character portrait bust", "three-quarter perspective", "expressive facial rendering"],
+    },
+    "npc_cutout": {
+        "archetype": "npc_cutout",
+        "description": "Full-figure 2.5D game sprite cutout isolated on neutral background",
+        "allowed_fragments": {
+            "scaffolded-kingdom/quartermaster-ledger",
+            "neighboring-kingdom/blank-script",
+            "shared/single-face-reading",
+            "shared/seam-lines",
+        },
+        "doctrine_fragments": [
+            "shared/single-face-reading",
+        ],
+        "target_capacity": 4,
+        "derive_physics": lambda mass_kg, bounds, verbs: ["full standing figure", "ground contact occlusion shadow", "clean sprite silhouette"],
+    },
+    "npc_home": {
+        "archetype": "npc_home",
+        "description": "Environmental stationing or residence with atmospheric perspective",
+        "allowed_fragments": {
+            "customs-house/the-site",
+            "customs-house/forfeit-corridor",
+            "grey-wind/mountain-passage",
+            "shared/brief-faces-are-themes",
+        },
+        "doctrine_fragments": [
+            "shared/brief-faces-are-themes",
+        ],
+        "target_capacity": 4,
+        "derive_physics": lambda mass_kg, bounds, verbs: ["architectural interior", "volumetric atmospheric perspective", "environmental narrative props"],
+    },
+    "npc_favored_item": {
+        "archetype": "npc_favored_item",
+        "description": "Tactile inventory relic or personal artifact",
+        "allowed_fragments": {
+            "shared/glyph-customs-seal",
+            "shared/single-face-reading",
+            "cartographers/canon-warrant",
+        },
+        "doctrine_fragments": [
+            "shared/single-face-reading",
+        ],
+        "target_capacity": 4,
+        "derive_physics": lambda mass_kg, bounds, verbs: ["tactile inventory relic", "hand-held scale", "material wear and provenance"],
+    },
+    "npc_aspirations": {
+        "archetype": "npc_aspirations",
+        "description": "Theatrical narrative wide tableau illustrating character yearning",
+        "allowed_fragments": {
+            "shared/brief-faces-are-themes",
+        },
+        "doctrine_fragments": [
+            "shared/brief-faces-are-themes",
+        ],
+        "target_capacity": 3,
+        "derive_physics": lambda mass_kg, bounds, verbs: ["wide cinematic composition", "theatrical lighting contrast", "dramatic narrative tableau"],
     },
 }
 
@@ -1340,3 +1414,230 @@ def rewrite_prompt(
     ]
 
     return ", ".join(prompt_parts)
+
+
+def compile_npc_facet_brief(
+    sheet: dict[str, Any],
+    facet: str,
+    fragment_text: str = "",
+    scene_id: str = "customs-house",
+    fragments_dir: Path | None = None,
+    ledger_path: Path | None = None,
+    llm_callback: Callable[[dict[str, Any]], str] | None = None,
+) -> CompiledAssetBrief:
+    """
+    Compile an NPC sheet facet (portrait, cutout, home, favored_items, aspirations)
+    through explicit facet recipes, applying scene substrate backpressure,
+    CartographersLedger provenance, and single-face orthographic doctrine.
+    """
+    active_fragments_dir = fragments_dir or FRAGMENTS_DIR
+    ledger = CartographersLedger(ledger_path=ledger_path, fragments_dir=active_fragments_dir)
+    ledger.sync_with_filesystem(persist=(ledger_path is not None or DEFAULT_LEDGER_PATH.is_file()))
+
+    name = sheet.get("name", "Unnamed Character")
+    role = sheet.get("role", "")
+    style = sheet.get("style", "")
+    world_id = sheet.get("world_id") or sheet.get("world", "scaffolded-kingdom")
+    written = sheet.get("written", False)
+
+    # Normalize facet text
+    raw_content = fragment_text or sheet.get(facet, "")
+    if isinstance(raw_content, list):
+        facet_detail = raw_content[0] if raw_content else ""
+    else:
+        facet_detail = str(raw_content)
+
+    recipe_name = f"npc_{facet}"
+    if recipe_name not in ASSET_RECIPES:
+        recipe_name = "npc_portrait"
+    recipe = ASSET_RECIPES[recipe_name]
+
+    # Resolve scene context
+    zone_ctx = resolve_scene_zone_context(sheet, scene_id=scene_id)
+    scene_backpressure = [
+        f"grounded in {zone_ctx.zone_name}",
+        f"grounded upon {zone_ctx.substrate_material}",
+    ]
+
+    # Check for cross-domain tension
+    coherence_conflicts = []
+    if "space-vampires" in world_id and "customs-house" in scene_id:
+        scene_backpressure.append("thermoelectric conduits frosted with border ice amidst customs pine")
+    elif "grey-wind" in world_id and "customs-house" in scene_id:
+        scene_backpressure.append("slate-grey mountain chill cutting through customs intake drafts")
+
+    # Physical derivations
+    deriv_fn = recipe.get("derive_physics", lambda m, b, v: [])
+    physical_derivations = deriv_fn(None, {}, [])
+
+    # Check ledger for NPC/facet warrants or criticisms
+    active_criticisms = []
+    warrant_id = None
+    npc_slug = name.lower().replace(" ", "_").replace("-", "_")
+    for fid, entry in ledger.entries.items():
+        if entry.get("asset_id") in (npc_slug, f"{npc_slug}_{facet}"):
+            if entry.get("maturity") == "criticized":
+                crit = entry.get("criticism_constraint")
+                if crit:
+                    active_criticisms.append(crit)
+            elif entry.get("maturity") == "curated":
+                warrant_id = entry.get("warrant_id") or warrant_id
+
+    if warrant_id:
+        standing_tier = "warranted"
+        standing_score = 0.90
+    elif written:
+        standing_tier = "verified"
+        standing_score = 0.65
+    else:
+        standing_tier = "provisional"
+        standing_score = 0.40
+
+    # Assemble prompt
+    subject_str = f"{name}, {role}" if role else name
+    core_body = f"{subject_str}. {facet_detail}" if facet_detail else subject_str
+
+    if facet == "cutout":
+        prompt_parts = [
+            style if style else "Retro JRPG character art, sword and sorcery, 16-bit pixel aesthetic with painterly shading",
+            "orthographic top-down 2.5D isometric game character sprite cutout",
+            core_body,
+            scene_backpressure[0],
+            "full-figure standing character from head to boots, front three-quarter view, perfectly clean silhouette, ready for alpha matting",
+            "isolated on neutral solid grey background (#707070), no background walls, no room floors",
+            "subtle directional studio lighting from top-left, soft ground contact occlusion shadow beneath feet",
+            "crisp 16-bit painterly texture, highly detailed tactile character sprite, Black Forest Labs Flux 3 Klein render, 1024x1024",
+        ]
+    elif facet == "portrait":
+        prompt_parts = [
+            style if style else "Retro JRPG character art, sword and sorcery, 16-bit pixel aesthetic with painterly shading",
+            "character portrait bust, front three-quarter angle",
+            core_body,
+            "expressive character visage, fine facial details, atmospheric cinematic rim lighting, 16-bit painterly texture, Black Forest Labs Flux 3 Klein render, 1024x1024",
+        ]
+    elif facet == "home":
+        prompt_parts = [
+            style if style else "Retro JRPG environmental concept art, painterly shading",
+            "wide environmental interior perspective",
+            core_body,
+            f"constructed with {zone_ctx.substrate_material}, atmospheric depth, volumetric light shafts",
+            "rich narrative environmental details, level transition threshold, Black Forest Labs Flux 3 Klein render, 1024x1024",
+        ]
+    elif facet == "favored_items":
+        prompt_parts = [
+            style if style else "Retro JRPG inventory icon art, painterly shading",
+            "tactile inventory item prop cutout on neutral background",
+            core_body,
+            "hand-held tactile physical relic, material wear and verified provenance, clean isolated silhouette, subtle drop shadow, Black Forest Labs Flux 3 Klein render, 1024x1024",
+        ]
+    else:  # aspirations
+        prompt_parts = [
+            style if style else "Theatrical cinematic narrative art, painterly shading",
+            "wide narrative tableau",
+            core_body,
+            "dramatic theatrical lighting contrast, chiaroscuro, poetic environmental scale, Black Forest Labs Flux 3 Klein render, 1024x1024",
+        ]
+
+    rewritten_prompt = ". ".join(p.strip().rstrip(".") for p in prompt_parts if p) + "."
+
+    negative_clauses = ["blurry", "photorealistic human photo", "deformed limbs", "modern CGI"]
+    if active_criticisms:
+        negative_clauses.extend(active_criticisms)
+    negative_prompt = ", ".join(negative_clauses)
+
+    return CompiledAssetBrief(
+        asset_id=f"{npc_slug}_{facet}",
+        label=f"{name} ({facet})",
+        recipe_archetype=recipe_name,
+        fragment_id=facet,
+        scene_id=scene_id,
+        physical_specs=", ".join(physical_derivations),
+        world_look={"materials": zone_ctx.substrate_material, "reverb": zone_ctx.acoustic_reverb},
+        fragments_used=list(recipe.get("allowed_fragments", [])),
+        quarantined_fragments=[],
+        doctrine_rules=recipe.get("doctrine_fragments", []),
+        diffusion_details=[facet_detail] if facet_detail else [],
+        compiled_brief=core_body,
+        rewritten_prompt=rewritten_prompt,
+        negative_prompt=negative_prompt,
+        zone_context=asdict(zone_ctx),
+        scene_backpressure=scene_backpressure,
+        coherence_conflicts=coherence_conflicts,
+        active_criticisms=active_criticisms,
+        standing_tier=standing_tier,
+        standing_score=standing_score,
+        warrant_id=warrant_id,
+        saturation_score=0.5,
+        saturation_locked=False,
+        fragment_maturities={},
+    )
+
+
+def query_live_local_llm(
+    context: dict[str, Any],
+    endpoint_url: str = "http://127.0.0.1:8080/v1/chat/completions",
+    model: str = "gemma4-orion",
+    timeout: float = 3.0,
+) -> str | None:
+    """
+    HTTP adapter for local OpenAI-compatible inference servers (e.g. llama-swap, llama.cpp, vLLM).
+    Calls /v1/chat/completions with the Cartographer's epistemic governance prompt.
+    Returns the generated field note string, or None if the server is offline or fails.
+    """
+    conflict = context.get("conflict", {})
+    zone_ctx = context.get("zone_context", {})
+    criticisms = context.get("criticisms_to_avoid", [])
+
+    prompt = (
+        f"You are the Cartographer of the Bureau of the Unwritten Atlas in SpriteQuest.\n"
+        f"Resolve this coherence conflict with a concise, single-sentence Schema v1 sensory detail:\n"
+        f"- Conflict kind: {conflict.get('kind', 'cross_domain_anomaly')}\n"
+        f"- Description: {conflict.get('description', '')}\n"
+        f"- Substrate: {zone_ctx.get('substrate_material', 'stone')}\n"
+        f"- Lighting: {zone_ctx.get('lighting_profile', 'ambient')}\n"
+    )
+    if criticisms:
+        prompt += f"- Rejected constraints to avoid: {'; '.join(criticisms)}\n"
+    prompt += "Provide ONLY the descriptive detail clause."
+
+    payload = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": "You are a concise fantasy worldbuilder creating sensory prop descriptions."},
+            {"role": "user", "content": prompt},
+        ],
+        "temperature": 0.3,
+        "max_tokens": 120,
+    }
+    try:
+        req = urllib.request.Request(
+            endpoint_url,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            choices = data.get("choices", [])
+            if choices:
+                content = choices[0].get("message", {}).get("content", "")
+                if content and len(content.strip()) >= 10:
+                    return content.strip().strip('"')
+    except (urllib.error.URLError, TimeoutError, OSError, json.JSONDecodeError):
+        return None
+    return None
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="SpriteQuest Fragment Compiler & Cartographers Epistemic Governor")
+    parser.add_argument("--scene", default="customs-house", help="Host scene ID (default: customs-house)")
+    parser.add_argument("--live-llm", action="store_true", help="Enable live local LLM synthesis adapter")
+    parser.add_argument("--llm-url", default="http://127.0.0.1:8080/v1/chat/completions", help="Local LLM endpoint URL")
+    args = parser.parse_args()
+
+    print(f"SpriteQuest Fragment Compiler: scene='{args.scene}', live_llm={args.live_llm}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
