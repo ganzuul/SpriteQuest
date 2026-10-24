@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "id": "shared/secondary-growth-is-not-a-pair",
+  "version": 1,
+  "world_id": "shared",
+  "for": "gemma4-orion",
+  "detail": "secondary growth and surface distress such as lichen, water stains, and gouges must be distributed asymmetrically across the form, never as symmetrical mirrored pairs",
+  "evidence": {
+    "kind": "directed",
+    "source": "library/README.md",
+    "quote": "One observable detail, in prose, with where it came from."
+  },
+  "note": "A doctrine fragment for the prompt rewriter preventing artificial bilateral symmetry on surface distress."
+}

@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "id": "shared/brief-faces-are-themes",
+  "version": 1,
+  "world_id": "shared",
+  "for": "gemma4-orion",
+  "detail": "treat multi-face brief descriptions as thematic guidelines for the visible face rather than trying to paste all hidden surfaces into one view",
+  "evidence": {
+    "kind": "directed",
+    "source": "library/README.md",
+    "quote": "describe the object from one face, at one moment"
+  },
+  "note": "A doctrine fragment for the prompt rewriter preventing multi-angle surface crowding."
+}
