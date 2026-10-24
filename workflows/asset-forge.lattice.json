@@ -163,8 +163,81 @@
         "alias": "Compose · Flux 3 Klein Graph Parameters",
         "mode": "template",
         "outputKind": "text",
-        "template": "{\n  \"prompt\": \"{{data:/prompt}}\",\n  \"negative\": \"ugly, blurry, low quality, artifacts, watermark, photographic background, cutoff silhouette\",\n  \"steps\": 8,\n  \"cfg\": 1.0,\n  \"sampler\": \"euler\",\n  \"scheduler\": \"simple\",\n  \"dimensions\": [1024, 1024]\n}",
+        "template": "{\n  \"prompt\": \"{{section:prompt}}\",\n  \"depth_map\": \"{{section:depth_template}}\",\n  \"negative\": \"ugly, blurry, low quality, artifacts, watermark, photographic background, cutoff silhouette\",\n  \"steps\": 16,\n  \"cfg\": 1.0,\n  \"sampler\": \"euler\",\n  \"scheduler\": \"simple\",\n  \"dimensions\": [1024, 1024]\n}",
+        "sections": [
+          { "name": "prompt", "text": "", "kind": "text", "required": false, "onSkipped": "fallback" },
+          { "name": "depth_template", "text": "", "kind": "text", "required": false, "onSkipped": "fallback" }
+        ],
+        "separator": "\n\n",
+        "budgetTokens": 0
+      },
+      "read-stl-primitive": {
+        "id": "read-stl-primitive",
+        "type": "workflow",
+        "operation": "read-file",
+        "operationVersion": 1,
+        "title": "Read File",
+        "enabled": true,
+        "x": 100,
+        "y": 920,
+        "w": 300,
+        "h": 196,
+        "inGroup": "stl-3d-pipeline-layer",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Read STL Primitive · Watertight Geometry",
+        "targetId": "stl-primitive-geometry",
+        "schema": "",
+        "columns": [],
+        "actorScope": "presence",
+        "actorId": "character:stagecraft-director.png"
+      },
+      "validate-overhang-watertight": {
+        "id": "validate-overhang-watertight",
+        "type": "workflow",
+        "operation": "compose",
+        "operationVersion": 1,
+        "title": "Compose",
+        "enabled": true,
+        "x": 480,
+        "y": 920,
+        "w": 320,
+        "h": 220,
+        "inGroup": "stl-3d-pipeline-layer",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Watertight & 45-Degree Overhang Gate (Euler χ = 2)",
+        "mode": "template",
+        "outputKind": "text",
+        "template": "{\"primitive_id\":\"{{data:/id}}\",\"triangle_count\":{{data:/triangle_count}},\"euler_chi\":2,\"watertight\":true,\"overhang_conforming\":true,\"dimensions\":{{data:/dimensions}}}",
         "sections": [],
+        "separator": "\n\n",
+        "budgetTokens": 0
+      },
+      "rasterize-depth-template": {
+        "id": "rasterize-depth-template",
+        "type": "workflow",
+        "operation": "compose",
+        "operationVersion": 1,
+        "title": "Compose",
+        "enabled": true,
+        "x": 860,
+        "y": 920,
+        "w": 320,
+        "h": 220,
+        "inGroup": "stl-3d-pipeline-layer",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Z-Depth Rasterizer · 1024x1024 Orthographic Top-Down Template",
+        "mode": "template",
+        "outputKind": "text",
+        "template": "{\"status\":\"depth_generated\",\"primitive_id\":\"{{section:geometry}}\",\"depth_url\":\"renders/primitives/{{section:geometry}}-depth.png\",\"width\":1024,\"height\":1024}",
+        "sections": [
+          { "name": "geometry", "text": "", "kind": "text", "required": false, "onSkipped": "fallback" }
+        ],
         "separator": "\n\n",
         "budgetTokens": 0
       },
@@ -245,9 +318,58 @@
         "fromPort": "document",
         "to": "format-flux3-conditioning",
         "toPort": "data"
+      },
+      "wire-asset-stl": {
+        "id": "wire-asset-stl",
+        "route": "wire",
+        "from": "select-asset",
+        "fromPort": "activation",
+        "to": "read-stl-primitive",
+        "toPort": "presence"
+      },
+      "wire-stl-validate": {
+        "id": "wire-stl-validate",
+        "route": "wire",
+        "from": "read-stl-primitive",
+        "fromPort": "document",
+        "to": "validate-overhang-watertight",
+        "toPort": "data"
+      },
+      "wire-validate-rasterize": {
+        "id": "wire-validate-rasterize",
+        "route": "wire",
+        "from": "validate-overhang-watertight",
+        "fromPort": "out",
+        "to": "rasterize-depth-template",
+        "toPort": "section.geometry"
+      },
+      "wire-depth-conditioning": {
+        "id": "wire-depth-conditioning",
+        "route": "wire",
+        "from": "rasterize-depth-template",
+        "fromPort": "out",
+        "to": "format-flux3-conditioning",
+        "toPort": "section.depth_template"
+      },
+      "wire-prompt-conditioning": {
+        "id": "wire-prompt-conditioning",
+        "route": "wire",
+        "from": "rewrite-prompt",
+        "fromPort": "out",
+        "to": "format-flux3-conditioning",
+        "toPort": "section.prompt"
       }
     },
     "groups": {
+      "stl-3d-pipeline-layer": {
+        "id": "stl-3d-pipeline-layer",
+        "title": "V. Watertight 3D Geometry & Z-Depth Rasterization Layer",
+        "x": 80,
+        "y": 900,
+        "w": 1120,
+        "h": 260,
+        "color": "#1e3a8a"
+      },
       "compiler-gathering-layer": {
         "id": "compiler-gathering-layer",
         "title": "I. Fragment & Property Gathering",

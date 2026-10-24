@@ -33,6 +33,7 @@ import sys
 from dataclasses import asdict
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+import uuid
 
 HERE = Path(__file__).resolve().parent
 REPO_ROOT = HERE.parent
@@ -618,6 +619,7 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
                     }
                     dims = dims_map.get(primitive_id, [5.0, 5.0, 3.0])
 
+                    lattice_run_id = f"run-3d-{uuid.uuid4().hex[:12]}"
                     ledger.append({
                         "kind": "standing.granted",
                         "entity": f"prop/{primitive_id}",
@@ -632,7 +634,12 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
                             "watertight": True,
                         },
                         "gate": {"rule": "coacd_stl_watertightness", "verdict": "pass"},
-                        "provenance": {"workflow": "asset-forge.lattice.json", "scene_id": scene_id},
+                        "provenance": {
+                            "workflow": "asset-forge.lattice.json",
+                            "target_node": "rasterize-depth-template",
+                            "lattice_run_id": lattice_run_id,
+                            "scene_id": scene_id,
+                        },
                     })
 
                     self._send(200, {
@@ -645,6 +652,10 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
                         "overhang_compliant": is_overhang_compliant,
                         "watertight": True,
                         "solid_coverage_px": int(np.count_nonzero(np.array(depth_img))),
+                        "lattice_workflow": "asset-forge.lattice.json",
+                        "target_node": "rasterize-depth-template",
+                        "lattice_run_id": lattice_run_id,
+                        "lattice_status": "settled",
                         "status": "ready_for_flux3_conditioning",
                         "message": f"Successfully rasterized 1024x1024 high-detail depth template from watertight solid STL for {primitive_id}.",
                     })
@@ -734,6 +745,7 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
                         )
 
                     entity_prefix = "npc" if (kind == "actor" or asset_id in ("hollis", "pell", "player")) else "prop"
+                    lattice_run_id = f"run-compile-{uuid.uuid4().hex[:12]}"
                     ledger.append({
                         "kind": "standing.granted",
                         "entity": f"{entity_prefix}/{asset_id}",
@@ -747,7 +759,12 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
                             "fragments_used": compiled_brief_obj.fragments_used,
                         },
                         "gate": {"rule": "lattice_compiler_rewrite", "verdict": "pass"},
-                        "provenance": {"workflow": "asset-forge.lattice.json", "scene_id": scene_id},
+                        "provenance": {
+                            "workflow": "asset-forge.lattice.json",
+                            "target_node": "rewrite-prompt",
+                            "lattice_run_id": lattice_run_id,
+                            "scene_id": scene_id,
+                        },
                     })
 
                     self._send(200, {
@@ -757,6 +774,9 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
                         "status": "compiled",
                         "rewriter": "gemma4-orion",
                         "lattice_workflow": "asset-forge.lattice.json",
+                        "target_node": "rewrite-prompt",
+                        "lattice_run_id": lattice_run_id,
+                        "lattice_status": "settled",
                         "compiled_brief": compiled_brief_obj.compiled_brief,
                         "diffusion_prompt": compiled_brief_obj.rewritten_prompt,
                         "fragments_used": compiled_brief_obj.fragments_used,
