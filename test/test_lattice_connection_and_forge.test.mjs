@@ -263,4 +263,19 @@ describe('Interface Connection with Lattice & Prompt Rewrite Pipeline (TDD)', ()
     assert.equal(compRes.success, true, 'Compilation succeeds locally even when remote daemon is offline');
     assert.ok(compRes.prompt.length > 50, 'Generates valid diffusion prompt locally');
   });
+
+  test('7. SillyTavern Map Launcher & Overlay Integration', () => {
+    const indexPath = path.resolve('./index.js');
+    const indexCode = fs.readFileSync(indexPath, 'utf-8');
+    assert.ok(indexCode.includes('function addMapSendbarButton'), 'index.js must define addMapSendbarButton');
+    assert.ok(indexCode.includes('export async function openMapModal'), 'index.js must export openMapModal');
+    assert.ok(indexCode.includes('sq-map-sendbar'), 'index.js must create sq-map-sendbar button');
+    assert.ok(indexCode.includes('sq-map-overlay'), 'index.js must define sq-map-overlay container');
+    assert.ok(indexCode.includes('sq-menu-map-launch'), 'index.js must add map launcher to extension menu');
+
+    const stylePath = path.resolve('./style.css');
+    const styleCode = fs.readFileSync(stylePath, 'utf-8');
+    assert.ok(styleCode.includes('#sq-map-sendbar'), 'style.css must style sq-map-sendbar launcher');
+    assert.ok(styleCode.includes('.sq-map-overlay'), 'style.css must style sq-map-overlay modal');
+  });
 });

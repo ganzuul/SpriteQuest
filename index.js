@@ -26,6 +26,14 @@ function addLauncher() {
         item.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); UI.open(); } });
         menu.append(item);
     }
+    if (menu && !document.getElementById('sq-menu-map-launch')) {
+        const mapItem = document.createElement('div');
+        mapItem.id = 'sq-menu-map-launch'; mapItem.className = 'list-group-item flex-container flexGap5 interactable'; mapItem.tabIndex = 0;
+        mapItem.innerHTML = '<i class="fa-solid fa-map-location-dot"></i><span>SpriteQuest Map</span>';
+        mapItem.addEventListener('click', () => openMapModal());
+        mapItem.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openMapModal(); } });
+        menu.append(mapItem);
+    }
     const host = document.getElementById('extensions_settings2') ?? document.getElementById('extensions_settings');
     if (!host || document.getElementById('pc-settings')) return;
     const block = document.createElement('div'); block.id = 'pc-settings'; block.className = 'pc-settings-block';
@@ -56,6 +64,103 @@ function addSendbarButton() {
     bar.append(button);
     paintSendbar(); return true;
 }
+function addMapSendbarButton() {
+    const existing = document.getElementById('sq-map-sendbar');
+    const bar = document.getElementById('leftSendForm'); if (!bar) return false;
+    if (existing) { if (existing.parentElement !== bar) bar.append(existing); return true; }
+    const button = document.createElement('button');
+    button.id = 'sq-map-sendbar'; button.className = 'pc-chat-launcher interactable sq-map-launcher'; button.type = 'button';
+    button.setAttribute('aria-label', 'Open SpriteQuest Map');
+    button.title = 'SpriteQuest 2.5D Map & Stagecraft Viewport\nClick to open in-app. Right-click to open in new tab.';
+    button.innerHTML = '<i class="fa-solid fa-map-location-dot" style="font-size: 15px; pointer-events: none;"></i>';
+    button.addEventListener('click', () => openMapModal());
+    button.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openMapModal(); } });
+    button.addEventListener('contextmenu', event => {
+        event.preventDefault(); window.open(resolveMapUrl(), '_blank');
+    });
+    bar.append(button); return true;
+}
+let mapOverlay = null;
+function resolveMapUrl() {
+    if (typeof window !== 'undefined' && window.FORGE_SERVICE_URL) {
+        return `${window.FORGE_SERVICE_URL}/viewer`;
+    }
+    return '/scripts/extensions/third-party/Lattice/renders/maps/border-march/index.html';
+}
+export async function openMapModal() {
+    let url = resolveMapUrl();
+    try {
+        if (typeof fetch === 'function') {
+            const probe = await fetch('http://127.0.0.1:8788/health', {
+                signal: typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(400) : undefined,
+            });
+            if (probe.ok) {
+                url = 'http://127.0.0.1:8788/viewer';
+            }
+        }
+    } catch (_) {}
+
+    if (!mapOverlay) {
+        mapOverlay = document.createElement('div');
+        mapOverlay.id = 'sq-map-overlay';
+        mapOverlay.className = 'sq-map-overlay';
+        mapOverlay.innerHTML = `
+          <div class="sq-map-modal">
+            <div class="sq-map-header">
+              <div class="sq-map-title">
+                <i class="fa-solid fa-map-location-dot" style="color: var(--pc-accent, #38bdf8); font-size: 15px;"></i>
+                <span style="font-weight: 600; font-size: 13px; letter-spacing: 0.3px;">SpriteQuest · 2.5D Map & Stagecraft Viewport</span>
+                <span class="sq-map-badge">customs-house</span>
+              </div>
+              <div class="sq-map-actions">
+                <button id="sq-map-btn-tab" class="menu_button sq-map-btn" title="Open in dedicated tab" type="button">
+                  <i class="fa-solid fa-arrow-up-right-from-square"></i> Open in Tab
+                </button>
+                <button id="sq-map-btn-close" class="menu_button sq-map-btn" title="Close Map (Esc)" type="button">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+            </div>
+            <div class="sq-map-body">
+              <iframe id="sq-map-frame" src="${url}" frameborder="0" allow="fullscreen"></iframe>
+            </div>
+          </div>
+        `;
+        document.body.append(mapOverlay);
+
+        mapOverlay.querySelector('#sq-map-btn-close').addEventListener('click', closeMapModal);
+        mapOverlay.querySelector('#sq-map-btn-tab').addEventListener('click', () => {
+            const frame = mapOverlay?.querySelector('#sq-map-frame');
+            window.open(frame?.src || url, '_blank');
+        });
+        mapOverlay.addEventListener('click', (e) => {
+            if (e.target === mapOverlay) closeMapModal();
+        });
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && mapOverlay?.classList.contains('sq-map-open')) {
+                closeMapModal();
+            }
+        });
+    } else {
+        const frame = mapOverlay.querySelector('#sq-map-frame');
+        if (frame && (!frame.src || frame.src.endsWith('/'))) {
+            frame.src = url;
+        }
+    }
+    mapOverlay.classList.add('sq-map-open');
+}
+export function closeMapModal() {
+    if (mapOverlay) {
+        mapOverlay.classList.remove('sq-map-open');
+    }
+}
+export function toggleMapModal() {
+    if (mapOverlay && mapOverlay.classList.contains('sq-map-open')) {
+        closeMapModal();
+    } else {
+        openMapModal();
+    }
+}
 function paintSendbar() {
     const status = sendWorkflowState(), active = isEnabled();
     const label = document.getElementById('pc-enable-label'); if (label) label.textContent = status.enableLabel;
@@ -68,7 +173,7 @@ function paintSendbar() {
 function mountLauncher() {
     let attempts = 0;
     const mount = () => {
-        addLauncher(); const bar = addSendbarButton();
+        addLauncher(); const bar = addSendbarButton(); addMapSendbarButton();
         if ((!bar || !document.getElementById('pc-menu-launch') || !document.getElementById('pc-settings')) && attempts++ < 40) setTimeout(mount, 250);
     }; mount();
 }
@@ -84,6 +189,24 @@ function addSlashCommand() {
                 const action = String(value ?? '').trim().toLowerCase();
                 if (['on', 'off'].includes(action)) { settings().enabled = action === 'on'; updateState(); return settings().enabled ? 'enabled' : 'off'; }
                 UI.toggle(); return '';
+            },
+        }));
+        SlashCommandParser.addCommandObject(SlashCommand.fromProps({
+            name: 'map',
+            helpString: 'Open the SpriteQuest 2.5D Map Viewport.',
+            unnamedArgumentList: [],
+            callback: () => {
+                openMapModal();
+                return '';
+            },
+        }));
+        SlashCommandParser.addCommandObject(SlashCommand.fromProps({
+            name: 'spritequest',
+            helpString: 'Open the SpriteQuest 2.5D Map Viewport.',
+            unnamedArgumentList: [],
+            callback: () => {
+                openMapModal();
+                return '';
             },
         }));
     } catch (error) { console.warn('[Lattice] slash command unavailable', error); }
@@ -112,6 +235,9 @@ function boot() {
         }
         mountLauncher(); addSlashCommand();
         globalThis.lattice = { open: UI.open, close: UI.close, toggle: UI.toggle };
+        if (typeof openMapModal !== 'undefined') {
+            globalThis.spritequest = { openMap: openMapModal, closeMap: closeMapModal, toggleMap: toggleMapModal };
+        }
         console.log('[' + MODULE + '] ready');
     } catch (error) {
         console.error('[Lattice] failed to start', error);

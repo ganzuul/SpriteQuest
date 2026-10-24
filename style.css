@@ -652,6 +652,24 @@
 #pc-sendbar.pc-chat-launcher.pc-sendbar-on { color: var(--pc-accent); opacity: 1; }
 #pc-sendbar.pc-chat-launcher:focus-visible { outline: 2px solid var(--pc-accent); outline-offset: 1px; }
 
+/* SpriteQuest Map Launcher in Chat Bar */
+#sq-map-sendbar.sq-map-launcher { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 var(--bottomFormBlockSize, 36px); width: var(--bottomFormBlockSize, 36px); height: var(--bottomFormBlockSize, 36px); min-width: 0; padding: 2px; margin: 0 0 0 2px; border: 0; border-radius: 3px; background: transparent; color: var(--SmartThemeBodyColor, #dcdcd2); opacity: 0.7; transition: opacity var(--animation-duration-2x, 200ms), color 150ms ease; box-shadow: none; cursor: pointer; }
+#sq-map-sendbar.sq-map-launcher:hover { opacity: 1; color: var(--pc-accent, #38bdf8); filter: brightness(1.2); background: color-mix(in srgb, var(--SmartThemeBodyColor, #dcdcd2) 7%, transparent); }
+#sq-map-sendbar.sq-map-launcher:focus-visible { outline: 2px solid var(--pc-accent, #38bdf8); outline-offset: 1px; }
+
+/* SpriteQuest Map Modal Overlay */
+.sq-map-overlay { display: none; position: fixed; inset: 0; z-index: 99999; background: rgba(10, 12, 16, 0.78); backdrop-filter: blur(8px); align-items: center; justify-content: center; padding: 16px; box-sizing: border-box; }
+.sq-map-overlay.sq-map-open { display: flex; }
+.sq-map-modal { width: 95vw; height: 92vh; max-width: 1720px; max-height: 1040px; background: #0f141c; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 8px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 24px rgba(56, 189, 248, 0.2); display: flex; flex-direction: column; overflow: hidden; }
+.sq-map-header { height: 42px; min-height: 42px; padding: 0 14px; background: #141c28; border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; align-items: center; justify-content: space-between; user-select: none; }
+.sq-map-title { display: flex; align-items: center; gap: 8px; color: #e2e8f0; font-family: inherit; }
+.sq-map-badge { font-size: 11px; font-family: monospace; padding: 2px 6px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 3px; color: #38bdf8; margin-left: 6px; }
+.sq-map-actions { display: flex; gap: 8px; align-items: center; }
+.sq-map-btn { font-size: 12px; padding: 4px 10px; height: 28px; display: inline-flex; align-items: center; gap: 6px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.12); color: #cbd5e1; border-radius: 4px; cursor: pointer; transition: all 120ms ease; }
+.sq-map-btn:hover { background: rgba(56, 189, 248, 0.15); border-color: rgba(56, 189, 248, 0.4); color: #ffffff; }
+.sq-map-body { flex: 1; width: 100%; height: calc(100% - 42px); position: relative; background: #000; }
+.sq-map-body iframe { width: 100%; height: 100%; border: 0; display: block; }
+
 /* Colorblind-friendly themes retain type names and add matching pin/wire cues. */
 :root[data-pc-accessible="1"] .pc-root { --pc-raised: var(--pc-block); }
 :root[data-pc-accessible="1"] .pc-root .pc-node-native .pc-native-heading,
