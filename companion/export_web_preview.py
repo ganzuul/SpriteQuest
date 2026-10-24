@@ -1519,6 +1519,412 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
     .log-status-dot.online::before {{ background: #22c55e; box-shadow: 0 0 6px #22c55e; }}
     .log-status-dot.offline {{ color: #f59e0b; }}
     .log-status-dot.offline::before {{ background: #eab308; }}
+
+    /* Scene Header & Primitives Menu Controls */
+    .scene-header-controls {{
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }}
+    .scene-select-wrap {{
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #191613;
+      padding: 3px 8px;
+      border-radius: 5px;
+      border: 1px solid #3d352d;
+    }}
+    .scene-menu-label {{
+      font-size: 11px;
+      color: #a8947f;
+      font-weight: 600;
+    }}
+    .scene-select {{
+      background: #241f1a;
+      color: #f3ece2;
+      border: 1px solid #4a3e34;
+      font-family: inherit;
+      font-size: 11px;
+      padding: 3px 6px;
+      border-radius: 4px;
+      outline: none;
+      cursor: pointer;
+    }}
+    .scene-select:focus {{
+      border-color: var(--accent);
+    }}
+    .header-btn {{
+      background: #2a241e;
+      color: var(--accent);
+      border: 1px solid #4a3e34;
+      padding: 5px 12px;
+      border-radius: 5px;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s ease;
+    }}
+    .header-btn:hover {{
+      background: #3a322b;
+      border-color: var(--accent);
+      color: #ffffff;
+      box-shadow: 0 0 10px rgba(45, 212, 191, 0.25);
+    }}
+
+    /* Primitives Modal & Inspection Drawer */
+    .primitives-modal {{
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(8, 7, 6, 0.78);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 24px;
+    }}
+    .primitives-modal.hidden {{
+      display: none !important;
+    }}
+    .primitives-modal-content {{
+      background: #181512;
+      border: 1px solid #3d352d;
+      border-radius: 8px;
+      width: 100%;
+      max-width: 980px;
+      max-height: 88vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.95);
+      overflow: hidden;
+    }}
+    .primitives-modal-header {{
+      padding: 16px 20px;
+      background: #211c18;
+      border-bottom: 1px solid #383028;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }}
+    .primitives-modal-header h2 {{
+      font-size: 16px;
+      font-weight: 700;
+      color: #f5eedf;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }}
+    .primitives-modal-subtitle {{
+      font-size: 11px;
+      color: #a8947f;
+      margin-top: 4px;
+    }}
+    .close-btn {{
+      background: transparent;
+      border: none;
+      color: #a8947f;
+      font-size: 16px;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-family: inherit;
+    }}
+    .close-btn:hover {{
+      background: #332b24;
+      color: #ffffff;
+    }}
+    .primitives-filter-bar {{
+      padding: 10px 20px;
+      background: #1a1613;
+      border-bottom: 1px solid #2e2720;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow-x: auto;
+    }}
+    .filter-label {{
+      font-size: 11px;
+      color: #8c7e70;
+      font-weight: 600;
+    }}
+    .filter-tab {{
+      background: #26211c;
+      border: 1px solid #3d352d;
+      color: #c4b5a5;
+      font-family: inherit;
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }}
+    .filter-tab:hover {{
+      background: #332b24;
+      color: #f3ece2;
+    }}
+    .filter-tab.active {{
+      background: #2dd4bf;
+      color: #0d0b0a;
+      border-color: #2dd4bf;
+      font-weight: 600;
+    }}
+    .primitives-grid {{
+      padding: 20px;
+      overflow-y: auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+      flex: 1;
+    }}
+    .primitive-card {{
+      background: #1d1915;
+      border: 1px solid #383028;
+      border-radius: 6px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }}
+    .primitive-card:hover {{
+      border-color: #2dd4bf;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+    }}
+    .prim-img-wrap {{
+      position: relative;
+      background: #0d0b0a;
+      width: 100%;
+      height: 160px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      overflow: hidden;
+    }}
+    .prim-img {{
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.25s ease;
+    }}
+    .prim-img-wrap:hover .prim-img {{
+      transform: scale(1.04);
+    }}
+    .prim-overlay-lens {{
+      position: absolute;
+      bottom: 6px;
+      right: 6px;
+      background: rgba(13, 11, 10, 0.85);
+      border: 1px solid #383028;
+      padding: 3px 7px;
+      font-size: 9.5px;
+      border-radius: 4px;
+      color: #2dd4bf;
+      pointer-events: none;
+    }}
+    .prim-card-body {{
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }}
+    .prim-card-header {{
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 6px;
+    }}
+    .prim-card-title {{
+      font-size: 13px;
+      font-weight: 700;
+      color: #f5eedf;
+    }}
+    .prim-card-id {{
+      font-size: 10px;
+      color: #8c7e70;
+      font-family: monospace;
+    }}
+    .prim-card-badges {{
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-bottom: 8px;
+    }}
+    .prim-badge {{
+      display: inline-block;
+      font-size: 9.5px;
+      font-family: monospace;
+      padding: 1px 5px;
+      border-radius: 3px;
+      background: #241f1a;
+      border: 1px solid #3d352d;
+      color: #c4b5a5;
+    }}
+    .prim-badge-dim {{ color: #f59e0b; border-color: #78521e; }}
+    .prim-badge-tris {{ color: #38bdf8; border-color: #1e5a84; }}
+    .prim-badge-frag {{ color: #a855f7; border-color: #5b288c; }}
+    .prim-card-desc {{
+      font-size: 10.5px;
+      line-height: 1.4;
+      color: #a8947f;
+      flex: 1;
+      margin-bottom: 12px;
+    }}
+    .prim-card-actions {{
+      display: flex;
+      gap: 6px;
+    }}
+    .prim-act-btn {{
+      flex: 1;
+      padding: 5px 8px;
+      font-size: 10px;
+      font-family: inherit;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.15s ease;
+    }}
+    .prim-btn-blueprint {{
+      background: #26211c;
+      border: 1px solid #4a3e34;
+      color: #e6dfd5;
+    }}
+    .prim-btn-blueprint:hover {{
+      background: #383028;
+      border-color: #2dd4bf;
+      color: #ffffff;
+    }}
+    .prim-btn-forge {{
+      background: #1c2624;
+      border: 1px solid #1e4a42;
+      color: #2dd4bf;
+    }}
+    .prim-btn-forge:hover {{
+      background: #2dd4bf;
+      color: #0d0b0a;
+    }}
+
+    /* Lightbox Modal */
+    .primitive-lightbox {{
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(5, 4, 3, 0.88);
+      backdrop-filter: blur(8px);
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }}
+    .primitive-lightbox.hidden {{
+      display: none !important;
+    }}
+    .lightbox-content {{
+      background: #181512;
+      border: 1px solid #3d352d;
+      border-radius: 8px;
+      width: 100%;
+      max-width: 820px;
+      max-height: 90vh;
+      overflow-y: auto;
+      position: relative;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.98);
+      display: flex;
+      flex-direction: column;
+    }}
+    .lightbox-close {{
+      position: absolute;
+      top: 12px; right: 14px;
+      background: #2a241e;
+      border: 1px solid #4a3e34;
+      color: #eed;
+      font-size: 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      padding: 4px 8px;
+      z-index: 10;
+    }}
+    .lightbox-close:hover {{
+      background: #dc2626;
+      border-color: #ef4444;
+      color: #ffffff;
+    }}
+    .lightbox-img-wrap {{
+      width: 100%;
+      background: #0c0a09;
+      border-bottom: 1px solid #332b24;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }}
+    .lightbox-img-wrap img {{
+      max-width: 100%;
+      max-height: 380px;
+      object-fit: contain;
+      border: 1px solid #2e261f;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+      border-radius: 4px;
+    }}
+    .lightbox-details {{
+      padding: 20px;
+    }}
+    .lightbox-title {{
+      font-size: 18px;
+      font-weight: 700;
+      color: #f5eedf;
+      margin-bottom: 8px;
+    }}
+    .lightbox-meta {{
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 12px;
+    }}
+    .lightbox-desc {{
+      font-size: 12px;
+      line-height: 1.5;
+      color: #d1c5b8;
+      margin-bottom: 16px;
+    }}
+    .lightbox-prompt-box {{
+      background: #110f0d;
+      border: 1px solid #2a231c;
+      border-radius: 5px;
+      padding: 10px 14px;
+      margin-bottom: 16px;
+    }}
+    .prompt-box-label {{
+      font-size: 9px;
+      font-weight: 700;
+      color: #2dd4bf;
+      letter-spacing: 0.08em;
+      margin-bottom: 4px;
+    }}
+    .prompt-box-content {{
+      font-size: 10.5px;
+      font-family: monospace;
+      color: #f3ece2;
+      line-height: 1.45;
+    }}
+    .lightbox-actions {{
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }}
+    .no-primitives-notice {{
+      grid-column: 1 / -1;
+      text-align: center;
+      color: #8c7e70;
+      padding: 30px;
+      font-size: 12px;
+    }}
   </style>
 </head>
 <body>
@@ -1532,12 +1938,67 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
       <button class="view-tab" id="tab-depth" onclick="setLayerMode('depth')" title="Topographic Z-Depth Map">⛰️ Z-Depth Map</button>
       <button class="view-tab" id="tab-relief" onclick="setLayerMode('relief')" title="Hillshade & Contour Relief">📐 Topo Relief</button>
     </div>
+    <div class="scene-header-controls">
+      <div class="scene-select-wrap">
+        <label for="scene-selector" class="scene-menu-label">Act / Scene:</label>
+        <select id="scene-selector" class="scene-select" onchange="onSceneSelectChange(this.value)">
+          <option value="border-march" selected>Act II: Border March & Pass</option>
+          <option value="customs-house">Act I: Customs House Interior</option>
+          <option value="unwritten-ascent">Act III: The Unwritten Ascent</option>
+          <option value="glass-cathedral">Act IV: The Glass Cathedral</option>
+        </select>
+      </div>
+      <button class="header-btn" id="btn-primitives-menu" onclick="togglePrimitivesMenu()" title="Inspect 2D blueprint images of scene primitives">
+        📦 Scene Primitives (<span id="primitives-badge-count">6</span>) ▾
+      </button>
+    </div>
     <div class="controls-hint">
-      WASD / Arrows / Click to Move • Mouse Hover probes elevation & dynamic shadows
+      WASD / Arrows / Click to Move • Hover probes elevation
     </div>
   </header>
 
   <div id="main-container">
+    <!-- Primitives Inspection Modal / Drawer -->
+    <div id="primitives-modal" class="primitives-modal hidden">
+      <div class="primitives-modal-content">
+        <div class="primitives-modal-header">
+          <div>
+            <h2 id="primitives-modal-title">📦 Scene Primitives: The Border March</h2>
+            <div id="primitives-modal-subtitle" class="primitives-modal-subtitle">
+              Inspect 2D blueprint renders, metric dimensions, and source fragments for this scene's physical assets
+            </div>
+          </div>
+          <button class="close-btn" onclick="togglePrimitivesMenu()">✕</button>
+        </div>
+
+        <div class="primitives-filter-bar">
+          <span class="filter-label">Filter:</span>
+          <button class="filter-tab active" data-filter="all" onclick="filterPrimitives('all')">All (<span id="filter-count-all">0</span>)</button>
+          <button class="filter-tab" data-filter="architecture" onclick="filterPrimitives('architecture')">Architecture</button>
+          <button class="filter-tab" data-filter="monuments" onclick="filterPrimitives('monuments')">Monuments</button>
+          <button class="filter-tab" data-filter="containers" onclick="filterPrimitives('containers')">Containers</button>
+          <button class="filter-tab" data-filter="instruments" onclick="filterPrimitives('instruments')">Instruments</button>
+          <button class="filter-tab" data-filter="furniture" onclick="filterPrimitives('furniture')">Furniture</button>
+        </div>
+
+        <div class="primitives-grid" id="primitives-grid">
+          <!-- Dynamically populated primitive cards -->
+        </div>
+      </div>
+    </div>
+
+    <!-- 2D Image Lightbox Modal for deep inspection -->
+    <div id="primitive-lightbox" class="primitive-lightbox hidden" onclick="closePrimitiveLightbox()">
+      <div class="lightbox-content" onclick="event.stopPropagation()">
+        <button class="lightbox-close" onclick="closePrimitiveLightbox()">✕</button>
+        <div class="lightbox-img-wrap">
+          <img id="lightbox-img" src="" alt="Primitive 2D Inspection" />
+        </div>
+        <div class="lightbox-details" id="lightbox-details">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+    </div>
     <div class="viewport-3d" id="viewport">
       <div class="world-plane" id="world">
         <!-- Strata layers for CSS 3D parallax -->
@@ -1803,6 +2264,26 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
     }}
   }}
   window.setLayerMode = setLayerMode;
+
+  function togglePrimitivesMenu() {{
+    if (window.viewer && window.viewer.togglePrimitivesMenu) window.viewer.togglePrimitivesMenu();
+  }}
+  window.togglePrimitivesMenu = togglePrimitivesMenu;
+
+  function filterPrimitives(cat) {{
+    if (window.viewer && window.viewer.filterPrimitives) window.viewer.filterPrimitives(cat);
+  }}
+  window.filterPrimitives = filterPrimitives;
+
+  function onSceneSelectChange(sceneId) {{
+    if (window.viewer && window.viewer.selectScene) window.viewer.selectScene(sceneId);
+  }}
+  window.onSceneSelectChange = onSceneSelectChange;
+
+  function closePrimitiveLightbox() {{
+    if (window.viewer && window.viewer.closePrimitiveLightbox) window.viewer.closePrimitiveLightbox();
+  }}
+  window.closePrimitiveLightbox = closePrimitiveLightbox;
 
   window.viewer = initViewer({{
     mapWidthM: {tm.width_m},

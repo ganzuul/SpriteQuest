@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "id": "unwritten-ascent",
+  "name": "The Unwritten Ascent",
+  "act": "Act III: The Unwritten Road & The Grey Chasm",
+  "world_id": "scaffolded-kingdom",
+  "category": "frontier_road",
+  "map_ref": "library/maps/border-march.json",
+  "description": "The northern scree trail climbing above the fog line where the world literally unloads into raw wireframe void unless stabilized by certified survey instruments.",
+  "primitives": [
+    {
+      "id": "cryo-entropy-beacon",
+      "name": "Cryo-Entropy Beacon Monolith",
+      "fragment_id": "space-vampires/glyph-entropy-matrix",
+      "category": "hazards",
+      "dimensions": [1.17, 1.17, 3.2],
+      "triangle_count": 22,
+      "stl_path": "library/stl_primitives/cryo-entropy-beacon.stl",
+      "description": "Tapered obsidian obelisk with pyramidion apex projecting absolute zero cold, spiked into the mountain bedrock."
+    },
+    {
+      "id": "wish-stone-slab",
+      "name": "Orom's Granite Bridge Slab",
+      "fragment_id": "grey-wind/wish-granting",
+      "category": "monuments",
+      "dimensions": [3.0, 8.0, 0.6],
+      "triangle_count": 20,
+      "stl_path": "library/stl_primitives/wish-stone-slab.stl",
+      "description": "Spanned across the 6-meter chasm to bridge the void where the road unloads into unwritten grey mist."
+    },
+    {
+      "id": "relic-cairn",
+      "name": "Geodetic Triangulation Cairn",
+      "fragment_id": "cartographers/epistemic-survey",
+      "category": "monuments",
+      "dimensions": [1.8, 1.8, 1.6],
+      "triangle_count": 104,
+      "stl_path": "library/stl_primitives/relic-cairn.stl",
+      "description": "Marker cairn stabilizing local coordinate mesh with a certified brass theodolite and surveyor's slate tally."
+    }
+  ]
+}

@@ -360,6 +360,8 @@ class ScenePlacementEngine:
                 except Exception:
                     pass
 
+        from companion.scene_definitions import export_scenes_manifest
+
         return {
             "zones": [asdict(z) for z in self.zones],
             "walls": [asdict(w) for w in self.walls],
@@ -368,6 +370,7 @@ class ScenePlacementEngine:
             "physical_props": frag_engine.export_fragment_assets(),
             "stagecraft": sc_engine.export_stagecraft_manifest(),
             "npcs": npcs_data,
+            "scenes": export_scenes_manifest(),
         }
 
 

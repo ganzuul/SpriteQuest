@@ -2714,6 +2714,219 @@ export function initViewer(config) {
     };
   }
 
+  // --- Scene Primitives Inspection & 2D Blueprint Lightbox Engine ---
+  const scenesManifest = features?.scenes || { scenes: [], scenes_by_id: {} };
+  let currentSceneId = (features?.scenes?.scenes_by_id && features.scenes.scenes_by_id['border-march'])
+    ? 'border-march'
+    : (features?.scenes?.scenes?.[0]?.id || 'border-march');
+  let currentPrimitiveFilter = 'all';
+
+  function getScenes() {
+    return scenesManifest.scenes || [];
+  }
+
+  function getScene(sceneId) {
+    return scenesManifest.scenes_by_id?.[sceneId] || null;
+  }
+
+  function getCurrentScene() {
+    return getScene(currentSceneId);
+  }
+
+  function getScenePrimitives(sceneId = currentSceneId) {
+    const sc = getScene(sceneId);
+    return sc?.primitives || [];
+  }
+
+  function selectScene(sceneId) {
+    if (!scenesManifest.scenes_by_id?.[sceneId]) {
+      log('SCENE', `Scene '${sceneId}' not found in manifest.`, 'warn');
+      return null;
+    }
+    currentSceneId = sceneId;
+    const sc = getCurrentScene();
+    log('SCENE', `Active scene switched to: '${sc.name}' (${sc.id}) · ${sc.primitives.length} primitives.`);
+
+    if (typeof document !== 'undefined') {
+      const selectEl = document.getElementById('scene-selector');
+      if (selectEl && selectEl.value !== sceneId) {
+        selectEl.value = sceneId;
+      }
+      const badgeCount = document.getElementById('primitives-badge-count');
+      if (badgeCount) badgeCount.textContent = sc.primitives.length;
+    }
+
+    renderPrimitivesMenuDOM();
+    return sc;
+  }
+
+  function togglePrimitivesMenu(forceOpen) {
+    if (typeof document === 'undefined') return;
+    const modal = document.getElementById('primitives-modal');
+    if (!modal) return;
+    const shouldOpen = forceOpen !== undefined ? forceOpen : modal.classList.contains('hidden');
+    if (shouldOpen) {
+      modal.classList.remove('hidden');
+      renderPrimitivesMenuDOM();
+      playAudioCue('click');
+    } else {
+      modal.classList.add('hidden');
+    }
+  }
+
+  function openPrimitivesMenu(filter = 'all') {
+    currentPrimitiveFilter = filter;
+    togglePrimitivesMenu(true);
+  }
+
+  function closePrimitivesMenu() {
+    togglePrimitivesMenu(false);
+  }
+
+  function filterPrimitives(category) {
+    currentPrimitiveFilter = category;
+    renderPrimitivesMenuDOM();
+  }
+
+  function renderPrimitivesMenuDOM() {
+    if (typeof document === 'undefined') return;
+    const sc = getCurrentScene();
+    if (!sc) return;
+
+    const modalTitle = document.getElementById('primitives-modal-title');
+    if (modalTitle) modalTitle.innerHTML = `📦 Scene Primitives: <span style="color: #2dd4bf;">${escapeHtml(sc.name)}</span>`;
+
+    const modalSub = document.getElementById('primitives-modal-subtitle');
+    if (modalSub) modalSub.textContent = `${sc.act || sc.id} • ${sc.description || ''}`;
+
+    const badgeCount = document.getElementById('primitives-badge-count');
+    if (badgeCount) badgeCount.textContent = sc.primitives.length;
+
+    const allCount = document.getElementById('filter-count-all');
+    if (allCount) allCount.textContent = sc.primitives.length;
+
+    const filterTabs = (typeof document !== 'undefined' && typeof document.querySelectorAll === 'function')
+      ? document.querySelectorAll('.filter-tab')
+      : [];
+    filterTabs.forEach((tab) => {
+      if (tab.dataset && tab.dataset.filter) {
+        if (tab.dataset.filter === currentPrimitiveFilter) {
+          tab.classList.add('active');
+        } else {
+          tab.classList.remove('active');
+        }
+      }
+    });
+
+    const grid = document.getElementById('primitives-grid');
+    if (!grid) return;
+
+    const prims = sc.primitives.filter((p) => currentPrimitiveFilter === 'all' || p.category === currentPrimitiveFilter);
+
+    if (prims.length === 0) {
+      grid.innerHTML = `<div class="no-primitives-notice">No primitives matching category '${escapeHtml(currentPrimitiveFilter)}' in ${escapeHtml(sc.name)}.</div>`;
+      return;
+    }
+
+    grid.innerHTML = prims.map((p) => {
+      const dims = p.dimensions ? `${p.dimensions[0]}m × ${p.dimensions[1]}m × ${p.dimensions[2]}m` : 'Metric';
+      return `
+        <div class="primitive-card" data-primitive-id="${escapeHtml(p.id)}">
+          <div class="prim-img-wrap" onclick="window.viewer && window.viewer.openPrimitiveLightbox && window.viewer.openPrimitiveLightbox('${escapeHtml(p.id)}')">
+            <img src="${p.image_2d}" alt="${escapeHtml(p.name)}" class="prim-img" />
+            <div class="prim-overlay-lens">🔍 Inspect 2D Blueprint</div>
+          </div>
+          <div class="prim-card-body">
+            <div class="prim-card-header">
+              <span class="prim-card-title">${escapeHtml(p.name)}</span>
+              <span class="prim-card-id">${escapeHtml(p.id)}</span>
+            </div>
+            <div class="prim-card-badges">
+              <span class="prim-badge prim-badge-dim">📐 ${dims}</span>
+              <span class="prim-badge prim-badge-tris">🔺 ${p.triangle_count} tris</span>
+              <span class="prim-badge prim-badge-frag">📜 ${escapeHtml(p.fragment_id)}</span>
+            </div>
+            <div class="prim-card-desc">${escapeHtml(p.description)}</div>
+            <div class="prim-card-actions">
+              <button class="prim-act-btn prim-btn-blueprint" onclick="window.viewer && window.viewer.openPrimitiveLightbox && window.viewer.openPrimitiveLightbox('${escapeHtml(p.id)}')">🖼️ 2D Blueprint</button>
+              <button class="prim-act-btn prim-btn-forge" onclick="window.viewer && window.viewer.forgeScenePrimitive && window.viewer.forgeScenePrimitive('${escapeHtml(p.id)}')">✨ Forge (F3K)</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function openPrimitiveLightbox(primitiveId) {
+    if (typeof document === 'undefined') return;
+    const sc = getCurrentScene();
+    const prim = sc?.primitives?.find((p) => p.id === primitiveId) ||
+      Object.values(scenesManifest.scenes_by_id || {}).flatMap((s) => s.primitives).find((p) => p.id === primitiveId);
+
+    if (!prim) return;
+
+    const modal = document.getElementById('primitive-lightbox');
+    const imgEl = document.getElementById('lightbox-img');
+    const detailsEl = document.getElementById('lightbox-details');
+    if (!modal || !imgEl || !detailsEl) return;
+
+    imgEl.src = prim.image_2d;
+    imgEl.alt = prim.name;
+
+    const dims = prim.dimensions ? `${prim.dimensions[0]}m × ${prim.dimensions[1]}m × ${prim.dimensions[2]}m` : 'N/A';
+    detailsEl.innerHTML = `
+      <div class="lightbox-title">${escapeHtml(prim.name)}</div>
+      <div class="lightbox-meta">
+        <span class="prim-badge prim-badge-dim">📐 Dimensions: ${dims}</span>
+        <span class="prim-badge prim-badge-tris">🔺 Triangles: ${prim.triangle_count}</span>
+        <span class="prim-badge prim-badge-frag">📜 Fragment: ${escapeHtml(prim.fragment_id)}</span>
+        <span class="prim-badge" style="color: #a855f7; border-color: #7e22ce;">🏷️ Category: ${escapeHtml(prim.category)}</span>
+      </div>
+      <div class="lightbox-desc">${escapeHtml(prim.description)}</div>
+      <div class="lightbox-prompt-box">
+        <div class="prompt-box-label">BLACK FOREST LABS FLUX 3 KLEIN DIFFUSION PROMPT SPECIFICATION:</div>
+        <div class="prompt-box-content">orthographic top-down 2.5D isometric game asset cutout, ${escapeHtml(prim.name)}, ${escapeHtml(prim.description)}, source fragment: ${escapeHtml(prim.fragment_id)}, isolated on neutral solid grey background (#707070), subtle directional studio lighting, soft ground contact occlusion shadow, crisp 16-bit painterly texture, highly detailed tactile physical prop, Black Forest Labs Flux 3 Klein render, 1024x1024</div>
+      </div>
+      <div class="lightbox-actions">
+        <button class="header-btn" onclick="window.viewer && window.viewer.forgeScenePrimitive && window.viewer.forgeScenePrimitive('${escapeHtml(prim.id)}')">✨ Dispatch to Asset Forge (Flux 3 Klein)</button>
+        <button class="header-btn" style="background: #2a241e; color: #e6dfd5;" onclick="window.viewer && window.viewer.closePrimitiveLightbox && window.viewer.closePrimitiveLightbox()">✕ Close Inspection</button>
+      </div>
+    `;
+
+    modal.classList.remove('hidden');
+    playAudioCue('click');
+  }
+
+  function closePrimitiveLightbox() {
+    if (typeof document === 'undefined') return;
+    const modal = document.getElementById('primitive-lightbox');
+    if (modal) modal.classList.add('hidden');
+  }
+
+  function forgeScenePrimitive(primitiveId) {
+    closePrimitiveLightbox();
+    closePrimitivesMenu();
+    if (physicalPropsMap.has(primitiveId)) {
+      selectAsset(primitiveId);
+      renderAssetInForge(primitiveId);
+    } else {
+      const sc = getCurrentScene();
+      const prim = sc?.primitives?.find((p) => p.id === primitiveId) ||
+        Object.values(scenesManifest.scenes_by_id || {}).flatMap((s) => s.primitives).find((p) => p.id === primitiveId);
+      if (prim) {
+        selectAsset({
+          id: prim.id,
+          label: prim.name,
+          fragment_id: prim.fragment_id,
+          salience: 'moderate',
+          lore_snippet: prim.description,
+          diffusion_prompt: `orthographic top-down 2.5D isometric game asset cutout, ${prim.name}, ${prim.description}, source fragment: ${prim.fragment_id}, isolated on neutral solid grey background (#707070), subtle directional studio lighting, soft ground contact occlusion shadow, crisp 16-bit painterly texture, highly detailed tactile physical prop, Black Forest Labs Flux 3 Klein render, 1024x1024`,
+        });
+        renderAssetInForge(prim.id);
+      }
+    }
+  }
+
   function handleClick(pxX, pxY, wWidth = (world ? world.clientWidth || 600 : 600), wHeight = (world ? world.clientHeight || 700 : 700)) {
     const worldCoord = screenToWorld(pxX, pxY, wWidth, wHeight);
     const hit = getInteractableAt(worldCoord.x, worldCoord.y);
@@ -3515,6 +3728,7 @@ export function initViewer(config) {
   renderFeaturesDOM();
   updatePlayerPosition(playerX, playerY);
   selectAsset('r6_ship_crate_standard');
+  renderPrimitivesMenuDOM();
   log('STAGE', 'SpriteQuest 2.5D Viewport Engine initialized.');
   log('STAGE', `Loaded scene with ${physicalPropsMap.size} physical props and ${cueMarks.length} cue marks.`);
   if (typeof fetch !== 'undefined') {
@@ -3593,6 +3807,19 @@ export function initViewer(config) {
     checkComfyServer,
     checkForgeServer,
     getForgeServiceUrl,
+    getScenes,
+    getScene,
+    getCurrentScene,
+    getScenePrimitives,
+    selectScene,
+    togglePrimitivesMenu,
+    openPrimitivesMenu,
+    closePrimitivesMenu,
+    filterPrimitives,
+    renderPrimitivesMenuDOM,
+    openPrimitiveLightbox,
+    closePrimitiveLightbox,
+    forgeScenePrimitive,
   };
 
   const globalRoot = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this);
@@ -3661,6 +3888,20 @@ export function initViewer(config) {
     globalRoot.clearLogs = clearLogs;
     globalRoot.log = log;
     globalRoot.checkComfyServer = checkComfyServer;
+    globalRoot.getScenes = getScenes;
+    globalRoot.getScene = getScene;
+    globalRoot.getCurrentScene = getCurrentScene;
+    globalRoot.getScenePrimitives = getScenePrimitives;
+    globalRoot.selectScene = selectScene;
+    globalRoot.togglePrimitivesMenu = togglePrimitivesMenu;
+    globalRoot.openPrimitivesMenu = openPrimitivesMenu;
+    globalRoot.closePrimitivesMenu = closePrimitivesMenu;
+    globalRoot.filterPrimitives = filterPrimitives;
+    globalRoot.renderPrimitivesMenuDOM = renderPrimitivesMenuDOM;
+    globalRoot.openPrimitiveLightbox = openPrimitiveLightbox;
+    globalRoot.closePrimitiveLightbox = closePrimitiveLightbox;
+    globalRoot.forgeScenePrimitive = forgeScenePrimitive;
+    globalRoot.onSceneSelectChange = (val) => selectScene(val);
     globalRoot.viewer = instance;
   }
 

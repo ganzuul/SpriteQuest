@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "id": "border-march",
+  "name": "The Border March & Forfeit Gap",
+  "act": "Act II: The Mountain Pass & Ancient Overhang",
+  "world_id": "grey-wind",
+  "category": "outdoor_map",
+  "map_ref": "library/maps/border-march.json",
+  "description": "An uneven frontier landscape stretching between two level chunks. Centered around a plateau hosting the Border Customs House, bounded by an eastern mountain pass and ancient 45-degree overhang ruin ramparts in the north.",
+  "primitives": [
+    {
+      "id": "ancient-bastion",
+      "name": "Ancient 45-Degree Stepped Bastion",
+      "fragment_id": "grey-wind/named-ruins",
+      "category": "architecture",
+      "dimensions": [22.0, 22.0, 12.0],
+      "triangle_count": 30,
+      "stl_path": "library/stl_primitives/ancient-bastion.stl",
+      "description": "Cantilevered megalithic stone rampart obeying the 45-degree overhang rule. The ruin has no foundations below the seam."
+    },
+    {
+      "id": "relic-cairn",
+      "name": "Theodolite Station & Relic Cairn",
+      "fragment_id": "cartographers/epistemic-survey",
+      "category": "monuments",
+      "dimensions": [1.8, 1.8, 1.6],
+      "triangle_count": 104,
+      "stl_path": "library/stl_primitives/relic-cairn.stl",
+      "description": "Conical dry-stone cairn crowned with a bronze geodetic mounting post holding Surveyor Vellum's calibrated theodolite."
+    },
+    {
+      "id": "wish-stone-slab",
+      "name": "Orom's Literal Wish-Stone Slab",
+      "fragment_id": "grey-wind/wish-granting",
+      "category": "monuments",
+      "dimensions": [3.0, 8.0, 0.6],
+      "triangle_count": 20,
+      "stl_path": "library/stl_primitives/wish-stone-slab.stl",
+      "description": "Monolithic quarried granite slab bridging chasm drops, chiseled with coarse runes and answered literally by Orom."
+    },
+    {
+      "id": "frontier-brazier",
+      "name": "Frontier Cast-Iron Brazier",
+      "fragment_id": "shared/unmodelled-prop",
+      "category": "hearth",
+      "dimensions": [1.26, 1.2, 1.0],
+      "triangle_count": 30,
+      "stl_path": "library/stl_primitives/frontier-brazier.stl",
+      "description": "Octagonal cast-iron fire basin resting on tripod legs, burning charcoal embers to warm frontier guards."
+    },
+    {
+      "id": "border-signpost",
+      "name": "Border Milestone Signpost",
+      "fragment_id": "shared/unmodelled-prop",
+      "category": "markers",
+      "dimensions": [0.84, 0.18, 2.2],
+      "triangle_count": 20,
+      "stl_path": "library/stl_primitives/border-signpost.stl",
+      "description": "Weathered oak milestone post with directional arm pointing travellers toward the mountain pass."
+    },
+    {
+      "id": "r6-ship-crate",
+      "name": "R6-SHIP Standard Bounding Crate",
+      "fragment_id": "customs-house/r6-ship",
+      "category": "containers",
+      "dimensions": [1.2, 1.2, 1.0],
+      "triangle_count": 12,
+      "stl_path": "library/stl_primitives/r6-ship-crate.stl",
+      "description": "Impounded freight containers stacked alongside the road approach."
+    }
+  ]
+}

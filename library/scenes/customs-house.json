@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "id": "customs-house",
+  "name": "The Border Customs House",
+  "act": "Act I: The Forfeit Corridor & Foyer",
+  "world_id": "customs-house",
+  "category": "interior_floorplan",
+  "floorplan_ref": "library/floorplans/customs-house.json",
+  "description": "The administrative border checkpoint wedged into the structural gap between two level chunks. Serves as ground truth for architectural blockout, clearance routing, forfeit transit, and quartermaster stagecraft blocking.",
+  "primitives": [
+    {
+      "id": "r6-ship-crate",
+      "name": "R6-SHIP Standard Bounding Crate",
+      "fragment_id": "customs-house/r6-ship",
+      "category": "containers",
+      "dimensions": [1.2, 1.2, 1.0],
+      "triangle_count": 12,
+      "stl_path": "library/stl_primitives/r6-ship-crate.stl",
+      "description": "Man-portable Baltic pine shipping container with recessed hemp grab handles, black iron corner caps, and official red wax clearance seals."
+    },
+    {
+      "id": "glass-stasis-coffin",
+      "name": "Hexagonal Borosilicate Stasis Coffin",
+      "fragment_id": "space-vampires/glass-stasis-coffin",
+      "category": "vessels",
+      "dimensions": [0.85, 2.2, 0.76],
+      "triangle_count": 30,
+      "stl_path": "library/stl_primitives/glass-stasis-coffin.stl",
+      "description": "Elongated hexagonal borosilicate crystal sarcophagus leaking cryogenic vapor, smuggled across the border in Crate #00-NULL."
+    },
+    {
+      "id": "common-table",
+      "name": "Hollis's Quartermaster Ledger Desk",
+      "fragment_id": "customs-house/hollis-ledger",
+      "category": "furniture",
+      "dimensions": [1.594, 1.96, 1.395],
+      "triangle_count": 934,
+      "stl_path": "library/stl_primitives/common-table.stl",
+      "description": "Heavy oak administrative desk holding the open two-column ledger and copper inkstand."
+    },
+    {
+      "id": "common-dresser",
+      "name": "1588 Beam Weigh Scale Station",
+      "fragment_id": "customs-house/first-clearance-beats",
+      "category": "instruments",
+      "dimensions": [1.62, 0.847, 1.234],
+      "triangle_count": 496,
+      "stl_path": "library/stl_primitives/common-dresser.stl",
+      "description": "Zinc-topped inspection counter with counterbalanced brass beam scale and calibrated counterweights."
+    },
+    {
+      "id": "common-bookcase",
+      "name": "Customs Manifest Archive Shelf",
+      "fragment_id": "wizard-tower/the-shelf",
+      "category": "furniture",
+      "dimensions": [1.336, 0.739, 1.832],
+      "triangle_count": 500,
+      "stl_path": "library/stl_primitives/common-bookcase.stl",
+      "description": "Tall oak bookcase lined with clearance folios, tax statutes, and sealed transit rolls."
+    },
+    {
+      "id": "common-cabinet",
+      "name": "Sealed Stamp & Seal Cabinet",
+      "fragment_id": "shared/glyph-customs-seal",
+      "category": "furniture",
+      "dimensions": [1.365, 0.762, 1.37],
+      "triangle_count": 942,
+      "stl_path": "library/stl_primitives/common-cabinet.stl",
+      "description": "Iron-bound security cabinet storing vermilion seal sticks, brass dies, and impound tags."
+    },
+    {
+      "id": "common-wardrobe",
+      "name": "Forfeit Storage Wardrobe",
+      "fragment_id": "customs-house/forfeit-corridor",
+      "category": "furniture",
+      "dimensions": [0.496, 1.108, 1.489],
+      "triangle_count": 500,
+      "stl_path": "library/stl_primitives/common-wardrobe.stl",
+      "description": "Heavy locked cupboard lining the Forfeit Corridor where contested parcels await final destruction or auction."
+    },
+    {
+      "id": "common-chair",
+      "name": "Quartermaster Clerk Chair",
+      "fragment_id": "customs-house/two-questions",
+      "category": "furniture",
+      "dimensions": [1.003, 0.961, 1.673],
+      "triangle_count": 1000,
+      "stl_path": "library/stl_primitives/common-chair.stl",
+      "description": "High-backed carved wooden chair behind the quartermaster's elevated counter."
+    },
+    {
+      "id": "common-bench",
+      "name": "Intake Supplicant Bench",
+      "fragment_id": "customs-house/searcher",
+      "category": "furniture",
+      "dimensions": [0.357, 0.993, 0.358],
+      "triangle_count": 500,
+      "stl_path": "library/stl_primitives/common-bench.stl",
+      "description": "Scarred timber bench where arriving carriers sit during clearance calculation."
+    }
+  ]
+}
