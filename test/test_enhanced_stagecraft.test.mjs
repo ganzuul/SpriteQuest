@@ -288,4 +288,33 @@ describe('Enhanced Stagecraft & Atmospheric Engine (TDD)', () => {
     assert.ok(Math.abs(pellActor.x - 61.0) < 1.0, `Pell X should be near 61.0, got ${pellActor.x}`);
     assert.ok(pellActor.y >= 84.0, `Pell Y should have advanced past gate to >= 84.0, got ${pellActor.y}`);
   });
+
+  test('9. Standing-Scaled Physical Resistance & Cartographer Cutscene Beats', async () => {
+    // 9.1 Prop Standing Gate on Affordance Execution
+    // By default, monumental_living_atlas has verified standing (0.65), below 'warranted' (0.90)
+    viewer.setActorPosition('player', 66.0, 64.0);
+    const affordanceBefore = viewer.executeAffordance('player', 'at-living-atlas', 'inspect_cartography');
+    assert.equal(affordanceBefore.success, false, 'Unwarranted living atlas must refuse cartography affordance');
+    assert.equal(affordanceBefore.status, 'prop_standing_refused');
+
+    // Curate the living atlas -> promotes standing to WARRANTED (0.90)
+    viewer.curateAssetFragment('monumental_living_atlas');
+    const affordanceAfter = viewer.executeAffordance('player', 'at-living-atlas', 'inspect_cartography');
+    assert.equal(affordanceAfter.success, true, 'Warranted living atlas must allow cartography affordance');
+
+    // 9.2 Cartographer Survey Cutscene Beat
+    const customScript = {
+      id: 'cartographer-survey-scene',
+      title: 'Cartographer Epistemic Survey',
+      beats: [
+        { type: 'cartographer_survey', propId: 'monumental_living_atlas', actor: 'hollis', durationMs: 100 },
+      ],
+    };
+    const cutsceneLog = await viewer.playCutscene(customScript, { speedMultiplier: 50.0 });
+    const surveyBeat = cutsceneLog.find((b) => b.type === 'cartographer_survey');
+    assert.ok(surveyBeat, 'Cartographer survey beat must be executed');
+    assert.equal(surveyBeat.status, 'surveyed');
+    assert.equal(surveyBeat.standing_tier, 'warranted');
+    assert.ok(surveyBeat.dialogue.includes('warranted') || surveyBeat.dialogue.includes('Warrant'));
+  });
 });

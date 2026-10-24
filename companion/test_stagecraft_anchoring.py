@@ -132,6 +132,32 @@ class TestStagecraftAnchoring(unittest.TestCase):
         desk_unwritten = next(a for a in at_desk_unwritten if a["id"] == "at-quartermaster-desk")
         self.assertEqual(desk_unwritten["status"], "standing_refused")
 
+    def test_prop_standing_gate_on_monumental_living_atlas(self):
+        """
+        Verify that Monumental Living Atlas requires warranted prop standing:
+          - If prop standing is provisional or unwritten -> prop_standing_refused.
+          - If prop standing is warranted -> available.
+        """
+        # Unwarranted / provisional atlas
+        at_atlas_unwarranted = self.engine.evaluate_affordances(
+            x=66.0, y=64.0, written=True, disposition="helps",
+            prop_standings={"monumental_living_atlas": "provisional"}
+        )
+        atlas_unwarranted = next(a for a in at_atlas_unwarranted if a["id"] == "at-living-atlas")
+        self.assertEqual(atlas_unwarranted["status"], "prop_standing_refused")
+        self.assertIn("Requires prop standing 'warranted'", atlas_unwarranted["reason"])
+
+        # Warranted atlas
+        at_atlas_warranted = self.engine.evaluate_affordances(
+            x=66.0, y=64.0, written=True, disposition="helps",
+            prop_standings={"monumental_living_atlas": "warranted"}
+        )
+        atlas_warranted = next(a for a in at_atlas_warranted if a["id"] == "at-living-atlas")
+        self.assertEqual(atlas_warranted["status"], "available")
+        verbs = [v["verb"] for v in atlas_warranted["verbs"]]
+        self.assertIn("inspect_cartography", verbs)
+        self.assertIn("verify_warrant", verbs)
+
     def test_hoffman_theatrical_stage_direction_composition(self):
         """
         Verify that the Blackboard snapshot produces a deterministic, injectable

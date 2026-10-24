@@ -44,9 +44,23 @@ class AffordanceTemplate:
     world_y: float
     world_z: float
     reach_radius_m: float
-    required_standing: str  # "any" | "written"
+    required_standing: str  # "any" | "written" (actor standing)
     playing_area_id: str | None
     verbs: tuple[AffordanceVerb, ...] = ()
+    required_prop_standing: str = "any"  # "any" | "provisional" | "verified" | "warranted" | "canon_locked"
+
+
+def _standing_rank(standing: str) -> int:
+    ranks = {
+        "unwritten": 1,
+        "provisional": 2,
+        "refined_by_criticism": 2,
+        "criticized": 2,
+        "verified": 3,
+        "warranted": 4,
+        "canon_locked": 5,
+    }
+    return ranks.get(standing, 1)
 
 
 @dataclass
@@ -186,6 +200,45 @@ class StagecraftAnchoringEngine:
     def _build_affordance_templates(self) -> None:
         """Bind NASA-style Affordance Templates to stage fixtures and props."""
         prop_by_id = {p.id: p for p in self.scene_engine.props}
+        for plate in getattr(self.scene_engine, "build_plates", []):
+            fp_rel = plate.get("scene_floorplan")
+            if not fp_rel:
+                continue
+            fp_path = REPO_ROOT / fp_rel
+            if not fp_path.exists():
+                continue
+            try:
+                fp_data = json.loads(fp_path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                continue
+
+            anchor = plate.get("anchor", {})
+            anc_x = float(anchor.get("center_x", 0.0))
+            anc_y = float(anchor.get("center_y", 0.0))
+            anc_z = float(anchor.get("elevation", 0.0))
+
+            scale_info = fp_data.get("scale", {})
+            center_xz = scale_info.get("center_xz", [0.0, 30.0])
+            cx, cz = float(center_xz[0]), float(center_xz[1])
+
+            for sock in fp_data.get("prop_sockets", []):
+                sid = sock.get("id") or sock.get("socket_id")
+                if not sid or sid in prop_by_id:
+                    continue
+                at = sock.get("at", [0.0, 0.0, 0.0])
+                wx = round(anc_x + (float(at[0]) - cx), 2)
+                wy = round(anc_y + (float(at[2]) - cz), 2)
+                wz = round(anc_z + float(at[1]), 2)
+
+                class _PropProxy:
+                    def __init__(self, pid: str, x: float, y: float, z: float):
+                        self.id = pid
+                        self.world_x = x
+                        self.world_y = y
+                        self.world_z = z
+
+                prop_by_id[sid] = _PropProxy(sid, wx, wy, wz)
+
         portal_by_id = {p.id: p for p in self.scene_engine.portals}
 
         # 1. Weigh Table & Two-Pan Balance Scale (Center Counter)
@@ -299,7 +352,42 @@ class StagecraftAnchoringEngine:
                 )
             )
 
-        # 5. Outdoor Wilderness Fixtures
+        # 5. Monumental Living Atlas (Bureau of the Unwritten Atlas)
+        if "monumental_living_atlas" in prop_by_id:
+            p = prop_by_id["monumental_living_atlas"]
+            self.affordance_templates.append(
+                AffordanceTemplate(
+                    id="at-living-atlas",
+                    prop_id=p.id,
+                    label="Monumental Living Atlas Folio",
+                    world_x=p.world_x,
+                    world_y=p.world_y,
+                    world_z=p.world_z,
+                    reach_radius_m=5.0,
+                    required_standing="any",
+                    required_prop_standing="warranted",
+                    playing_area_id="upstage_quartermaster",
+                    verbs=(
+                        AffordanceVerb(
+                            verb="inspect_cartography",
+                            label="Survey certified topographical strata",
+                            stage_beat="leans over the counterweighted folio examining certified strata warrants",
+                        ),
+                        AffordanceVerb(
+                            verb="verify_warrant",
+                            label="Consult imperial warrant seal",
+                            stage_beat="traces the polished brass surveyor disc with certified ink",
+                        ),
+                        AffordanceVerb(
+                            verb="turn_brass_crank",
+                            label="Advance living copper plates",
+                            stage_beat="turns the geared brass crank as the copper plates slide to reveal the border pass",
+                        ),
+                    ),
+                )
+            )
+
+        # 6. Outdoor Wilderness Fixtures
         for op in self.scene_engine.get_outdoor_props():
             self.affordance_templates.append(
                 AffordanceTemplate(
@@ -420,9 +508,10 @@ class StagecraftAnchoringEngine:
         y: float,
         written: bool = False,
         disposition: str = "unreliable",
+        prop_standings: dict[str, str] | None = None,
     ) -> list[dict[str, Any]]:
         """
-        Evaluate NASA Affordance Templates within reach of (x, y) against actor standing.
+        Evaluate NASA Affordance Templates within reach of (x, y) against actor and prop standing.
         """
         results: list[dict[str, Any]] = []
         for at in self.affordance_templates:
@@ -430,9 +519,14 @@ class StagecraftAnchoringEngine:
             if dist > at.reach_radius_m:
                 continue
 
+            prop_standing = (prop_standings or {}).get(at.prop_id, "verified")
+
             if at.required_standing == "written" and not written:
                 status = "standing_refused"
                 reason = "Requires written standing (role.authored) in the Hollis Ledger"
+            elif at.required_prop_standing != "any" and _standing_rank(prop_standing) < _standing_rank(at.required_prop_standing):
+                status = "prop_standing_refused"
+                reason = f"Requires prop standing '{at.required_prop_standing}' (currently '{prop_standing}')"
             else:
                 status = "available"
                 reason = "Within reach and standing verified"
@@ -443,6 +537,8 @@ class StagecraftAnchoringEngine:
                 "label": at.label,
                 "distance_m": round(dist, 2),
                 "required_standing": at.required_standing,
+                "required_prop_standing": at.required_prop_standing,
+                "prop_standing": prop_standing,
                 "status": status,
                 "reason": reason,
                 "verbs": [asdict(v) for v in at.verbs],

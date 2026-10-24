@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import urllib.error
 import urllib.request
 from dataclasses import asdict, dataclass, field
@@ -908,6 +909,10 @@ class CartographersLedger:
 
 def select_asset_recipe(asset: Any) -> tuple[str, dict[str, Any]]:
     """Determine the explicit compilation recipe for an asset."""
+    recipe_override = getattr(asset, "recipe_archetype", None) or (asset.get("recipe_archetype") if isinstance(asset, dict) else "")
+    if recipe_override and recipe_override in ASSET_RECIPES:
+        return recipe_override, ASSET_RECIPES[recipe_override]
+
     asset_id = getattr(asset, "id", None) or (asset.get("id") if isinstance(asset, dict) else "")
     label = getattr(asset, "label", None) or (asset.get("label") if isinstance(asset, dict) else "")
     template = getattr(asset, "visual_template", None) or (asset.get("visual_template") if isinstance(asset, dict) else "")
@@ -915,16 +920,16 @@ def select_asset_recipe(asset: Any) -> tuple[str, dict[str, Any]]:
 
     combined = f"{template} {asset_id} {label} {fragment_id}".lower()
 
+    if any(k in template or k in combined for k in ("living_atlas", "atlas", "grimoire", "statute", "warrant", "lectern", "pedestal", "shelf")):
+        return "monumental_document", ASSET_RECIPES["monumental_document"]
     if "r6_crate" in template or "crate" in combined:
         return "crate_freight", ASSET_RECIPES["crate_freight"]
     if "ledger_desk" in template or "desk" in combined or "quartermaster" in combined:
         return "station_desk", ASSET_RECIPES["station_desk"]
-    if "weigh_scale" in template or "weigh" in combined or "balance_scale" in combined:
+    if "weigh_scale" in template or re.search(r"\b(weigh|weight|scale|balance)\b", combined):
         return "weigh_scale", ASSET_RECIPES["weigh_scale"]
     if "glass_coffin" in template or "coffin" in combined or "stasis" in combined or "cryo" in combined:
         return "containment_relic", ASSET_RECIPES["containment_relic"]
-    if any(k in template or k in combined for k in ("living_atlas", "atlas", "grimoire", "statute", "warrant", "lectern", "pedestal", "shelf")):
-        return "monumental_document", ASSET_RECIPES["monumental_document"]
     if any(k in template or k in combined for k in ("boom_gate", "barrier", "wicket", "gate")):
         return "barrier_gate", ASSET_RECIPES["barrier_gate"]
     if any(k in template or k in combined for k in ("cairn", "signpost", "brazier")):
@@ -1170,7 +1175,11 @@ def compile_asset_brief(
         else:
             fragment_maturities[fid] = "canon"
 
-    if has_curated:
+    explicit_tier = getattr(asset, "standing_tier", None) or (asset.get("standing_tier") if isinstance(asset, dict) else None)
+    if explicit_tier == "canon_locked":
+        standing_tier = "canon_locked"
+        standing_score = 1.00
+    elif has_curated:
         standing_tier = "warranted"
         standing_score = 0.90
     elif has_field_note:
@@ -1182,9 +1191,6 @@ def compile_asset_brief(
     elif recipe_name == "unmodelled_slab":
         standing_tier = "unwritten"
         standing_score = 0.15
-    elif sat_info["saturation_locked"]:
-        standing_tier = "canon_locked"
-        standing_score = 1.00
     else:
         standing_tier = "verified"
         standing_score = 0.65

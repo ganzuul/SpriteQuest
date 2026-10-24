@@ -2320,7 +2320,7 @@ export function initViewer(config) {
       return { success: false, reason: 'asset_not_found' };
     }
     const p = physicalPropsMap.get(id);
-    const fid = fragmentId || (p.fragments_used || []).find((f) => f.startsWith('cartographers/'));
+    const fid = fragmentId || (p.fragment_id && p.fragment_id.startsWith('cartographers/') ? p.fragment_id : null) || (p.fragments_used || []).find((f) => f.startsWith('cartographers/'));
     if (!fid) {
       return { success: false, reason: 'no_dynamic_fragment' };
     }
@@ -2380,7 +2380,7 @@ export function initViewer(config) {
       return { success: false, reason: 'asset_not_found' };
     }
     const p = physicalPropsMap.get(id);
-    const fid = fragmentId || (p.fragments_used || []).find((f) => f.startsWith('cartographers/'));
+    const fid = fragmentId || (p.fragment_id && p.fragment_id.startsWith('cartographers/') ? p.fragment_id : null) || (p.fragments_used || []).find((f) => f.startsWith('cartographers/'));
     if (!fid) {
       return { success: false, reason: 'no_dynamic_fragment' };
     }
@@ -2751,7 +2751,19 @@ export function initViewer(config) {
         if (prop.obstacle_type === 'solid_furniture' || prop.obstacle_type === 'wall') {
           return { allowed: false, reason: 'solid_obstacle', propId: id };
         } else if (prop.obstacle_type === 'physics_object' || prop.obstacle_type === 'destructible_physics_object') {
-          if (pushStrength >= prop.mass_kg) {
+          // Standing-Scaled Physical Durability & Resistance
+          const standingScore = typeof prop.standing_score === 'number' ? prop.standing_score : 0.65;
+          let massMod = 1.0;
+          if (standingScore < 0.25) {
+            massMod = 0.75;
+          } else if (standingScore < 0.50) {
+            massMod = 0.90;
+          } else if (standingScore >= 0.85) {
+            massMod = 1.35;
+          }
+          const effectiveMass = prop.mass_kg * massMod;
+
+          if (pushStrength >= effectiveMass) {
             return { allowed: true, pushedProp: id };
           } else {
             return { allowed: false, reason: 'too_heavy', propId: id };
@@ -2966,6 +2978,24 @@ export function initViewer(config) {
       };
     }
 
+    if (at.required_prop_standing && at.required_prop_standing !== 'any') {
+      const prop = physicalPropsMap.get(at.prop_id);
+      const propTier = prop ? prop.standing_tier : 'unwritten';
+      const STANDING_ORDER = { unwritten: 1, provisional: 2, refined_by_criticism: 2, verified: 3, warranted: 4, canon_locked: 5 };
+      const reqRank = STANDING_ORDER[at.required_prop_standing] || 1;
+      const actualRank = STANDING_ORDER[propTier] || 1;
+      if (actualRank < reqRank) {
+        return {
+          success: false,
+          reason: 'prop_standing_refused',
+          status: 'prop_standing_refused',
+          affordanceId,
+          verb,
+          message: `Requires prop standing '${at.required_prop_standing}', but '${at.prop_id}' is '${propTier}'`,
+        };
+      }
+    }
+
     const vObj = (at.verbs || []).find((v) => v.verb === verb);
     const stageBeat = vObj ? vObj.stage_beat : `${verb} on ${at.label}`;
 
@@ -3126,6 +3156,33 @@ export function initViewer(config) {
       } else if (beat.type === 'audio') {
         playAudioCue(beat.cue);
         executionLog.push({ type: 'audio', cue: beat.cue, status: 'played' });
+      } else if (beat.type === 'cartographer_survey') {
+        const propId = beat.propId;
+        const prop = physicalPropsMap.get(propId);
+        const standing = prop ? prop.standing_tier : 'unwritten';
+        const warrant = prop ? prop.warrant_id : null;
+        let dialogue = '';
+        if (standing === 'warranted' || standing === 'canon_locked') {
+          dialogue = `Behold: ${prop?.label || propId}. Certified under ${warrant || 'Canon Warrant'}. Its footing is warranted.`;
+        } else if (standing === 'refined_by_criticism') {
+          dialogue = `A surveyor strike-mark defaces this asset: rejected by authorial criticism. It stands under caution.`;
+        } else if (standing === 'provisional') {
+          dialogue = `This fixture stands upon provisional survey lines. A waiting field note, not yet carved into copper.`;
+        } else {
+          dialogue = `An unwritten slab awaits prompt specification. The Bureau withholds standing.`;
+        }
+        if (beat.actor) {
+          await speak(beat.actor, beat.text || dialogue, {
+            durationMs: (beat.durationMs || 1500) / speedMultiplier,
+          });
+        }
+        executionLog.push({
+          type: 'cartographer_survey',
+          propId,
+          standing_tier: standing,
+          status: 'surveyed',
+          dialogue: beat.text || dialogue,
+        });
       } else if (beat.type === 'pause') {
         await new Promise((r) => setTimeout(r, (beat.durationMs || 500) / speedMultiplier));
       }
