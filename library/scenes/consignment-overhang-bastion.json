@@ -38,9 +38,11 @@
       "category": "architecture",
       "tree_group": "Architecture & Terrain",
       "stage_role": "45-Degree Overhang Climbing Anchor & High Vantage",
-      "dimensions": [4.0, 4.0, 6.0],
-      "triangle_count": 28,
+      "dimensions": [22.0, 22.0, 12.0],
+      "triangle_count": 1685,
       "stl_path": "library/stl_primitives/ancient-bastion.stl",
+      "mesh_glb": "library/mesh/ancient-bastion-lowpoly.glb",
+      "collider_glb": "library/mesh/ancient-bastion-collider.glb",
       "world_pos": [24.0, 24.0],
       "description": "Cyclopean masonry fortress projecting outward at 45 degrees over the northwest abyss. Survives unpatched from the First Epoch."
     },
@@ -52,9 +54,11 @@
       "category": "monuments",
       "tree_group": "Instruments & Monuments",
       "stage_role": "High Geodetic Marker & Ruin Name Cache",
-      "dimensions": [1.4, 1.4, 2.1],
-      "triangle_count": 20,
+      "dimensions": [1.8, 1.8, 1.6],
+      "triangle_count": 994,
       "stl_path": "library/stl_primitives/relic-cairn.stl",
+      "mesh_glb": "library/mesh/relic-cairn-lowpoly.glb",
+      "collider_glb": "library/mesh/relic-cairn-collider.glb",
       "world_pos": [24.0, 24.0],
       "description": "Summit monument housing Vellum's calibrated theodolite and the weathered slate tally of Aethel-Vorn (the city that wished for no winters)."
     }

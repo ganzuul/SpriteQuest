@@ -606,13 +606,46 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
                         )
                     else:
                         if not asset_data or not asset_data.get("id"):
-                            fp_path = REPO_ROOT / "library" / "floorplans" / f"{scene_id}.json"
-                            if fp_path.is_file():
-                                fp_json = json.loads(fp_path.read_text(encoding="utf-8"))
-                                for sock in fp_json.get("prop_sockets", []):
-                                    if sock.get("id") == asset_id:
-                                        asset_data = dict(sock)
-                                        break
+                            # 1. Check scene definition in library/scenes/<scene_id>.json
+                            scene_path = REPO_ROOT / "library" / "scenes" / f"{scene_id}.json"
+                            if scene_path.is_file():
+                                try:
+                                    sc_json = json.loads(scene_path.read_text(encoding="utf-8"))
+                                    for p in sc_json.get("primitives", []):
+                                        if p.get("id") == asset_id or p.get("asset_id") == asset_id:
+                                            asset_data = dict(p)
+                                            asset_data["label"] = p.get("name", asset_id)
+                                            break
+                                except Exception:
+                                    pass
+
+                            # 2. Check floorplan
+                            if not asset_data or not asset_data.get("id"):
+                                fp_path = REPO_ROOT / "library" / "floorplans" / f"{scene_id}.json"
+                                if fp_path.is_file():
+                                    try:
+                                        fp_json = json.loads(fp_path.read_text(encoding="utf-8"))
+                                        for sock in fp_json.get("prop_sockets", []):
+                                            if sock.get("id") == asset_id:
+                                                asset_data = dict(sock)
+                                                break
+                                    except Exception:
+                                        pass
+
+                            # 3. Check map declaration
+                            if not asset_data or not asset_data.get("id"):
+                                map_path = REPO_ROOT / "library" / "maps" / f"{scene_id}.json"
+                                if map_path.is_file():
+                                    try:
+                                        map_json = json.loads(map_path.read_text(encoding="utf-8"))
+                                        for stl_p in map_json.get("stl_primitives", []):
+                                            if stl_p.get("id") == asset_id or stl_p.get("primitive") == asset_id:
+                                                asset_data = dict(stl_p)
+                                                asset_data["label"] = stl_p.get("id", asset_id).replace("-", " ").title()
+                                                break
+                                    except Exception:
+                                        pass
+
                         if not asset_data:
                             asset_data = {"id": asset_id, "label": asset_id}
 

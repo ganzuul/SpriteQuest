@@ -1900,10 +1900,38 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
       font-size: 10px;
       line-height: 1.35;
       color: #b5a899;
-      max-height: 40px;
+      max-height: 36px;
       overflow-y: auto;
       word-break: break-word;
       overflow-wrap: break-word;
+    }}
+    .sidebar-prompt-box {{
+      margin-top: 4px;
+      padding: 5px 6px;
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: 4px;
+      font-size: 9px;
+      min-width: 0;
+    }}
+    .sidebar-prompt-header {{
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #38bdf8;
+      font-weight: bold;
+      font-size: 8.5px;
+      margin-bottom: 2px;
+      letter-spacing: 0.02em;
+    }}
+    .sidebar-prompt-text {{
+      color: #cbd5e1;
+      line-height: 1.3;
+      max-height: 44px;
+      overflow-y: auto;
+      word-break: break-word;
+      font-family: monospace;
+      font-size: 8.5px;
     }}
     .sidebar-preview-actions {{
       display: flex;
@@ -2188,6 +2216,12 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
         <div class="sidebar-preview-role" id="sidebar-preview-role">Staging role</div>
         <div class="sidebar-preview-meta" id="sidebar-preview-meta"></div>
         <div class="sidebar-preview-desc" id="sidebar-preview-desc"></div>
+        <div class="sidebar-prompt-box" id="sidebar-prompt-box">
+          <div class="sidebar-prompt-header">
+            <span>⚡ Lattice Refined Prompt</span>
+          </div>
+          <div class="sidebar-prompt-text" id="sidebar-preview-prompt">Awaiting compilation...</div>
+        </div>
         <div class="sidebar-preview-actions">
           <button class="prim-act-btn prim-btn-blueprint" onclick="window.viewer && window.viewer.focusSceneAssetOnMap && window.viewer.focusSceneAssetOnMap()" title="Pan & move probe to this asset on the map">📍 Focus Map</button>
           <button class="prim-act-btn prim-btn-blueprint" onclick="window.viewer && window.viewer.compileSelectedAssetBrief && window.viewer.compileSelectedAssetBrief()" title="Compile Lattice prompt from fragments">⚡ Compile</button>

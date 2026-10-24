@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "faction": "cartographers",
+  "title": "The Bureau of the Unwritten Atlas \u2014 Epistemic Survey & Curation Ledger",
+  "parsimony_config": {
+    "max_pending_field_notes_per_archetype": 1,
+    "saturation_threshold": 0.8,
+    "default_target_capacity": 4
+  },
+  "entries": {
+    "cartographers/bridge-wish-stone-slab-default-zone": {
+      "fragment_id": "cartographers/bridge-wish-stone-slab-default-zone",
+      "conflict_id": "border-march:default-zone:wish-stone-slab:cross_domain_anomaly",
+      "conflict_kind": "cross_domain_anomaly",
+      "asset_id": "wish-stone-slab",
+      "recipe_archetype": "unmodelled_slab",
+      "scene_id": "border-march",
+      "zone_id": "default-zone",
+      "origin": "cartographer_llm",
+      "maturity": "field_note",
+      "initial_sha256": "4fc760eead01d0f58b83781f701f64224863b191813c273d2770b8a56adaecdc",
+      "current_sha256": "4fc760eead01d0f58b83781f701f64224863b191813c273d2770b8a56adaecdc",
+      "initial_detail": "stamped brass surveyor brackets and customs transit chalk marks securing the orom's literal wish-stone slab directly onto the weathered stone and timber subfloor",
+      "current_detail": "stamped brass surveyor brackets and customs transit chalk marks securing the orom's literal wish-stone slab directly onto the weathered stone and timber subfloor",
+      "curation_edits": 0,
+      "warrant_id": null
+    }
+  }
+}

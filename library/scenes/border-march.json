@@ -45,9 +45,11 @@
       "fragment_id": "grey-wind/named-ruins",
       "category": "architecture",
       "dimensions": [22.0, 22.0, 12.0],
-      "triangle_count": 30,
+      "triangle_count": 1685,
       "world_pos": [24.0, 24.0],
       "stl_path": "library/stl_primitives/ancient-bastion.stl",
+      "mesh_glb": "library/mesh/ancient-bastion-lowpoly.glb",
+      "collider_glb": "library/mesh/ancient-bastion-collider.glb",
       "description": "Cantilevered megalithic stone rampart obeying the 45-degree overhang rule. The ruin has no foundations below the seam."
     },
     {
@@ -59,9 +61,11 @@
       "fragment_id": "cartographers/epistemic-survey",
       "category": "monuments",
       "dimensions": [1.8, 1.8, 1.6],
-      "triangle_count": 104,
+      "triangle_count": 994,
       "world_pos": [24.0, 24.0],
       "stl_path": "library/stl_primitives/relic-cairn.stl",
+      "mesh_glb": "library/mesh/relic-cairn-lowpoly.glb",
+      "collider_glb": "library/mesh/relic-cairn-collider.glb",
       "description": "Conical dry-stone cairn crowned with a bronze geodetic mounting post holding Surveyor Vellum's calibrated theodolite."
     },
     {
@@ -72,10 +76,12 @@
       "stage_role": "Forged Megalithic Bridge / Literal Wish Artifact",
       "fragment_id": "grey-wind/wish-granting",
       "category": "monuments",
-      "dimensions": [3.0, 8.0, 0.6],
-      "triangle_count": 20,
+      "dimensions": [3.0, 8.0, 0.8],
+      "triangle_count": 900,
       "world_pos": [42.0, 74.0],
       "stl_path": "library/stl_primitives/wish-stone-slab.stl",
+      "mesh_glb": "library/mesh/wish-stone-slab-lowpoly.glb",
+      "collider_glb": "library/mesh/wish-stone-slab-collider.glb",
       "description": "Monolithic quarried granite slab bridging chasm drops, chiseled with coarse runes and answered literally by Orom."
     },
     {

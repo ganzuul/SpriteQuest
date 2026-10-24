@@ -278,4 +278,28 @@ describe('Interface Connection with Lattice & Prompt Rewrite Pipeline (TDD)', ()
     assert.ok(styleCode.includes('#sq-map-sendbar'), 'style.css must style sq-map-sendbar launcher');
     assert.ok(styleCode.includes('.sq-map-overlay'), 'style.css must style sq-map-overlay modal');
   });
+
+  test('8. Outdoor Ruin Primitives Trigger Dynamic Lattice Prompt Refinement', () => {
+    // 1. Switch to Overhang Bastion scene
+    viewer.selectScene('consignment-overhang-bastion');
+    const sc = viewer.getCurrentScene();
+    assert.equal(sc.id, 'consignment-overhang-bastion');
+
+    // 2. Select ancient-bastion outdoor ruin
+    const item = viewer.selectScenePrimitive('ancient-bastion');
+    assert.ok(item, 'Must select ancient-bastion primitive');
+
+    // 3. Compile asset brief via Lattice
+    const compRes = viewer.compileSelectedAssetBrief();
+    assert.equal(compRes.success, true);
+    assert.ok(compRes.prompt.includes('45-degree cantilever overhang rule'), 'Must weave 45-degree cantilever rule');
+    assert.ok(compRes.prompt.includes('cyclopean'), 'Must weave cyclopean masonry');
+    assert.ok(compRes.prompt.includes('Black Forest Labs Flux 3 Klein render'), 'Must condition for Flux 3 Klein');
+
+    // 4. Verify sidebar DOM prompt element is populated
+    const promptEl = document.getElementById('sidebar-preview-prompt');
+    if (promptEl) {
+      assert.ok(promptEl.textContent.includes('45-degree cantilever overhang rule'), 'DOM must display refined prompt');
+    }
+  });
 });

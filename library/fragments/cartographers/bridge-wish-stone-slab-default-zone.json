@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "id": "cartographers/bridge-wish-stone-slab-default-zone",
+  "version": 1,
+  "world_id": "cartographers",
+  "for": "diffusion",
+  "facets": [
+    "home",
+    "favored_items"
+  ],
+  "detail": "stamped brass surveyor brackets and customs transit chalk marks securing the orom's literal wish-stone slab directly onto the weathered stone and timber subfloor",
+  "evidence": {
+    "kind": "directed",
+    "source": "library/cartographers_ledger.json",
+    "quote": "Foreign domain asset ('grey-wind') placed in 'border-march' zone 'default-zone' (weathered stone and timber subfloor) without bridging fixture."
+  },
+  "facts": {
+    "extent": "base mounting brackets 25 cm across",
+    "scale_ref": "fastened along the bottom contact perimeter",
+    "material": "weathered brass and surveyor chalk on weathered stone and timber subfloor",
+    "state": "surveyed in transit"
+  },
+  "note": "Synthesized as a Provisional Field Note by the Bureau of the Unwritten Atlas to resolve cross_domain_anomaly (border-march:default-zone:wish-stone-slab:cross_domain_anomaly). Edit to curate and grant a Canon Warrant; delete to record an authorial criticism tombstone."
+}

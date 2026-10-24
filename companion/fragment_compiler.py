@@ -76,12 +76,47 @@ WORLD_LOOK_DESCRIPTIONS = {
         "lighting": "cold overcast mountain light, crisp shadows",
         "framing": "orthographic top-down 2.5D isometric game asset cutout, isolated on neutral grey background",
     },
+    "border-march": {
+        "setting": "The Cold Border March & Ancient Overhang Bastion Ridge",
+        "materials": "cracked cyclopean limestone masonry, 45-degree cantilever granite blocks, dry-stone cairn slate, weathered brass theodolite brackets, alpine scree",
+        "lighting": "stark high-altitude alpine sun, sharp directional top-left rim lighting, deep cast occlusion shadows beneath stone overhangs",
+        "framing": "orthographic top-down 2.5D isometric game asset cutout, isolated subject on neutral solid grey background (#707070), perfectly clean silhouette, ready for alpha matting",
+    },
+    "consignment-overhang-bastion": {
+        "setting": "The 45° Bastion & Relic Cairn Summit at the Border March",
+        "materials": "cyclopean First-Epoch masonry, dry-stone cairn rings, calibrated surveyor vellum plaques, unwritten boundary markers, lichen-encrusted granite",
+        "lighting": "dramatic alpine rim light from northwest, crisp silhouette against solid neutral grey background (#707070), deep contact ground shadow",
+        "framing": "orthographic top-down 2.5D isometric game asset cutout, isolated subject on neutral solid grey background (#707070), perfectly clean silhouette, ready for alpha matting",
+    },
 }
 
 
 # Explicit Compilation Recipes
 # Selection is an explicit authored recipe per archetype: no indiscriminate dumping.
 ASSET_RECIPES: dict[str, dict[str, Any]] = {
+    "ancient_ruin": {
+        "archetype": "ancient_ruin",
+        "description": "Cyclopean stone bastion, ruined watchtower, or stepped overhang terrace",
+        "allowed_fragments": {
+            "grey-wind/named-ruins",
+            "grey-wind/mountain-passage",
+            "grey-wind/wish-granting",
+            "cartographers/epistemic-survey",
+            "cartographers/the-living-atlas",
+            "shared/single-face-reading",
+        },
+        "doctrine_fragments": [
+            "shared/single-face-reading",
+        ],
+        "target_capacity": 5,
+        "derive_physics": lambda mass_kg, bounds, verbs: [
+            "cyclopean masonry blocks",
+            "conforming to the 45-degree cantilever overhang rule",
+            "stratified ancient stone foundations",
+            "weathered mineral fractures and lichen patina",
+            "grounded firmly upon bedrock",
+        ],
+    },
     "crate_freight": {
         "archetype": "crate_freight",
         "description": "Standardized freight shipping crate demanding arithmetic clearance",
@@ -987,10 +1022,10 @@ def select_asset_recipe(asset: Any) -> tuple[str, dict[str, Any]]:
     if recipe_override and recipe_override in ASSET_RECIPES:
         return recipe_override, ASSET_RECIPES[recipe_override]
 
-    asset_id = getattr(asset, "id", None) or (asset.get("id") if isinstance(asset, dict) else "")
-    label = getattr(asset, "label", None) or (asset.get("label") if isinstance(asset, dict) else "")
-    template = getattr(asset, "visual_template", None) or (asset.get("visual_template") if isinstance(asset, dict) else "")
-    fragment_id = getattr(asset, "fragment_id", None) or (asset.get("fragment_id") if isinstance(asset, dict) else "") or ""
+    asset_id = str(getattr(asset, "id", None) or (asset.get("id") if isinstance(asset, dict) else "") or "")
+    label = str(getattr(asset, "label", None) or (asset.get("label") if isinstance(asset, dict) else "") or "")
+    template = str(getattr(asset, "visual_template", None) or (asset.get("visual_template") if isinstance(asset, dict) else "") or "")
+    fragment_id = str(getattr(asset, "fragment_id", None) or (asset.get("fragment_id") if isinstance(asset, dict) else "") or "")
 
     combined = f"{template} {asset_id} {label} {fragment_id}".lower()
 
@@ -1006,9 +1041,11 @@ def select_asset_recipe(asset: Any) -> tuple[str, dict[str, Any]]:
         return "containment_relic", ASSET_RECIPES["containment_relic"]
     if any(k in template or k in combined for k in ("boom_gate", "barrier", "wicket", "gate")):
         return "barrier_gate", ASSET_RECIPES["barrier_gate"]
+    if any(k in template or k in combined for k in ("bastion", "ruin", "watchtower", "terrace", "colonnade", "overhang", "wish", "monolith")):
+        return "ancient_ruin", ASSET_RECIPES["ancient_ruin"]
     if any(k in template or k in combined for k in ("cairn", "signpost", "brazier")):
         return "waypoint_marker", ASSET_RECIPES["waypoint_marker"]
-    if "unmodelled" in template or "unmodelled" in combined or "slab" in combined:
+    if "unmodelled" in template or "unmodelled" in combined or "placeholder" in combined:
         return "unmodelled_slab", ASSET_RECIPES["unmodelled_slab"]
 
     return "unmodelled_slab", ASSET_RECIPES["unmodelled_slab"]

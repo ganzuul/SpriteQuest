@@ -2277,14 +2277,54 @@ export function initViewer(config) {
       p.diffusion_prompt = selectedAsset.diffusion_prompt;
       p.compiled_brief = selectedAsset.compiled_brief;
       p.fragments_used = [...frags];
+    } else {
+      // Scene Primitive, Outdoor Ruin, or Spatial Map Asset
+      const sc = getCurrentScene();
+      const prim = _findItemInScene(sc, id) || selectedAsset;
+      const frags = selectedAsset.fragments_used?.length
+        ? [...selectedAsset.fragments_used]
+        : (prim.fragments_used ? [...prim.fragments_used] : [prim.fragment_id || 'grey-wind/named-ruins']);
+      selectedAsset.fragments_used = frags;
+
+      const criticismsText = selectedAsset.active_criticisms?.length
+        ? ` Authorial criticisms: ${selectedAsset.active_criticisms.join('; ')}.`
+        : '';
+      const warrantText = selectedAsset.warrant_id ? ` Canon warrant: ${selectedAsset.warrant_id}.` : '';
+
+      const dimsStr = prim.dimensions ? `${prim.dimensions[0]}m × ${prim.dimensions[1]}m × ${prim.dimensions[2]}m` : '';
+      const trisStr = prim.triangle_count ? `${prim.triangle_count} triangles` : '';
+      const physicalDerivs = [
+        dimsStr ? `bounding volume ${dimsStr}` : null,
+        trisStr ? `faceted 3D geometry ${trisStr}` : null,
+        prim.category === 'architecture' ? 'cyclopean masonry blocks conforming to the 45-degree cantilever overhang rule' : null,
+        prim.category === 'monuments' ? 'dry-stone tiered rings and calibrated surveyor theodolite mount' : null,
+        'isolated game asset cutout'
+      ].filter(Boolean).join(', ');
+
+      const briefBase = prim.description || prim.lore || `${prim.name || prim.label || id}, outdoor ruin asset in scene.`;
+      selectedAsset.compiled_brief = `Subject: ${prim.name || prim.label || id}. Physicality: ${physicalDerivs}. Lore & Function: ${briefBase} Admitted fragments: ${frags.join(', ')}.${warrantText}${criticismsText}`;
+
+      const worldSetting = (currentSceneId && (currentSceneId.includes('bastion') || currentSceneId.includes('border')))
+        ? 'The Cold Border March & Ancient Overhang Bastion Ridge, high mountain valley strewn with cyclopean masonry ruins'
+        : `${zoneName} (${currentSceneId})`;
+      const worldMaterials = (currentSceneId && (currentSceneId.includes('bastion') || currentSceneId.includes('border')))
+        ? 'weathered cyclopean limestone masonry, 45-degree cantilever granite blocks, dry-stone cairn slate, alpine scree, lichen patina'
+        : 'weathered stone, rough timber, forged iron fittings';
+
+      selectedAsset.diffusion_prompt = `orthographic top-down 2.5D isometric game asset cutout, ${prim.name || prim.label || id}, ${physicalDerivs}, crafted with ${worldMaterials}, grounded upon ${substrate} in ${worldSetting}, isolated on neutral solid grey background (#707070), no background walls, no room floors, perfectly clean silhouette, ready for alpha matting, subtle directional studio lighting from top-left, soft ground contact occlusion shadow beneath base, crisp 16-bit painterly texture, highly detailed tactile physical prop, Black Forest Labs Flux 3 Klein render, 1024x1024`;
+
+      if (prim.diffusion_prompt !== undefined) prim.diffusion_prompt = selectedAsset.diffusion_prompt;
+      if (prim.compiled_brief !== undefined) prim.compiled_brief = selectedAsset.compiled_brief;
+      prim.fragments_used = [...frags];
     }
 
     // Remote sync with Companion Forge Service (port 8788) when online
+    const activeSceneId = currentSceneId || selectedAsset.zone_context?.scene_id || 'border-march';
     if (typeof fetch === 'function' && options.remote !== false) {
       postForgeJson('/forge/compile', {
         asset_id: id,
         kind: selectedAsset.kind,
-        scene_id: selectedAsset.zone_context?.scene_id || 'customs-house',
+        scene_id: activeSceneId,
         facet: options.facet || 'portrait',
         asset: selectedAsset,
       }, 1500).then(remote => {
@@ -2296,6 +2336,10 @@ export function initViewer(config) {
           selectedAsset.standing_score = remote.standing_score;
           log('LATTICE', `[remote-sync] Synced compiled prompt from companion forge service on port 8788.`);
           renderAssetViewerDOM();
+          const activeItem = getSelectedScenePrimitive();
+          if (activeItem && (activeItem.id === id || activeItem.asset_id === id)) {
+            renderSidebarPreviewDOM(activeItem);
+          }
         }
       }).catch(() => {});
     }
@@ -2915,8 +2959,10 @@ export function initViewer(config) {
           salience: 'major',
           image_url: item.image_2d || null,
           lore: item.description,
-          diffusion_prompt: `orthographic top-down 2.5D isometric game asset cutout, ${item.name}, ${item.description}, source fragment: ${item.fragment_id}, isolated on neutral solid grey background (#707070), subtle directional studio lighting, soft ground contact occlusion shadow, crisp 16-bit painterly texture, highly detailed tactile physical prop, Black Forest Labs Flux 3 Klein render, 1024x1024`,
+          dimensions: item.dimensions,
+          triangle_count: item.triangle_count,
         });
+        compileAssetBrief(item.id);
       }
 
       if (options.focusMap && Array.isArray(item.world_pos) && item.world_pos.length >= 2) {
@@ -3165,6 +3211,14 @@ export function initViewer(config) {
     }
     if (previewDesc) {
       previewDesc.textContent = activeItem.description || '';
+    }
+
+    const previewPrompt = document.getElementById('sidebar-preview-prompt');
+    if (previewPrompt) {
+      const promptText = (selectedAsset && (selectedAsset.id === activeItem.id || selectedAsset.id === activeItem.asset_id))
+        ? (selectedAsset.diffusion_prompt || activeItem.diffusion_prompt || 'Awaiting compile...')
+        : (activeItem.diffusion_prompt || 'Awaiting compile...');
+      previewPrompt.textContent = promptText;
     }
   }
 

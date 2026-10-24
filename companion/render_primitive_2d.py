@@ -70,6 +70,20 @@ PRIMITIVE_STYLES: dict[str, dict[str, Any]] = {
         "edge_rgb": (64, 42, 92),
         "accent": "#a855f7",
     },
+    "ruined-watchtower": {
+        "title": "North Flank Ruined Watchtower",
+        "category": "architecture",
+        "base_rgb": (154, 142, 132),
+        "edge_rgb": (62, 54, 48),
+        "accent": "#94a3b8",
+    },
+    "ancient-ruin-terrace": {
+        "title": "Ancient Overhang Ruin Buttress",
+        "category": "architecture",
+        "base_rgb": (165, 148, 130),
+        "edge_rgb": (70, 60, 50),
+        "accent": "#f59e0b",
+    },
     "cryo-entropy-beacon": {
         "title": "Cryo-Entropy Beacon Monolith",
         "category": "hazards",

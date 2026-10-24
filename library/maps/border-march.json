@@ -114,12 +114,30 @@
     },
     {
       "id": "west-watch-ruin",
-      "primitive": "ancient-bastion",
-      "fragment_id": "grey-wind/named-ruins",
+      "primitive": "ruined-watchtower",
+      "fragment_id": "grey-wind/mountain-passage",
       "at": [18.0, 110.0],
       "elevation_mode": "surface",
       "yaw_deg": 45.0,
-      "scale": 0.85
+      "scale": 1.0
+    },
+    {
+      "id": "relic-cairn-theodolite",
+      "primitive": "relic-cairn",
+      "fragment_id": "cartographers/the-living-atlas",
+      "at": [24.0, 24.0],
+      "elevation_mode": "surface",
+      "yaw_deg": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "orom-wish-stone-slab",
+      "primitive": "wish-stone-slab",
+      "fragment_id": "grey-wind/wish-granting",
+      "at": [42.0, 74.0],
+      "elevation_mode": "surface",
+      "yaw_deg": 30.0,
+      "scale": 1.0
     },
     {
       "id": "prop-border-signpost",
