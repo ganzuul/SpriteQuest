@@ -218,18 +218,52 @@
   },
   "prop_sockets": [
     {
-      "id": "socket-solar-lens-altar",
-      "zone": "chancel-high-altar",
-      "position": [0.0, 3.0, 190.0],
-      "footprint": [5.0, 5.0, 4.0],
-      "recommended_prop": "solar-fused-glass-altar"
+      "socket_id": "socket-solar-lens-altar",
+      "id": "solar_lens_high_altar",
+      "fragment_id": "wizard-tower/the-mount",
+      "recipe_archetype": "monumental_document",
+      "label": "Solar Fused Astronomical Lens & High Altar",
+      "salience": "monumental",
+      "obstacle_type": "solid_furniture",
+      "mass_kg": 520.0,
+      "at": [0.0, 3.0, 190.0],
+      "bounds": {"width": 5.0, "depth": 5.0, "height": 4.0},
+      "visual_template": "solar_altar",
+      "interactive_verbs": ["align_solar_focus", "channel_refraction"],
+      "destructible": false,
+      "image_url": null
     },
     {
-      "id": "socket-lectern-west",
-      "zone": "transept-west",
-      "position": [-40.0, 1.5, 130.0],
-      "footprint": [2.0, 2.0, 1.8],
-      "recommended_prop": "crystalline-astronomical-codex"
+      "socket_id": "socket-lectern-west",
+      "id": "crystalline_codex_lectern",
+      "fragment_id": "wizard-tower/the-grimoire",
+      "recipe_archetype": "monumental_document",
+      "label": "Crystalline Astronomical Codex & Solarium Lectern",
+      "salience": "major",
+      "obstacle_type": "solid_furniture",
+      "mass_kg": 75.0,
+      "at": [-40.0, 1.5, 130.0],
+      "bounds": {"width": 2.0, "depth": 2.0, "height": 1.8},
+      "visual_template": "grimoire_lectern",
+      "interactive_verbs": ["consult_arcana", "read_star_ephemeris"],
+      "destructible": false,
+      "image_url": null
+    },
+    {
+      "socket_id": "socket-archive-shelf-east",
+      "id": "sky_cathedral_archive_shelf",
+      "fragment_id": "wizard-tower/the-shelf",
+      "recipe_archetype": "station_desk",
+      "label": "Airborne Spun-Silica Archive Bookcase",
+      "salience": "moderate",
+      "obstacle_type": "solid_furniture",
+      "mass_kg": 140.0,
+      "at": [40.0, 1.5, 130.0],
+      "bounds": {"width": 2.4, "depth": 1.0, "height": 2.8},
+      "visual_template": "ledger_desk",
+      "interactive_verbs": ["retrieve_folio", "inspect_crystal_strata"],
+      "destructible": false,
+      "image_url": null
     }
   ]
 }
