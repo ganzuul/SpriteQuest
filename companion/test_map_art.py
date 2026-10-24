@@ -51,6 +51,14 @@ class TestMapArtPipeline(unittest.TestCase):
         self.assertGreater(arr.max(), 200)
         self.assertLess(arr.min(), 50)
 
+    def test_render_stylized_cartography_with_map_data(self):
+        art = render_stylized_cartography(self.tm, width=512, height=512, map_data=self.map_data)
+        self.assertEqual(art.size, (512, 512))
+        self.assertEqual(art.mode, "RGB")
+        arr = np.asarray(art)
+        self.assertGreater(arr.max(), 200)
+        self.assertLess(arr.min(), 50)
+
     def test_build_map_art_workflow(self):
         wf = build_map_art_workflow(
             depth_image_name="test_depth.png",

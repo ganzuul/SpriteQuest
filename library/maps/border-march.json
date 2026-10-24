@@ -91,6 +91,15 @@
       "top_elevation": 18.0,
       "base_elevation": 2.0,
       "overhang_angle_deg": 45.0
+    },
+    {
+      "id": "south-intake-gorge",
+      "type": "canyon_gorge",
+      "start": [12.0, 130.0],
+      "end": [58.0, 130.0],
+      "bed_elevation": 1.2,
+      "bed_width": 6.0,
+      "wall_slope_width": 6.0
     }
   ],
   "props": [

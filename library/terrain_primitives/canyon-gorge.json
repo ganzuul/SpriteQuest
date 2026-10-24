@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "canyon-gorge",
+  "name": "Sunken Canyon Gorge & River Bed",
+  "category": "corridor",
+  "description": "A sunken alluvial riverbed or dry gulch carved into the terrain with steep wall scarps, framing natural movement barriers and drainage ways.",
+  "default_scale": {
+    "bed_width_m": 6.0,
+    "wall_slope_width_m": 8.0,
+    "bed_elevation_m": 1.0
+  },
+  "slope_wall_deg": 52.0,
+  "traversable": true,
+  "tag_bit": 8
+}

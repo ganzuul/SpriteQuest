@@ -35,6 +35,12 @@ SLOPE_WALKABLE_MAX_DEG = 35.0
 SLOPE_SCRAMBLE_MAX_DEG = 50.0
 OVERHANG_ANCIENT_DEG = 45.0
 
+# Semantic terrain tag masks (bitflags)
+TAG_BUILD_PLATE = 1       # Level architectural foundation
+TAG_ANCIENT_RUIN = 2      # Ancient 45° overhang relic infrastructure
+TAG_ROAD_PASS = 4         # Traversable ridge pass / cleared road corridor
+TAG_CANYON_GORGE = 8      # Sunken riverbed / alluvial canyon gorge
+
 
 @dataclass
 class TerrainStratum:
@@ -261,7 +267,63 @@ class TerrainMesh:
                 if edge_in > 0:
                     elev = base_elevation + min(edge_in * math.tan(math.radians(overhang_angle_deg)), h_delta)
                     self.heights[r, c] = max(self.heights[r, c], elev)
-                    self.tags[r, c] |= 2  # Ancient ruin tag
+                    self.tags[r, c] |= TAG_ANCIENT_RUIN
+
+    def add_canyon_gorge(
+        self,
+        start_x: float,
+        start_y: float,
+        end_x: float,
+        end_y: float,
+        bed_elevation: float,
+        bed_width: float = 6.0,
+        wall_slope_width: float = 8.0,
+        tag_mask: int = TAG_CANYON_GORGE,
+    ) -> None:
+        """
+        Carve a sunken canyon gorge or alluvial river bed with steep wall scarps
+        and a flat, traversable bed floor.
+        """
+        dx = end_x - start_x
+        dy = end_y - start_y
+        seg_len = math.hypot(dx, dy)
+        if seg_len < 1e-6:
+            return
+
+        ux = dx / seg_len
+        uy = dy / seg_len
+        nx = -uy
+        ny = ux
+
+        margin = bed_width / 2.0 + wall_slope_width + 4.0
+        x_min = min(start_x, end_x) - margin
+        x_max = max(start_x, end_x) + margin
+        y_min = min(start_y, end_y) - margin
+        y_max = max(start_y, end_y) + margin
+
+        c_min, r_min = self.world_to_grid(x_min, y_min)
+        c_max, r_max = self.world_to_grid(x_max, y_max)
+
+        for r in range(r_min, r_max + 1):
+            for c in range(c_min, c_max + 1):
+                wx, wy = self.grid_to_world(c, r)
+                vx = wx - start_x
+                vy = wy - start_y
+                proj = vx * ux + vy * uy
+                if -2.0 <= proj <= seg_len + 2.0:
+                    perp_dist = abs(vx * nx + vy * ny)
+                    half_bed = bed_width / 2.0
+                    if perp_dist <= half_bed:
+                        self.heights[r, c] = min(self.heights[r, c], bed_elevation)
+                        self.tags[r, c] |= tag_mask
+                    elif perp_dist <= half_bed + wall_slope_width:
+                        t = (perp_dist - half_bed) / wall_slope_width
+                        t_curve = t * t * (3.0 - 2.0 * t)
+                        orig_h = self.heights[r, c]
+                        carved_h = bed_elevation + (orig_h - bed_elevation) * t_curve
+                        self.heights[r, c] = min(orig_h, carved_h)
+                        if perp_dist <= half_bed + 1.5:
+                            self.tags[r, c] |= tag_mask
 
     # -------------------------------------------------------------------------
     # Slope, normal, and traversability analysis
@@ -743,6 +805,19 @@ def load_outdoor_map_scene(map_path: Path) -> tuple[TerrainMesh, dict]:
                 center_y=float(c[1]),
                 height=float(prim.get("height", 10.0)),
                 radius=float(prim.get("radius", 15.0)),
+            )
+        elif ptype == "canyon_gorge":
+            start = prim["start"]
+            end = prim["end"]
+            tm.add_canyon_gorge(
+                start_x=float(start[0]),
+                start_y=float(start[1]),
+                end_x=float(end[0]),
+                end_y=float(end[1]),
+                bed_elevation=float(prim.get("bed_elevation", base_elev)),
+                bed_width=float(prim.get("bed_width", 6.0)),
+                wall_slope_width=float(prim.get("wall_slope_width", 8.0)),
+                tag_mask=int(prim.get("tag_mask", TAG_CANYON_GORGE)),
             )
 
     # 2. Stamp scene build plates (flattened ground foundations)

@@ -47,6 +47,9 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
     depth_path = map_dir / "depth_map.png"
     art_path = map_dir / "map_art.png"
     relief_path = map_dir / "topdown_relief.png"
+    stylized_path = map_dir / "stylized_art.png"
+
+    from companion.render_map_art import render_stylized_cartography
 
     # 1. Z-depth map from binary STL if present, else TerrainMesh heightfield
     if not depth_path.is_file():
@@ -58,15 +61,21 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
     else:
         depth_img = Image.open(depth_path)
 
-    # 2. Base map art: use pre-rendered diffusion art if present, else stylized cartography
+    # 2. Hand-inked stylized cartography with primitive visual elements
+    if not stylized_path.is_file():
+        stylized_img = render_stylized_cartography(tm, width=1024, height=1024, map_data=map_data)
+        stylized_img.save(stylized_path, format="PNG")
+    else:
+        stylized_img = Image.open(stylized_path)
+
+    # 3. Base map art: use pre-rendered diffusion art if present, else stylized cartography
     if art_path.is_file():
         base_art = Image.open(art_path)
     else:
-        from companion.render_map_art import render_stylized_cartography
-        base_art = render_stylized_cartography(tm, width=1024, height=1024)
+        base_art = stylized_img
         base_art.save(art_path, format="PNG")
 
-    # 3. Topdown relief for inspection/toggle
+    # 4. Topdown relief for inspection/toggle
     if not relief_path.is_file():
         relief_img = tm.render_topdown_relief(contour_step_m=2.0)
         relief_img.save(relief_path, format="PNG")
@@ -92,6 +101,11 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
     relief_buf = io.BytesIO()
     relief_preview.save(relief_buf, format="PNG", optimize=True)
     relief_b64 = base64.b64encode(relief_buf.getvalue()).decode("ascii")
+
+    stylized_preview = stylized_img.resize((600, 700), Image.Resampling.BILINEAR) if stylized_img.size != (600, 700) else stylized_img
+    stylized_buf = io.BytesIO()
+    stylized_preview.save(stylized_buf, format="PNG", optimize=True)
+    stylized_b64 = base64.b64encode(stylized_buf.getvalue()).decode("ascii")
 
     strata_json = json.dumps([
         {"id": s.id, "name": s.name, "z_min": s.z_min, "z_max": s.z_max, "css_z": s.css_z_px}
@@ -267,8 +281,13 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
       opacity: 1;
       background-image: url('data:image/png;base64,{relief_b64}');
     }}
+    .world-plane.mode-stylized .inspection-layer {{
+      opacity: 1;
+      background-image: url('data:image/png;base64,{stylized_b64}');
+    }}
     .world-plane.mode-depth .stratum-layer,
-    .world-plane.mode-relief .stratum-layer {{
+    .world-plane.mode-relief .stratum-layer,
+    .world-plane.mode-stylized .stratum-layer {{
       opacity: 0.12;
     }}
 
@@ -1509,6 +1528,7 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
     </div>
     <div class="view-mode-tabs">
       <button class="view-tab active" id="tab-art" onclick="setLayerMode('art')" title="Full 3D Parallax Map Art">🗺️ Map Art</button>
+      <button class="view-tab" id="tab-stylized" onclick="setLayerMode('stylized')" title="Hand-Inked Stylized Cartography">📜 Stylized Topo</button>
       <button class="view-tab" id="tab-depth" onclick="setLayerMode('depth')" title="Topographic Z-Depth Map">⛰️ Z-Depth Map</button>
       <button class="view-tab" id="tab-relief" onclick="setLayerMode('relief')" title="Hillshade & Contour Relief">📐 Topo Relief</button>
     </div>
@@ -1771,7 +1791,7 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
   function setLayerMode(mode) {{
     const world = document.getElementById('world');
     if (!world) return;
-    world.classList.remove('mode-art', 'mode-depth', 'mode-relief');
+    world.classList.remove('mode-art', 'mode-depth', 'mode-relief', 'mode-stylized');
     if (mode !== 'art') {{
       world.classList.add('mode-' + mode);
     }}
@@ -1811,7 +1831,15 @@ def main() -> int:
     parser.add_argument("--out", type=Path, default=REPO_ROOT / "renders" / "maps" / "border-march" / "index.html", help="Output HTML file path")
     args = parser.parse_args()
 
-    out_file = generate_interactive_html(Path(args.map), args.out)
+    map_p = Path(args.map)
+    if not map_p.is_file():
+        cand = REPO_ROOT / "library" / "maps" / f"{args.map}.json"
+        if cand.is_file():
+            map_p = cand
+        elif (REPO_ROOT / "library" / "maps" / args.map).is_file():
+            map_p = REPO_ROOT / "library" / "maps" / args.map
+
+    out_file = generate_interactive_html(map_p, args.out)
     print(f"Generated standalone 2.5D Parallax Web Preview -> {out_file} ({out_file.stat().st_size / 1024:.1f} KB)")
     return 0
 

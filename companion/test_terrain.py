@@ -28,6 +28,10 @@ from companion.terrain_mesh import (
     OVERHANG_ANCIENT_DEG,
     SLOPE_SCRAMBLE_MAX_DEG,
     SLOPE_WALKABLE_MAX_DEG,
+    TAG_ANCIENT_RUIN,
+    TAG_BUILD_PLATE,
+    TAG_CANYON_GORGE,
+    TAG_ROAD_PASS,
     TerrainMesh,
     rasterize_stl_depth,
 )
@@ -78,6 +82,26 @@ class TestTerrainMesh(unittest.TestCase):
         stats = self.tm.analyze_traversability()
         # Should be compliant with the ancient overhang rule
         self.assertGreaterEqual(stats["ancient_ruin_compliance_pct"], 90.0)
+
+    def test_canyon_gorge_primitive(self):
+        # Create an elevated plateau first (elevation 8.0m)
+        self.tm.add_flat_build_plate(20.0, 20.0, width=30.0, length=30.0, elevation=8.0, blend_margin=1.0)
+        # Carve a canyon gorge through it down to 2.0m
+        self.tm.add_canyon_gorge(
+            start_x=5.0,
+            start_y=20.0,
+            end_x=35.0,
+            end_y=20.0,
+            bed_elevation=2.0,
+            bed_width=4.0,
+            wall_slope_width=4.0,
+        )
+        # Check center of gorge bed
+        elev_bed = self.tm.sample_elevation(20.0, 20.0)
+        self.assertAlmostEqual(elev_bed, 2.0, places=1)
+        # Tag bit 8 should be present
+        c, r = self.tm.world_to_grid(20.0, 20.0)
+        self.assertTrue(bool(self.tm.tags[r, c] & TAG_CANYON_GORGE))
 
     def test_slice_strata(self):
         self.tm.add_hill(20.0, 20.0, height=16.0, radius=12.0)

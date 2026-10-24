@@ -41,21 +41,30 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from companion.render_sheets import Comfy, pick_clip, pick_unet, pick_vae
-from companion.terrain_mesh import TerrainMesh, load_outdoor_map_scene, rasterize_stl_depth
+from companion.terrain_mesh import (
+    TAG_ANCIENT_RUIN,
+    TAG_BUILD_PLATE,
+    TAG_CANYON_GORGE,
+    TAG_ROAD_PASS,
+    TerrainMesh,
+    load_outdoor_map_scene,
+    rasterize_stl_depth,
+)
 
 DEFAULT_COMFY_SERVER = os.environ.get("COMFY_SERVER", "http://127.0.0.1:8080/upstream/comfyui")
 COMFY_INPUT_DIR = Path(os.environ.get("COMFY_INPUT", Path.home() / "ComfyUI" / "input"))
 
 DEFAULT_MAP_PROMPT = (
-    "Antique fantasy cartography map art, vintage hand-drawn fantasy tabletop RPG world map, "
-    "warm aged parchment paper texture, ink line art topographic mountains, shaded cliffs, "
-    "cobblestone road passing through a stone customs gatehouse, river valley, "
-    "clean watercolor wash, aerial orthographic top-down perspective, high detail, masterpiece"
+    "This image is a grayscale height map: white is high mountain, black is low ground. "
+    "Redraw it as antique hand-inked fantasy cartography on aged parchment, strictly top-down "
+    "orthographic plan view, no horizon, no perspective, ink hachures on slopes, soft watercolor wash, "
+    "no text, no border. Keep every landform exactly where it is: a long north-south mountain ridge "
+    "along the east side with a narrow pass running down its spine, a flat rectangular plateau in "
+    "the centre-west where a small customs house stands, two small square ruined stone bastions "
+    "at the north-west and south-west, flat grassy lowland everywhere else."
 )
 
-NEGATIVE_PROMPT = (
-    "modern, photo, blurry, low resolution, 3d render, dark vignette, frame border, plastic, shiny"
-)
+NEGATIVE_PROMPT = ""
 
 
 def render_stylized_cartography(
@@ -63,86 +72,150 @@ def render_stylized_cartography(
     width: int = 1024,
     height: int = 1024,
     contour_step_m: float = 2.0,
+    map_data: dict | None = None,
 ) -> Image.Image:
     """
-    Deterministic artistic cartography renderer.
-    Produces a vintage hand-drawn fantasy map on parchment with:
-      - Multi-band elevation biome tinting (lowland silt, plateau sandstone, alpine slate, relic basalt)
+    Deterministic artistic cartography renderer for outdoor terrain primitives.
+    Produces a vintage hand-drawn fantasy map on aged vellum parchment with:
+      - Multi-band elevation biome tinting (lowland silt, sandstone plateau, scree, relic basalt)
       - Oblique NW hillshading
-      - Crisp sepia iso-contour ink lines
-      - Subtle organic parchment grain
+      - Directional slope hachuring along the fall-line on steep ascents
+      - Intermediate (2m) & index (10m) sepia iso-contour ink lines
+      - Dressed-stone foundation retaining walls and floorplan wall footprints for build plates
+      - Stepped cyclopean masonry terraces for ancient 45° overhang ruins
+      - Twin wagon wheel ruts and trail stippling for ridge passes
+      - Sunken alluvial washes and riparian flow lines for canyon gorges
+      - Cartographic symbols for placed props (signposts, braziers, cargo crates)
+      - Authentic map furniture: Compass Rose (North needle), metric scale bar, summit spot heights, and neatline frame.
     """
+    def world_to_px(x_m: float, y_m: float) -> tuple[int, int]:
+        px = int((x_m / tm.width_m) * (width - 1))
+        py = int((y_m / tm.length_m) * (height - 1))
+        return max(0, min(width - 1, px)), max(0, min(height - 1, py))
+
+    # 1. Base Elevation & Oblique Hillshading
     normals = tm.compute_surface_normals()
     slopes = tm.compute_slope_degrees()
 
-    # NW key light
-    light = np.array([-0.5, -0.5, 0.707], dtype=np.float32)
+    light = np.array([-0.55, -0.55, 0.62], dtype=np.float32)
     light /= np.linalg.norm(light)
     lam = np.clip((normals * light[None, None, :]).sum(axis=2), 0.0, 1.0)
 
     z_min = float(tm.heights.min())
     z_max = float(tm.heights.max())
-    elev_norm = np.clip((tm.heights - z_min) / max(z_max - z_min, 1.0), 0.0, 1.0)
+    elev_norm = np.clip((tm.heights - z_min) / max(z_max - z_min, 1e-5), 0.0, 1.0)
+
+    # Resize matrices to output resolution
+    lam_hi = np.asarray(Image.fromarray(lam.astype(np.float32)).resize((width, height), Image.Resampling.BICUBIC))
+    elev_hi = np.asarray(Image.fromarray(elev_norm.astype(np.float32)).resize((width, height), Image.Resampling.BICUBIC))
+    h_hi = np.asarray(Image.fromarray(tm.heights.astype(np.float32)).resize((width, height), Image.Resampling.BICUBIC))
+    tags_hi = np.asarray(Image.fromarray(tm.tags).resize((width, height), Image.Resampling.NEAREST))
+
+    gy_hi, gx_hi = np.gradient(h_hi, tm.length_m / height)
+    grad_mag_hi = np.hypot(gx_hi, gy_hi)
+    slope_deg_hi = np.degrees(np.arctan(grad_mag_hi))
 
     # Shading coefficient
-    shade = 0.40 + 0.45 * lam + 0.15 * elev_norm
+    shade = 0.38 + 0.44 * lam_hi + 0.18 * elev_hi
 
-    # Base parchment palette
-    # Lowland (< 0.2): olive-silt parchment
-    # Plateau (0.2 - 0.5): warm golden ochre
-    # Alpine scree (0.5 - 0.85): slate-limestone
-    # Overhang peaks (> 0.85): ancient dark basalt
-    r = np.zeros_like(tm.heights, dtype=np.float32)
-    g = np.zeros_like(tm.heights, dtype=np.float32)
-    b = np.zeros_like(tm.heights, dtype=np.float32)
+    # Biome wash palette
+    r = np.zeros((height, width), dtype=np.float32)
+    g = np.zeros((height, width), dtype=np.float32)
+    b = np.zeros((height, width), dtype=np.float32)
 
-    # Biome tinting interpolation
-    m_low = elev_norm < 0.25
-    m_plat = (elev_norm >= 0.25) & (elev_norm < 0.55)
-    m_scree = (elev_norm >= 0.55) & (elev_norm < 0.82)
-    m_peak = elev_norm >= 0.82
+    m_low = elev_hi < 0.22
+    m_plat = (elev_hi >= 0.22) & (elev_hi < 0.52)
+    m_scree = (elev_hi >= 0.52) & (elev_hi < 0.82)
+    m_peak = elev_hi >= 0.82
 
-    # Lowlands: warm olive silt
-    r[m_low] = shade[m_low] * 215.0
-    g[m_low] = shade[m_low] * 208.0
-    b[m_low] = shade[m_low] * 180.0
+    # Lowlands: warm olive-silt parchment
+    r[m_low] = shade[m_low] * 218.0
+    g[m_low] = shade[m_low] * 210.0
+    b[m_low] = shade[m_low] * 182.0
 
-    # Plateau: rich golden parchment
-    r[m_plat] = shade[m_plat] * 238.0
-    g[m_plat] = shade[m_plat] * 224.0
-    b[m_plat] = shade[m_plat] * 192.0
+    # Plateau: rich golden ochre
+    r[m_plat] = shade[m_plat] * 236.0
+    g[m_plat] = shade[m_plat] * 222.0
+    b[m_plat] = shade[m_plat] * 190.0
 
-    # Scree / high passes: slate stone
-    r[m_scree] = shade[m_scree] * 200.0
-    g[m_scree] = shade[m_scree] * 196.0
-    b[m_scree] = shade[m_scree] * 185.0
+    # Scree / high passes: slate limestone
+    r[m_scree] = shade[m_scree] * 206.0
+    g[m_scree] = shade[m_scree] * 200.0
+    b[m_scree] = shade[m_scree] * 186.0
 
     # Ancient relic peaks: weathered dark basalt
-    r[m_peak] = shade[m_peak] * 175.0
-    g[m_peak] = shade[m_peak] * 168.0
-    b[m_peak] = shade[m_peak] * 162.0
+    r[m_peak] = shade[m_peak] * 172.0
+    g[m_peak] = shade[m_peak] * 164.0
+    b[m_peak] = shade[m_peak] * 156.0
 
-    # Darken steep cliff scarps
-    cliff_mask = slopes >= 42.0
-    r[cliff_mask] *= 0.62
-    g[cliff_mask] *= 0.60
-    b[cliff_mask] *= 0.58
+    # 2. Slope Hachuring (Directional Fall-Line Strokes)
+    fall_angle = np.arctan2(gy_hi, gx_hi)
+    y_coords, x_coords = np.mgrid[0:height, 0:width]
+    wavelength = 7.0
+    contour_proj = -x_coords * np.sin(fall_angle) + y_coords * np.cos(fall_angle)
+    hachure_pattern = np.cos(2.0 * np.pi * contour_proj / wavelength)
 
-    # Iso-contour lines in bistre ink
-    cont = np.fmod(tm.heights, contour_step_m)
-    gy_c, gx_c = np.gradient(cont)
-    contour_mask = np.hypot(gx_c, gy_c) > (contour_step_m * 0.42)
+    hachure_active = (slope_deg_hi >= 30.0) & (slope_deg_hi < 65.0)
+    thresh = 0.82 - 0.45 * np.clip((slope_deg_hi - 30.0) / 30.0, 0.0, 1.0)
+    hachure_mask = hachure_active & (hachure_pattern > thresh)
 
-    r[contour_mask] = 42
-    g[contour_mask] = 34
-    b[contour_mask] = 26
+    r[hachure_mask] *= 0.72
+    g[hachure_mask] *= 0.68
+    b[hachure_mask] *= 0.62
 
-    # Tag highlights: road/path footprint
-    road_mask = (tm.tags & 4) != 0
+    # Darken steep cliff scarps (slope >= 48 deg)
+    cliff_mask = slope_deg_hi >= 48.0
+    r[cliff_mask] *= 0.60
+    g[cliff_mask] *= 0.58
+    b[cliff_mask] *= 0.54
+
+    # 3. Iso-contour lines in bistre ink (intermediate 2m, index 10m)
+    cont_2m = np.fmod(h_hi, contour_step_m)
+    gy_c, gx_c = np.gradient(cont_2m)
+    contour_mask_2m = np.hypot(gx_c, gy_c) > (contour_step_m * 0.42)
+
+    cont_10m = np.fmod(h_hi, max(contour_step_m * 4.0, 10.0))
+    gy_10, gx_10 = np.gradient(cont_10m)
+    contour_mask_10m = np.hypot(gx_10, gy_10) > (max(contour_step_m * 4.0, 10.0) * 0.42)
+
+    # Intermediate contours (fine sepia)
+    r[contour_mask_2m] = 58
+    g[contour_mask_2m] = 48
+    b[contour_mask_2m] = 38
+
+    # Index contours (heavier dark bistre)
+    r[contour_mask_10m] = 32
+    g[contour_mask_10m] = 24
+    b[contour_mask_10m] = 18
+
+    # 4. Primitive Semantic Tag Shading
+    # Build Plate Foundation (tag 1)
+    build_mask = (tags_hi & TAG_BUILD_PLATE) != 0
+    if np.any(build_mask):
+        r[build_mask] = np.clip(r[build_mask] * 1.06, 0, 255)
+        g[build_mask] = np.clip(g[build_mask] * 1.04, 0, 255)
+        b[build_mask] = np.clip(b[build_mask] * 0.98, 0, 255)
+
+    # Ancient Ruin Buttresses (tag 2)
+    ruin_mask = (tags_hi & TAG_ANCIENT_RUIN) != 0
+    if np.any(ruin_mask):
+        r[ruin_mask] = np.clip(r[ruin_mask] * 0.88, 0, 255)
+        g[ruin_mask] = np.clip(g[ruin_mask] * 0.94, 0, 255)  # verdigris lichen tint
+        b[ruin_mask] = np.clip(b[ruin_mask] * 0.88, 0, 255)
+
+    # Ridge Pass Road / Trail (tag 4)
+    road_mask = (tags_hi & TAG_ROAD_PASS) != 0
     if np.any(road_mask):
-        r[road_mask] = np.clip(r[road_mask] * 1.12, 0, 255)
-        g[road_mask] = np.clip(g[road_mask] * 1.08, 0, 255)
-        b[road_mask] = np.clip(b[road_mask] * 0.90, 0, 255)
+        r[road_mask] = np.clip(r[road_mask] * 1.14, 0, 255)
+        g[road_mask] = np.clip(g[road_mask] * 1.10, 0, 255)
+        b[road_mask] = np.clip(b[road_mask] * 0.94, 0, 255)
+
+    # Canyon / Gorge Riverbed (tag 8)
+    gorge_mask = (tags_hi & TAG_CANYON_GORGE) != 0
+    if np.any(gorge_mask):
+        r[gorge_mask] = np.clip(r[gorge_mask] * 0.82, 0, 255)
+        g[gorge_mask] = np.clip(g[gorge_mask] * 0.96, 0, 255)  # alluvial turquoise silt
+        b[gorge_mask] = np.clip(b[gorge_mask] * 0.98, 0, 255)
 
     rgb = np.stack([
         np.clip(r, 0, 255),
@@ -150,11 +223,147 @@ def render_stylized_cartography(
         np.clip(b, 0, 255),
     ], axis=-1).astype(np.uint8)
 
-    base_img = Image.fromarray(rgb, mode="RGB")
-    if (base_img.width, base_img.height) != (width, height):
-        base_img = base_img.resize((width, height), Image.Resampling.BILINEAR)
+    canvas = Image.fromarray(rgb, mode="RGB")
+    draw = ImageDraw.Draw(canvas, "RGBA")
 
-    return base_img
+    # 5. Vector Overlays: Architectural Elements, Primitive Details & Props
+    if map_data:
+        # A. Build Plate Retaining Stone Walls & Floorplan Footprints
+        for plate in map_data.get("build_plates", []):
+            anchor = plate.get("anchor", {})
+            footprint = plate.get("footprint", {})
+            cx, cy = anchor.get("center_x", 0.0), anchor.get("center_y", 0.0)
+            w_m, l_m = footprint.get("width", 30.0), footprint.get("length", 30.0)
+
+            x0, y0 = cx - w_m / 2.0, cy - l_m / 2.0
+            x1, y1 = cx + w_m / 2.0, cy + l_m / 2.0
+            p0 = world_to_px(x0, y0)
+            p1 = world_to_px(x1, y1)
+
+            # Dressed-stone foundation retaining wall
+            draw.rectangle([p0, p1], outline=(54, 44, 32, 220), width=3)
+            draw.rectangle([p0[0] + 3, p0[1] + 3, p1[0] - 3, p1[1] - 3], outline=(90, 78, 62, 140), width=1)
+
+            # Floorplan interior layout
+            fp_path = REPO_ROOT / plate.get("scene_floorplan", "")
+            if fp_path.is_file():
+                try:
+                    fp_data = json.loads(fp_path.read_text(encoding="utf-8"))
+                    for zone in fp_data.get("zones", []):
+                        zb = zone.get("bounds", {})
+                        zx0 = cx + zb.get("x_min", 0.0)
+                        zx1 = cx + zb.get("x_max", 0.0)
+                        zy0 = cy + (zb.get("z_min", 0.0) - 30.0)
+                        zy1 = cy + (zb.get("z_max", 0.0) - 30.0)
+                        zp0 = world_to_px(zx0, zy0)
+                        zp1 = world_to_px(zx1, zy1)
+                        draw.rectangle([zp0, zp1], outline=(42, 34, 26, 180), width=2)
+                        draw.rectangle([zp0[0] + 2, zp0[1] + 2, zp1[0] - 2, zp1[1] - 2], fill=(210, 198, 175, 45))
+                except Exception:
+                    pass
+
+        # B. Primitive Inking (Pass tracks, ancient ruin terraces, gorge beds)
+        for prim in map_data.get("primitives", []):
+            ptype = prim.get("type")
+            if ptype == "ridge_pass":
+                sx, sy = prim["start"]
+                ex, ey = prim["end"]
+                dx = ex - sx
+                dy = ey - sy
+                dist = math.hypot(dx, dy)
+                if dist > 1e-5:
+                    ux, uy = dx / dist, dy / dist
+                    nx, ny = -uy, ux
+                    gauge_m = 1.6  # Standard wagon wheel gauge
+                    t1_s = world_to_px(sx - nx * (gauge_m / 2.0), sy - ny * (gauge_m / 2.0))
+                    t1_e = world_to_px(ex - nx * (gauge_m / 2.0), ey - ny * (gauge_m / 2.0))
+                    t2_s = world_to_px(sx + nx * (gauge_m / 2.0), sy + ny * (gauge_m / 2.0))
+                    t2_e = world_to_px(ex + nx * (gauge_m / 2.0), ey + ny * (gauge_m / 2.0))
+                    draw.line([t1_s, t1_e], fill=(110, 95, 78, 200), width=2)
+                    draw.line([t2_s, t2_e], fill=(110, 95, 78, 200), width=2)
+
+            elif ptype == "ancient_ruin_buttress":
+                c = prim["center"]
+                bw = prim.get("base_width", 20.0)
+                bl = prim.get("base_length", 20.0)
+                steps = 4
+                for s in range(steps):
+                    frac = 1.0 - (s / steps) * 0.7
+                    w_s = bw * frac
+                    l_s = bl * frac
+                    rp0 = world_to_px(c[0] - w_s / 2.0, c[1] - l_s / 2.0)
+                    rp1 = world_to_px(c[0] + w_s / 2.0, c[1] + l_s / 2.0)
+                    draw.rectangle([rp0, rp1], outline=(38, 30, 24, 210), width=2)
+
+            elif ptype == "canyon_gorge":
+                sx, sy = prim["start"]
+                ex, ey = prim["end"]
+                sp = world_to_px(sx, sy)
+                ep = world_to_px(ex, ey)
+                # Stream flow center line
+                draw.line([sp, ep], fill=(70, 110, 120, 220), width=2)
+
+        # C. Placed Map Props (Signpost, Brazier, Cargo Crates)
+        for prop in map_data.get("props", []):
+            ptype = prop.get("type")
+            px_m, py_m = prop["at"]
+            pp = world_to_px(px_m, py_m)
+            if ptype == "signpost":
+                draw.line([(pp[0] - 6, pp[1]), (pp[0] + 6, pp[1])], fill=(80, 50, 25, 255), width=3)
+                draw.line([(pp[0], pp[1] - 6), (pp[0], pp[1] + 6)], fill=(80, 50, 25, 255), width=3)
+                draw.ellipse([(pp[0] - 3, pp[1] - 3), (pp[0] + 3, pp[1] + 3)], fill=(220, 200, 160, 255), outline=(60, 40, 20, 255))
+            elif ptype == "brazier":
+                draw.ellipse([(pp[0] - 8, pp[1] - 8), (pp[0] + 8, pp[1] + 8)], fill=(230, 120, 40, 70))
+                draw.ellipse([(pp[0] - 4, pp[1] - 4), (pp[0] + 4, pp[1] + 4)], fill=(245, 160, 30, 255), outline=(40, 30, 25, 255), width=2)
+            elif ptype == "cargo_crates":
+                draw.rectangle([(pp[0] - 6, pp[1] - 6), (pp[0] + 6, pp[1] + 6)], fill=(150, 120, 85, 230), outline=(50, 35, 20, 255), width=2)
+                draw.line([(pp[0] - 6, pp[1] - 6), (pp[0] + 6, pp[1] + 6)], fill=(50, 35, 20, 200), width=1)
+                draw.line([(pp[0] + 6, pp[1] - 6), (pp[0] - 6, pp[1] + 6)], fill=(50, 35, 20, 200), width=1)
+            else:
+                draw.ellipse([(pp[0] - 4, pp[1] - 4), (pp[0] + 4, pp[1] + 4)], fill=(180, 60, 40, 230), outline=(40, 20, 20, 255))
+
+    # 6. Cartographic Furnishings & Margin Elements
+    # A. Double Neatline Border
+    border_margin = 18
+    draw.rectangle([(border_margin, border_margin), (width - border_margin, height - border_margin)], outline=(42, 34, 26, 240), width=3)
+    draw.rectangle([(border_margin + 4, border_margin + 4), (width - border_margin - 4, height - border_margin - 4)], outline=(72, 60, 48, 160), width=1)
+
+    # B. Compass Rose in North-East Margin
+    cr_x, cr_y = width - 75, 75
+    cr_r = 28
+    draw.ellipse([(cr_x - cr_r, cr_y - cr_r), (cr_x + cr_r, cr_y + cr_r)], outline=(60, 48, 36, 180), width=1)
+    draw.polygon([(cr_x, cr_y - cr_r - 6), (cr_x - 7, cr_y), (cr_x, cr_y - 4)], fill=(42, 32, 24, 255))
+    draw.polygon([(cr_x, cr_y - cr_r - 6), (cr_x + 7, cr_y), (cr_x, cr_y - 4)], fill=(190, 175, 150, 255), outline=(42, 32, 24, 255))
+    draw.polygon([(cr_x, cr_y + cr_r + 4), (cr_x - 6, cr_y), (cr_x, cr_y + 3)], fill=(170, 155, 130, 255), outline=(42, 32, 24, 255))
+    draw.polygon([(cr_x, cr_y + cr_r + 4), (cr_x + 6, cr_y), (cr_x, cr_y + 3)], fill=(42, 32, 24, 255))
+    draw.polygon([(cr_x + cr_r + 4, cr_y), (cr_x, cr_y - 6), (cr_x + 3, cr_y)], fill=(42, 32, 24, 255))
+    draw.polygon([(cr_x - cr_r - 4, cr_y), (cr_x, cr_y - 6), (cr_x - 3, cr_y)], fill=(170, 155, 130, 255), outline=(42, 32, 24, 255))
+    draw.text((cr_x - 4, cr_y - cr_r - 18), "N", fill=(32, 24, 18, 255))
+
+    # C. Metric Scale Bar (e.g. 50m bar)
+    sb_x = 35
+    sb_y = height - 35
+    px_per_m = width / tm.width_m
+    bar_len_50m = int(50.0 * px_per_m)
+    bar_len_25m = int(25.0 * px_per_m)
+    bar_h = 6
+
+    draw.rectangle([(sb_x, sb_y), (sb_x + bar_len_25m, sb_y + bar_h)], fill=(42, 34, 26, 255), outline=(42, 34, 26, 255))
+    draw.rectangle([(sb_x + bar_len_25m, sb_y), (sb_x + bar_len_50m, sb_y + bar_h)], fill=(240, 232, 215, 255), outline=(42, 34, 26, 255), width=1)
+    draw.text((sb_x - 2, sb_y - 12), "0", fill=(32, 24, 18, 255))
+    draw.text((sb_x + bar_len_25m - 6, sb_y - 12), "25m", fill=(32, 24, 18, 255))
+    draw.text((sb_x + bar_len_50m - 8, sb_y - 12), "50m", fill=(32, 24, 18, 255))
+
+    # D. Spot Elevation Peak Markers
+    if z_max > z_min + 5.0:
+        # Find peak location
+        peak_idx = np.unravel_index(np.argmax(tm.heights), tm.heights.shape)
+        peak_wx, peak_wy = tm.grid_to_world(int(peak_idx[1]), int(peak_idx[0]))
+        ppk = world_to_px(peak_wx, peak_wy)
+        draw.polygon([(ppk[0], ppk[1] - 5), (ppk[0] - 4, ppk[1] + 3), (ppk[0] + 4, ppk[1] + 3)], fill=(42, 32, 24, 255))
+        draw.text((ppk[0] + 6, ppk[1] - 6), f"▲ {z_max:.1f}m", fill=(32, 24, 18, 255))
+
+    return canvas
 
 
 def build_map_art_workflow(
@@ -328,7 +537,7 @@ def render_map_bundle_art(
             print(f"ComfyUI generation notice ({exc}), using stylized cartography fallback", file=sys.stderr)
 
     if rendered_via == "stylized_fallback" or not art_path.is_file():
-        art_img = render_stylized_cartography(tm, width=1024, height=1024)
+        art_img = render_stylized_cartography(tm, width=1024, height=1024, map_data=map_data)
         art_img.save(art_path, format="PNG")
 
     return {
