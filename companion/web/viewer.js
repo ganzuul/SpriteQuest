@@ -2153,25 +2153,79 @@ export function initViewer(config) {
     if (selectedAsset.kind === 'actor') {
       const npcKey = id === 'player' ? 'pell' : id;
       const npc = selectedAsset.npc_sheet || npcs[id] || npcs[npcKey] || null;
-      if (npc && npc.compiled_portrait) {
-        selectedAsset.diffusion_prompt = npc.compiled_portrait.rewritten_prompt;
-        selectedAsset.compiled_brief = npc.compiled_portrait.compiled_brief;
-        selectedAsset.fragments_used = [...npc.compiled_portrait.fragments_used];
-        selectedAsset.standing_tier = npc.compiled_portrait.standing_tier;
-        selectedAsset.standing_score = npc.compiled_portrait.standing_score;
-      } else {
-        const defaultFrag = id === 'pell' ? 'scaffolded-kingdom/understudy' : (id === 'hollis' ? 'customs-house/hollis-ledger' : 'shared/actor-roster');
-        selectedAsset.fragments_used = [defaultFrag, 'shared/brief-faces-are-themes'];
-        selectedAsset.compiled_brief = `${selectedAsset.label}. ${selectedAsset.lore_snippet || 'Actor standing in scene'}`;
-        selectedAsset.diffusion_prompt = `Retro JRPG character art, sword and sorcery, 16-bit pixel aesthetic with painterly shading. character portrait bust, front three-quarter angle. ${selectedAsset.compiled_brief}. grounded in ${zoneName}. expressive character visage, fine facial details, atmospheric cinematic rim lighting, 16-bit painterly texture, Black Forest Labs Flux 3 Klein render, 1024x1024.`;
+      const frags = selectedAsset.fragments_used?.length
+        ? [...selectedAsset.fragments_used]
+        : (npc?.compiled_portrait?.fragments_used?.length
+            ? [...npc.compiled_portrait.fragments_used]
+            : [id === 'pell' ? 'scaffolded-kingdom/understudy' : (id === 'hollis' ? 'customs-house/hollis-ledger' : 'shared/actor-roster'), 'shared/brief-faces-are-themes']);
+      selectedAsset.fragments_used = frags;
+
+      const criticismsText = selectedAsset.active_criticisms?.length
+        ? ` Authorial criticisms: ${selectedAsset.active_criticisms.join('; ')}.`
+        : '';
+      const warrantText = selectedAsset.warrant_id ? ` Canon warrant: ${selectedAsset.warrant_id}.` : '';
+
+      let briefBase = npc?.compiled_portrait?.compiled_brief;
+      if (!briefBase) {
+        if (id === 'hollis') {
+          briefBase = "Hollis the Twice-Written, quartermaster of the customs house. Unshaven quartermaster in a ledger-keeper's coat over chainmail, open two-column ledger with red clearance seal.";
+        } else if (id === 'pell' || id === 'player') {
+          briefBase = "Pell the Underwritten, anxious understudy. Plain rehearsal tunic holding a prompt book script that is blank below the first line, dramatic theatrical spotlight beam.";
+        } else {
+          briefBase = `${selectedAsset.label}. ${selectedAsset.lore_snippet || 'Actor standing in scene'}`;
+        }
       }
+      selectedAsset.compiled_brief = briefBase + warrantText + (criticismsText ? ` [Criticisms: ${selectedAsset.active_criticisms.length}]` : '');
+
+      selectedAsset.diffusion_prompt = `Retro JRPG character art, sword and sorcery, 16-bit pixel aesthetic with painterly shading. character portrait bust, front three-quarter angle. ${selectedAsset.compiled_brief}. grounded in ${zoneName} upon ${substrate}.${criticismsText} expressive character visage, fine facial details, atmospheric cinematic rim lighting, 16-bit painterly texture, Black Forest Labs Flux 3 Klein render, 1024x1024.`;
     } else if (physicalPropsMap.has(id)) {
       const p = physicalPropsMap.get(id);
-      selectedAsset.diffusion_prompt = p.diffusion_prompt;
-      selectedAsset.compiled_brief = p.compiled_brief;
-      selectedAsset.fragments_used = p.fragments_used ? [...p.fragments_used] : [p.fragment_id];
-      selectedAsset.standing_tier = p.standing_tier;
-      selectedAsset.standing_score = p.standing_score;
+      const frags = selectedAsset.fragments_used?.length
+        ? [...selectedAsset.fragments_used]
+        : (p.fragments_used ? [...p.fragments_used] : [p.fragment_id || 'customs-house/the-site']);
+      selectedAsset.fragments_used = frags;
+
+      const criticismsText = selectedAsset.active_criticisms?.length
+        ? ` Authorial criticisms: ${selectedAsset.active_criticisms.join('; ')}.`
+        : '';
+      const warrantText = selectedAsset.warrant_id ? ` Canon warrant: ${selectedAsset.warrant_id}.` : '';
+
+      const briefBase = p.compiled_brief || `${p.label}, physical prop in scene.`;
+      selectedAsset.compiled_brief = `${briefBase} Admitted fragments: ${frags.join(', ')}.${warrantText}${criticismsText ? ' ' + criticismsText : ''}`;
+
+      selectedAsset.diffusion_prompt = `orthographic top-down 2.5D isometric game asset cutout, ${p.label}, ${selectedAsset.compiled_brief}, grounded upon ${substrate} in ${zoneName}, isolated on neutral solid grey background (#707070), no background walls, no room floors, perfectly clean silhouette, ready for alpha matting, subtle directional studio lighting from top-left, soft ground contact occlusion shadow beneath base, crisp 16-bit painterly texture, highly detailed tactile physical prop, Black Forest Labs Flux 3 Klein render, 1024x1024`;
+
+      p.diffusion_prompt = selectedAsset.diffusion_prompt;
+      p.compiled_brief = selectedAsset.compiled_brief;
+      p.fragments_used = [...frags];
+    }
+
+    // Remote sync with Companion Forge Service (port 8788) when online
+    if (typeof fetch === 'function' && options.remote !== false) {
+      try {
+        fetch('http://127.0.0.1:8788/forge/compile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            asset_id: id,
+            kind: selectedAsset.kind,
+            scene_id: selectedAsset.zone_context?.scene_id || 'customs-house',
+            facet: options.facet || 'portrait',
+            asset: selectedAsset,
+          }),
+          signal: typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(1500) : undefined,
+        }).then(r => r.json()).then(remote => {
+          if (remote && remote.ok) {
+            selectedAsset.diffusion_prompt = remote.diffusion_prompt;
+            selectedAsset.compiled_brief = remote.compiled_brief;
+            selectedAsset.fragments_used = remote.fragments_used;
+            selectedAsset.standing_tier = remote.standing_tier;
+            selectedAsset.standing_score = remote.standing_score;
+            log('LATTICE', `[remote-sync] Synced compiled prompt from companion forge service on port 8788.`);
+            renderAssetViewerDOM();
+          }
+        }).catch(() => {});
+      } catch (e) {}
     }
 
     const frags = selectedAsset.fragments_used || [selectedAsset.fragment_id || 'customs-house/the-site'];

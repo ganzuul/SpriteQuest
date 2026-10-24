@@ -87,10 +87,10 @@
         "modelRole": "cartographer",
         "alias": "Cartographer Survey · Scene Backpressure & Parsimony Gate",
         "targetId": "cartographers-ledger",
-        "schema": "epistemic_governance",
+        "schema": "",
         "columns": ["maturity", "standing_tier", "warrant_id", "saturation_score"],
         "actorScope": "selected",
-        "actorId": "cartographers"
+        "actorId": ""
       },
       "compile-world-brief": {
         "id": "compile-world-brief",
@@ -110,7 +110,7 @@
         "alias": "Compose · Recipe, Scene Backpressure & Epistemic Brief",
         "mode": "template",
         "outputKind": "text",
-        "template": "Subject: {{label}} ({{id}})\nWorld Context: {{world_look.setting}}\nHost Zone Backpressure: {{zone_context.zone_name}} ({{zone_context.substrate_material}})\nEpistemic Standing: {{standing_tier}} (saturation: {{saturation_score}})\nPhysicality: {{physical_specs}}\nMaterial Construction: {{world_look.materials}}\n\nAdmitted Lore Fragments:\n{{fragments_summary}}\n\nAuthorial Criticisms:\n{{active_criticisms}}",
+        "template": "Subject: {{data:/label}} ({{data:/id}})\nWorld Context: {{data:/world_look/setting}}\nHost Zone Backpressure: {{data:/zone_context/zone_name}} ({{data:/zone_context/substrate_material}})\nEpistemic Standing: {{data:/standing_tier}} (saturation: {{data:/saturation_score}})\nPhysicality: {{data:/physical_specs}}\nMaterial Construction: {{data:/world_look/materials}}\n\nAdmitted Lore Fragments:\n{{data:/fragments_summary}}",
         "sections": [],
         "separator": "\n\n",
         "budgetTokens": 0
@@ -135,8 +135,10 @@
         "mode": "replace",
         "rules": [
           {
-            "match": "^Subject: (.*)",
-            "replace": "orthographic top-down 2.5D isometric game asset cutout, $1"
+            "kind": "regex",
+            "pattern": "^Subject: (.*)",
+            "replacement": "orthographic top-down 2.5D isometric game asset cutout, $1",
+            "flags": "m"
           }
         ],
         "separator": "\n",
@@ -161,10 +163,30 @@
         "alias": "Compose · Flux 3 Klein Graph Parameters",
         "mode": "template",
         "outputKind": "text",
-        "template": "{\n  \"prompt\": \"{{prompt}}\",\n  \"negative\": \"ugly, blurry, low quality, artifacts, watermark, photographic background, cutoff silhouette\",\n  \"steps\": 8,\n  \"cfg\": 1.0,\n  \"sampler\": \"euler\",\n  \"scheduler\": \"simple\",\n  \"dimensions\": [1024, 1024]\n}",
+        "template": "{\n  \"prompt\": \"{{data:/prompt}}\",\n  \"negative\": \"ugly, blurry, low quality, artifacts, watermark, photographic background, cutoff silhouette\",\n  \"steps\": 8,\n  \"cfg\": 1.0,\n  \"sampler\": \"euler\",\n  \"scheduler\": \"simple\",\n  \"dimensions\": [1024, 1024]\n}",
         "sections": [],
         "separator": "\n\n",
         "budgetTokens": 0
+      },
+      "generate": {
+        "id": "generate",
+        "type": "workflow",
+        "operation": "generate-reply",
+        "operationVersion": 1,
+        "title": "Generate Reply",
+        "enabled": true,
+        "x": 1300,
+        "y": 660,
+        "w": 300,
+        "h": 140,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Generate Prompt · Asset Forge",
+        "budgetTokens": 512,
+        "injectionRole": "system",
+        "injectionPosition": "in-chat",
+        "injectionDepth": 0
       },
       "forge-dispatch": {
         "id": "forge-dispatch",
@@ -184,53 +206,45 @@
       }
     },
     "wires": {
-      "wire-1": {
-        "id": "wire-1",
+      "wire-send-generate": {
+        "id": "wire-send-generate",
         "route": "wire",
         "from": "select-asset",
         "fromPort": "activation",
-        "to": "compile-world-brief",
+        "to": "generate",
         "toPort": "activation"
       },
-      "wire-2": {
-        "id": "wire-2",
+      "wire-generate-dispatch": {
+        "id": "wire-generate-dispatch",
         "route": "wire",
-        "from": "read-world-fragments",
-        "fromPort": "out",
-        "to": "compile-world-brief",
-        "toPort": "in"
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "forge-dispatch",
+        "toPort": "draft"
       },
-      "wire-3": {
-        "id": "wire-3",
+      "wire-spec-brief": {
+        "id": "wire-spec-brief",
         "route": "wire",
         "from": "read-prop-spec",
-        "fromPort": "out",
+        "fromPort": "document",
         "to": "compile-world-brief",
-        "toPort": "in"
+        "toPort": "data"
       },
-      "wire-4": {
-        "id": "wire-4",
+      "wire-brief-rewrite": {
+        "id": "wire-brief-rewrite",
         "route": "wire",
         "from": "compile-world-brief",
         "fromPort": "out",
         "to": "rewrite-prompt",
         "toPort": "in"
       },
-      "wire-5": {
-        "id": "wire-5",
+      "wire-gate-conditioning": {
+        "id": "wire-gate-conditioning",
         "route": "wire",
-        "from": "rewrite-prompt",
-        "fromPort": "out",
+        "from": "cartographer-coherence-gate",
+        "fromPort": "document",
         "to": "format-flux3-conditioning",
-        "toPort": "in"
-      },
-      "wire-6": {
-        "id": "wire-6",
-        "route": "wire",
-        "from": "format-flux3-conditioning",
-        "fromPort": "out",
-        "to": "forge-dispatch",
-        "toPort": "draft"
+        "toPort": "data"
       }
     },
     "groups": {

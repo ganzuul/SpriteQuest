@@ -335,5 +335,66 @@ class TestCartographersLedgerBridge(ForgeCase):
         self.assertEqual(crit_event["entity"], f"fragment/{frag_id}")
 
 
+class TestForgeCompilerPipelineBridge(ForgeCase):
+    """Test the Asset Forge Fragment Compiler & Prompt Rewriter pipeline bridge."""
+
+    def test_forge_pipeline_status(self):
+        code, body = self.get("/forge/pipeline")
+        self.assertEqual(code, 200)
+        self.assertTrue(body["ok"])
+        self.assertEqual(body["service"], "forge_compiler")
+        self.assertEqual(body["workflow"], "asset-forge.lattice.json")
+        self.assertTrue(body["workflow_exists"])
+
+    def test_forge_compile_prop(self):
+        code, body = self.post("/forge/compile", {
+            "asset_id": "r6_ship_crate_standard",
+            "kind": "prop",
+            "scene_id": "customs-house",
+        })
+        self.assertEqual(code, 200)
+        self.assertTrue(body["ok"])
+        self.assertEqual(body["status"], "compiled")
+        self.assertEqual(body["lattice_workflow"], "asset-forge.lattice.json")
+        self.assertIn("R6-SHIP", body["compiled_brief"])
+        self.assertIn("orthographic top-down 2.5D isometric game asset cutout", body["diffusion_prompt"])
+        self.assertIn("Weigh & Inspection Hall", body["diffusion_prompt"])
+        self.assertIn("conditioning", body)
+        self.assertEqual(body["conditioning"]["steps"], 16)
+
+        # Check ledger record
+        code, ledger_res = self.get("/ledger")
+        self.assertEqual(code, 200)
+        compile_event = next((e for e in ledger_res["events"] if e.get("kind") == "standing.granted" and e.get("entity") == "prop/r6_ship_crate_standard"), None)
+        self.assertIsNotNone(compile_event)
+        self.assertEqual(compile_event["provenance"]["workflow"], "asset-forge.lattice.json")
+
+    def test_forge_compile_actors(self):
+        # 1. Compile Hollis
+        code, hollis_body = self.post("/forge/compile", {
+            "asset_id": "hollis",
+            "kind": "actor",
+            "facet": "portrait",
+            "scene_id": "customs-house",
+        })
+        self.assertEqual(code, 200)
+        self.assertTrue(hollis_body["ok"])
+        self.assertEqual(hollis_body["standing_tier"], "verified")
+        self.assertIn("quartermaster", hollis_body["diffusion_prompt"].lower())
+        self.assertIn("ledger", hollis_body["diffusion_prompt"].lower())
+
+        # 2. Compile Pell
+        code, pell_body = self.post("/forge/compile", {
+            "asset_id": "pell",
+            "kind": "actor",
+            "facet": "portrait",
+            "scene_id": "customs-house",
+        })
+        self.assertEqual(code, 200)
+        self.assertTrue(pell_body["ok"])
+        self.assertEqual(pell_body["standing_tier"], "provisional")
+        self.assertIn("understudy", pell_body["diffusion_prompt"].lower())
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

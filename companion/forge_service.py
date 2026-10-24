@@ -46,6 +46,8 @@ from schemas import (  # noqa: E402  (path first, by design)
 from companion.fragment_compiler import (
     CartographersLedger,
     audit_scene_coherence,
+    compile_asset_brief,
+    compile_npc_facet_brief,
     load_fragment,
     resolve_scene_zone_context,
     select_asset_recipe,
@@ -258,6 +260,7 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
         "/health", "/roster", "/guidance", "/ledger", "/events",
         "/cartographers/status", "/cartographers/ledger",
         "/cartographers/survey", "/cartographers/curate", "/cartographers/criticize",
+        "/forge/pipeline", "/forge/compile",
     ]
 
     class Handler(BaseHTTPRequestHandler):
@@ -317,6 +320,16 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
                     "entries": cartographers_ledger.entries,
                     "warrants": warrants,
                     "parsimony_config": cartographers_ledger.data.get("parsimony_config", {}),
+                })
+            elif route == "/forge/pipeline":
+                wf_path = REPO_ROOT / "workflows" / "asset-forge.lattice.json"
+                self._send(200, {
+                    "ok": True,
+                    "service": "forge_compiler",
+                    "workflow": "asset-forge.lattice.json",
+                    "workflow_exists": wf_path.is_file(),
+                    "ledger_events": len(ledger.events),
+                    "cartographer_entries": len(cartographers_ledger.entries),
                 })
             else:
                 self._send(404, {"error": "unknown route",
@@ -508,6 +521,97 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
                     })
                 except Exception as exc:
                     self._send(400, {"error": "criticism failure", "reason": str(exc)})
+            elif route == "/forge/compile":
+                try:
+                    length = int(self.headers.get("Content-Length") or 0)
+                    payload = json.loads(self.rfile.read(length) or b"{}")
+                    asset_id = payload.get("asset_id") or "quartermaster_desk"
+                    kind = payload.get("kind", "prop")
+                    scene_id = payload.get("scene_id", "customs-house")
+                    facet = payload.get("facet", "portrait")
+                    asset_data = payload.get("asset", {})
+
+                    compiled_brief_obj = None
+
+                    if kind == "actor" or asset_id in ("hollis", "pell", "player") or (REPO_ROOT / "companion" / "npcs" / f"{asset_id}.json").is_file():
+                        sheet_name = "pell-the-underwritten" if asset_id in ("pell", "player") else asset_id
+                        sheet_path = REPO_ROOT / "companion" / "npcs" / f"{sheet_name}.json"
+                        if sheet_path.is_file():
+                            sheet = json.loads(sheet_path.read_text(encoding="utf-8"))
+                        else:
+                            sheet = asset_data.get("npc_sheet") or {
+                                "name": asset_data.get("label", asset_id),
+                                "role": "Actor",
+                                "written": asset_data.get("written", False),
+                            }
+                        compiled_brief_obj = compile_npc_facet_brief(
+                            sheet=sheet,
+                            facet=facet,
+                            scene_id=scene_id,
+                            fragments_dir=cartographers_ledger.fragments_dir,
+                            ledger_path=cartographers_ledger.ledger_path,
+                        )
+                    else:
+                        if not asset_data or not asset_data.get("id"):
+                            fp_path = REPO_ROOT / "library" / "floorplans" / f"{scene_id}.json"
+                            if fp_path.is_file():
+                                fp_json = json.loads(fp_path.read_text(encoding="utf-8"))
+                                for sock in fp_json.get("prop_sockets", []):
+                                    if sock.get("id") == asset_id:
+                                        asset_data = dict(sock)
+                                        break
+                        if not asset_data:
+                            asset_data = {"id": asset_id, "label": asset_id}
+
+                        compiled_brief_obj = compile_asset_brief(
+                            asset=asset_data,
+                            scene_id=scene_id,
+                            resolve_conflicts=True,
+                            fragments_dir=cartographers_ledger.fragments_dir,
+                            ledger_path=cartographers_ledger.ledger_path,
+                        )
+
+                    entity_prefix = "npc" if (kind == "actor" or asset_id in ("hollis", "pell", "player")) else "prop"
+                    ledger.append({
+                        "kind": "standing.granted",
+                        "entity": f"{entity_prefix}/{asset_id}",
+                        "actor": "game",
+                        "data": {
+                            "asset_id": asset_id,
+                            "kind": kind,
+                            "prompt": compiled_brief_obj.rewritten_prompt,
+                            "standing_tier": compiled_brief_obj.standing_tier,
+                            "standing_score": compiled_brief_obj.standing_score,
+                            "fragments_used": compiled_brief_obj.fragments_used,
+                        },
+                        "gate": {"rule": "lattice_compiler_rewrite", "verdict": "pass"},
+                        "provenance": {"workflow": "asset-forge.lattice.json", "scene_id": scene_id},
+                    })
+
+                    self._send(200, {
+                        "ok": True,
+                        "asset_id": asset_id,
+                        "kind": kind,
+                        "status": "compiled",
+                        "lattice_workflow": "asset-forge.lattice.json",
+                        "compiled_brief": compiled_brief_obj.compiled_brief,
+                        "diffusion_prompt": compiled_brief_obj.rewritten_prompt,
+                        "fragments_used": compiled_brief_obj.fragments_used,
+                        "standing_tier": compiled_brief_obj.standing_tier,
+                        "standing_score": compiled_brief_obj.standing_score,
+                        "scene_backpressure": compiled_brief_obj.scene_backpressure,
+                        "conditioning": {
+                            "prompt": compiled_brief_obj.rewritten_prompt,
+                            "negative": compiled_brief_obj.negative_prompt,
+                            "steps": 16,
+                            "cfg": 1.0,
+                            "dimensions": [1024, 1024],
+                            "sampler": "euler",
+                            "scheduler": "simple",
+                        },
+                    })
+                except Exception as exc:
+                    self._send(400, {"error": "compile failure", "reason": str(exc)})
             else:
                 self._send(404, {"error": "unknown route", "route": route,
                                  "known": known_routes})
