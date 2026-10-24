@@ -43,6 +43,9 @@ class FragmentAsset:
     smash_threshold_kg: float = 80.0
     image_url: str | None = None
     diffusion_prompt: str = ""
+    compiled_brief: str = ""
+    fragments_used: list[str] = field(default_factory=list)
+    world_setting: str = ""
 
 
 class FragmentPlacementEngine:
@@ -455,6 +458,16 @@ class FragmentPlacementEngine:
                         diffusion_prompt="weathered timber signpost pointing toward the border march",
                     )
                 )
+
+        # Compile world look and prompt rewriting for all derived fragment assets
+        from companion.fragment_compiler import compile_asset_brief
+
+        for fa in self.fragment_assets:
+            cb = compile_asset_brief(fa, scene_id="customs-house")
+            fa.compiled_brief = cb.compiled_brief
+            fa.diffusion_prompt = cb.rewritten_prompt
+            fa.fragments_used = cb.fragments_used
+            fa.world_setting = cb.world_look.get("setting", "")
 
     def export_fragment_assets(self) -> list[dict[str, Any]]:
         """Export list of fragment assets for JSON serialization."""

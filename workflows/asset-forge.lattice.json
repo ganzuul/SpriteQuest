@@ -1,0 +1,272 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "asset-forge",
+    "name": "The Asset Forge & Fragment Compiler",
+    "description": "Compiles scene lore fragments and physical asset specifications into cohesive, world-anchored diffusion prompts for Black Forest Labs Flux 3 Klein. On asset selection, the Fragment Compiler resolves world materials, physical bounding volume, mass, and doctrine rules. The Prompt Rewriter refines the compiled brief into an isolated 2.5D orthographic game asset prompt, which is then dispatched to the ComfyUI asset forge.",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-unified",
+    "nodes": {
+      "select-asset": {
+        "id": "select-asset",
+        "type": "workflow",
+        "operation": "on-send",
+        "operationVersion": 1,
+        "title": "Asset Select",
+        "enabled": true,
+        "x": 100,
+        "y": 420,
+        "w": 300,
+        "h": 140,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Asset Select · Interactive Target"
+      },
+      "read-world-fragments": {
+        "id": "read-world-fragments",
+        "type": "workflow",
+        "operation": "read-file",
+        "operationVersion": 1,
+        "title": "Read File",
+        "enabled": true,
+        "x": 100,
+        "y": 140,
+        "w": 300,
+        "h": 196,
+        "inGroup": "compiler-gathering-layer",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Read File · world lore fragments",
+        "targetId": "world-fragments",
+        "schema": "",
+        "columns": [],
+        "actorScope": "selected",
+        "actorId": ""
+      },
+      "read-prop-spec": {
+        "id": "read-prop-spec",
+        "type": "workflow",
+        "operation": "read-file",
+        "operationVersion": 1,
+        "title": "Read File",
+        "enabled": true,
+        "x": 100,
+        "y": 660,
+        "w": 300,
+        "h": 196,
+        "inGroup": "compiler-gathering-layer",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Read File · prop physical specs",
+        "targetId": "prop-specifications",
+        "schema": "",
+        "columns": [],
+        "actorScope": "selected",
+        "actorId": ""
+      },
+      "compile-world-brief": {
+        "id": "compile-world-brief",
+        "type": "workflow",
+        "operation": "compose",
+        "operationVersion": 1,
+        "title": "Compose",
+        "enabled": true,
+        "x": 480,
+        "y": 380,
+        "w": 320,
+        "h": 220,
+        "inGroup": "fragment-compiler-layer",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Compose · Fragment & World Specification",
+        "mode": "template",
+        "outputKind": "text",
+        "template": "Subject: {{label}} ({{id}})\nWorld Context: {{world_look.setting}}\nPhysicality: {{physical_specs}}\nMaterial Construction: {{world_look.materials}}\n\nActive Lore Fragments:\n{{fragments_summary}}",
+        "sections": [],
+        "separator": "\n\n",
+        "budgetTokens": 0
+      },
+      "rewrite-prompt": {
+        "id": "rewrite-prompt",
+        "type": "workflow",
+        "operation": "text-rules",
+        "operationVersion": 1,
+        "title": "Text Rules",
+        "enabled": true,
+        "x": 860,
+        "y": 380,
+        "w": 320,
+        "h": 220,
+        "inGroup": "prompt-rewriter-layer",
+        "profileId": null,
+        "model": "rewriter",
+        "modelRole": "rewriter",
+        "alias": "Prompt Rewriter · 2.5D Orthographic Matte",
+        "inputKind": "text",
+        "mode": "replace",
+        "rules": [
+          {
+            "match": "^Subject: (.*)",
+            "replace": "orthographic top-down 2.5D isometric game asset cutout, $1"
+          }
+        ],
+        "separator": "\n",
+        "scope": "authorized",
+        "protectedLiterals": []
+      },
+      "format-flux3-conditioning": {
+        "id": "format-flux3-conditioning",
+        "type": "workflow",
+        "operation": "compose",
+        "operationVersion": 1,
+        "title": "Compose",
+        "enabled": true,
+        "x": 1240,
+        "y": 380,
+        "w": 320,
+        "h": 220,
+        "inGroup": "diffusion-conditioning-layer",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Compose · Flux 3 Klein Graph Parameters",
+        "mode": "template",
+        "outputKind": "text",
+        "template": "{\n  \"prompt\": \"{{prompt}}\",\n  \"negative\": \"ugly, blurry, low quality, artifacts, watermark, photographic background, cutoff silhouette\",\n  \"steps\": 8,\n  \"cfg\": 1.0,\n  \"sampler\": \"euler\",\n  \"scheduler\": \"simple\",\n  \"dimensions\": [1024, 1024]\n}",
+        "sections": [],
+        "separator": "\n\n",
+        "budgetTokens": 0
+      },
+      "forge-dispatch": {
+        "id": "forge-dispatch",
+        "type": "workflow",
+        "operation": "review-publish",
+        "operationVersion": 1,
+        "title": "Review / Publish",
+        "enabled": true,
+        "x": 1620,
+        "y": 420,
+        "w": 300,
+        "h": 140,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Asset Forge Dispatch · ComfyUI Queue"
+      }
+    },
+    "wires": {
+      "wire-1": {
+        "id": "wire-1",
+        "route": "wire",
+        "from": "select-asset",
+        "fromPort": "activation",
+        "to": "compile-world-brief",
+        "toPort": "activation"
+      },
+      "wire-2": {
+        "id": "wire-2",
+        "route": "wire",
+        "from": "read-world-fragments",
+        "fromPort": "out",
+        "to": "compile-world-brief",
+        "toPort": "in"
+      },
+      "wire-3": {
+        "id": "wire-3",
+        "route": "wire",
+        "from": "read-prop-spec",
+        "fromPort": "out",
+        "to": "compile-world-brief",
+        "toPort": "in"
+      },
+      "wire-4": {
+        "id": "wire-4",
+        "route": "wire",
+        "from": "compile-world-brief",
+        "fromPort": "out",
+        "to": "rewrite-prompt",
+        "toPort": "in"
+      },
+      "wire-5": {
+        "id": "wire-5",
+        "route": "wire",
+        "from": "rewrite-prompt",
+        "fromPort": "out",
+        "to": "format-flux3-conditioning",
+        "toPort": "in"
+      },
+      "wire-6": {
+        "id": "wire-6",
+        "route": "wire",
+        "from": "format-flux3-conditioning",
+        "fromPort": "out",
+        "to": "forge-dispatch",
+        "toPort": "draft"
+      }
+    },
+    "groups": {
+      "compiler-gathering-layer": {
+        "id": "compiler-gathering-layer",
+        "title": "I. Fragment & Property Gathering",
+        "x": 80,
+        "y": 100,
+        "w": 340,
+        "h": 780,
+        "color": "#1e293b"
+      },
+      "fragment-compiler-layer": {
+        "id": "fragment-compiler-layer",
+        "title": "II. Fragment Compiler & World Look",
+        "x": 460,
+        "y": 320,
+        "w": 360,
+        "h": 320,
+        "color": "#064e3b"
+      },
+      "prompt-rewriter-layer": {
+        "id": "prompt-rewriter-layer",
+        "title": "III. Prompt Rewriter (Doctrine Rules)",
+        "x": 840,
+        "y": 320,
+        "w": 360,
+        "h": 320,
+        "color": "#78350f"
+      },
+      "diffusion-conditioning-layer": {
+        "id": "diffusion-conditioning-layer",
+        "title": "IV. Flux 3 Klein Graph Conditioning",
+        "x": 1220,
+        "y": 320,
+        "w": 360,
+        "h": 320,
+        "color": "#0c4a6e"
+      }
+    },
+    "roles": {
+      "rewriter": {
+        "id": "rewriter",
+        "title": "Prompt Rewriter",
+        "description": "Refines compiled world briefs into constraint-preserving 2.5D game asset prompts.",
+        "assignedModel": "gemma4-orion",
+        "defaultParameters": {
+          "temperature": 0.3,
+          "max_tokens": 512
+        }
+      }
+    },
+    "portals": {},
+    "definitions": {},
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 1
+    }
+  }
+}

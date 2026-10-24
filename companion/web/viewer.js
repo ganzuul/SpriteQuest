@@ -1788,6 +1788,9 @@ export function initViewer(config) {
         salience: p.salience || 'moderate',
         image_url: assetImages.get(p.id) || p.image_url || null,
         diffusion_prompt: p.diffusion_prompt || p.lore_snippet || `Orthographic asset specification for ${p.label}`,
+        compiled_brief: p.compiled_brief || '',
+        fragments_used: p.fragments_used || [p.fragment_id || 'customs-house/the-site'],
+        world_setting: p.world_setting || 'Border March Customs House',
         lore_snippet: p.lore_snippet || '',
         obstacle_type: p.obstacle_type,
         mass_kg: p.mass_kg,
@@ -1806,6 +1809,9 @@ export function initViewer(config) {
         salience: 'major',
         image_url: assetImages.get(a.id) || a.image_url || null,
         diffusion_prompt: a.diffusion_prompt || `${a.name}, 2.5D character portrait rendered via Flux 3 Klein`,
+        compiled_brief: a.lore_snippet || `${a.name} (${a.role || 'Actor'})`,
+        fragments_used: [a.id === 'pell' ? 'scaffolded-kingdom/understudy' : 'customs-house/hollis-ledger', 'shared/seam-lines'],
+        world_setting: 'Border March Customs House',
         lore_snippet: a.lore_snippet || `${a.name} (${a.role || 'Actor'})`,
         obstacle_type: 'actor',
         mass_kg: 70.0,
@@ -1917,6 +1923,12 @@ export function initViewer(config) {
     const provEl = document.getElementById('asset-viewer-provenance');
     if (provEl) provEl.textContent = selectedAsset.fragment_id;
 
+    const fragsEl = document.getElementById('asset-viewer-fragments');
+    if (fragsEl) {
+      const frags = selectedAsset.fragments_used || [selectedAsset.fragment_id];
+      fragsEl.textContent = frags.map(f => f.split('/').pop()).join(' · ') || 'the-site';
+    }
+
     const physEl = document.getElementById('asset-viewer-physicality');
     if (physEl) {
       const parts = [];
@@ -2001,6 +2013,9 @@ export function initViewer(config) {
       selectAsset(id);
     }
 
+    const frags = selectedAsset.fragments_used || [selectedAsset.fragment_id];
+    log('COMPILER', `Fragment Compiler assembled brief from ${frags.length} fragments: ${frags.join(', ')}.`);
+    log('REWRITER', `Lattice prompt rewriter refined prompt (${selectedAsset.diffusion_prompt.length} chars).`);
     log('FORGE', `Initiating render pipeline for '${id}' (${selectedAsset.label}).`);
     log('FORGE', `Diffusion prompt: "${selectedAsset.diffusion_prompt || 'No prompt specified'}"`);
 

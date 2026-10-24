@@ -1341,6 +1341,8 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
     .log-badge-stage {{ color: #34d399; background: #064e3b; border: 1px solid #047857; }}
     .log-badge-audio {{ color: #c084fc; background: #3b0764; border: 1px solid #7e22ce; }}
     .log-badge-phys {{ color: #eab308; background: #422006; border: 1px solid #854d0e; }}
+    .log-badge-compiler {{ color: #2dd4bf; background: #134e4a; border: 1px solid #0f766e; }}
+    .log-badge-rewriter {{ color: #f472b6; background: #831843; border: 1px solid #9d174d; }}
     .log-badge-sys {{ color: #94a3b8; background: #1e293b; border: 1px solid #475569; }}
     .log-badge-error {{ color: #f43f5e; background: #4c0519; border: 1px solid #be123c; }}
 
@@ -1445,9 +1447,11 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
 
         <div class="asset-meta-row" id="asset-viewer-meta">
           <div class="stat-row"><span>Provenance:</span><span class="stat-val stat-accent" id="asset-viewer-provenance">customs-house/r6-ship</span></div>
+          <div class="stat-row"><span>Compiled Lore:</span><span class="stat-val stat-accent" id="asset-viewer-fragments">the-site · r6-ship · fasteners</span></div>
           <div class="stat-row"><span>Physicality:</span><span class="stat-val" id="asset-viewer-physicality">42.5kg · physics object</span></div>
           <div class="stat-row"><span>Diffusion Model:</span><span class="stat-val stat-gold" id="asset-viewer-model">Black Forest Labs Flux 3 Klein</span></div>
           <div class="stat-row"><span>Pipeline Server:</span><span class="stat-val" id="asset-viewer-server-status" style="color: #4ade80;">Checking...</span></div>
+          <div class="stat-row"><span>Lattice Pipeline:</span><span class="stat-val stat-gold" id="asset-viewer-pipeline-status">Fragment Compiler + Rewriter</span></div>
         </div>
 
         <div class="asset-lore-box" id="asset-viewer-lore">
