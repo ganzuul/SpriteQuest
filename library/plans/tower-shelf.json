@@ -2,10 +2,9 @@
   "schema_version": 1,
   "id": "tower-shelf",
   "for": "gemma4-orion",
-  "note": "The shelf's own batch: documents and instruments, so the fastener rules that belong to a clasped cover live here and only here. The default plan (prop-gemma4-orion) stopped carrying them once sets could name a plan -- docs/quarantine/compose.md, 'Which plan a batch uses'.",
+  "note": "The shelf's own batch: documents and instruments. Fastener and binding rules are derived from explicit recipes (e.g. fore-edge closures on bound grimoires) rather than an all-in-one fastener fragment.",
   "fragments": [
     {"id": "shared/single-face-reading", "version": 1},
-    {"id": "shared/brief-faces-are-themes", "version": 1},
-    {"id": "shared/fasteners-on-their-own-face", "version": 1}
+    {"id": "shared/brief-faces-are-themes", "version": 1}
   ]
 }
