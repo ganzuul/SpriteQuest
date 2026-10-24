@@ -3,14 +3,8 @@
 companion/scene_definitions.py
 
 Scene Definition Engine & Primitive Linkage Registry.
-Binds scenes (acts/floorplans/maps) with their constituent 3D STL primitives
-and 2D inspection blueprints.
-
-Provides:
-  - Standardized JSON scene declarations in library/scenes/*.json
-  - Bidirectional lookup: scene -> primitives and primitive -> source fragments
-  - 2D image asset resolution (vector blueprint SVGs, data URLs, rendered mattes)
-  - Serialization to web preview bundle for HTML viewer menu integration.
+Binds scenes (acts/floorplans/maps) with their constituent 3D STL primitives,
+adventure staging roles, cast members, and 2D multi-view inspection sheets.
 """
 
 from __future__ import annotations
@@ -40,10 +34,16 @@ class ScenePrimitive:
     triangle_count: int
     stl_path: str
     description: str
+    asset_id: str = ""
+    tree_group: str = "Scene Assets"
+    stage_role: str = ""
+    world_pos: list[float] | None = None
     image_2d: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
+        if not d["asset_id"]:
+            d["asset_id"] = self.id
         if not d["image_2d"]:
             d["image_2d"] = get_primitive_2d_data_url(self.id, d)
         return d
@@ -58,6 +58,7 @@ class SceneDefinition:
     category: str
     description: str
     primitives: list[ScenePrimitive] = field(default_factory=list)
+    cast: list[dict[str, Any]] = field(default_factory=list)
     map_ref: str | None = None
     floorplan_ref: str | None = None
 
@@ -71,6 +72,7 @@ class SceneDefinition:
             "description": self.description,
             "map_ref": self.map_ref,
             "floorplan_ref": self.floorplan_ref,
+            "cast": self.cast,
             "primitives": [p.to_dict() for p in self.primitives],
         }
 
@@ -85,7 +87,6 @@ def load_scene_definition(scene_id: str, scenes_dir: Path = SCENES_DIR) -> Scene
     prims = []
     for p_raw in data.get("primitives", []):
         pid = p_raw.get("id", "")
-        # Resolve 2D image
         img_url = p_raw.get("image_2d") or get_primitive_2d_data_url(pid, p_raw)
         prims.append(
             ScenePrimitive(
@@ -97,6 +98,10 @@ def load_scene_definition(scene_id: str, scenes_dir: Path = SCENES_DIR) -> Scene
                 triangle_count=int(p_raw.get("triangle_count", 12)),
                 stl_path=p_raw.get("stl_path", f"library/stl_primitives/{pid}.stl"),
                 description=p_raw.get("description", ""),
+                asset_id=p_raw.get("asset_id", pid),
+                tree_group=p_raw.get("tree_group", "Scene Assets"),
+                stage_role=p_raw.get("stage_role", ""),
+                world_pos=p_raw.get("world_pos"),
                 image_2d=img_url,
             )
         )
@@ -109,19 +114,26 @@ def load_scene_definition(scene_id: str, scenes_dir: Path = SCENES_DIR) -> Scene
         category=data.get("category", "scene"),
         description=data.get("description", ""),
         primitives=prims,
+        cast=list(data.get("cast", [])),
         map_ref=data.get("map_ref"),
         floorplan_ref=data.get("floorplan_ref"),
     )
 
 
 def load_all_scenes(scenes_dir: Path = SCENES_DIR) -> dict[str, SceneDefinition]:
-    """Load all scene definitions available in library/scenes/."""
+    """Load all scene definitions available in library/scenes/ ordered by Act."""
     scenes: dict[str, SceneDefinition] = {}
     if not scenes_dir.is_dir():
         return scenes
 
-    for json_file in sorted(scenes_dir.glob("*.json")):
-        s_id = json_file.stem
+    # Order chronologically by Act I -> Act II -> Act III -> Act IV
+    preferred_order = ["customs-house", "border-march", "unwritten-ascent", "glass-cathedral"]
+    found_stems = [f.stem for f in sorted(scenes_dir.glob("*.json"))]
+    ordered_stems = [s for s in preferred_order if s in found_stems] + [
+        s for s in found_stems if s not in preferred_order
+    ]
+
+    for s_id in ordered_stems:
         scene = load_scene_definition(s_id, scenes_dir)
         if scene:
             scenes[s_id] = scene
@@ -143,12 +155,11 @@ def main() -> int:
     manifest = export_scenes_manifest()
     print(f"Loaded {len(manifest['scenes'])} scenes from {SCENES_DIR}:")
     for s in manifest["scenes"]:
-        print(f"  [{s['id']:18s}] '{s['name']}' ({len(s['primitives'])} primitives)")
+        print(f"  [{s['id']:18s}] '{s['name']}' ({len(s['primitives'])} primitives, {len(s.get('cast', []))} cast)")
         for p in s["primitives"]:
-            print(f"     - {p['id']:22s} dims:{p['dimensions']}m [{p['fragment_id']}]")
+            print(f"     - [{p['tree_group']}] {p['name']} ({p['id']} -> {p['asset_id']})")
     return 0
 
 
 if __name__ == "__main__":
-    import sys
     sys.exit(main())

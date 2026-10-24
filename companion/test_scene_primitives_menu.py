@@ -4,14 +4,16 @@ companion/test_scene_primitives_menu.py
 
 Automated unit & integration test suite for:
   - Scene definitions in library/scenes/*.json
-  - Scene primitive linkage and 2D blueprint asset rendering
-  - HTML viewer Scene Selector & Primitives Inspection Menu wiring
-  - Lightbox inspection and category filtering.
+  - 3D STL to 2D multi-view image rendering (companion/render_primitive_2d.py)
+  - Left Sidebar Asset Navigation Panel (#asset-nav-sidebar):
+      1. Top: Scene Picker (#sidebar-scene-picker, #scene-selector)
+      2. Middle: Hierarchical Tree View (#sidebar-asset-tree)
+      3. Bottom: Asset Preview Panel (#sidebar-asset-preview, #sidebar-preview-img)
+  - Bidirectional selection synchronization and map focus wiring.
 """
 
 from __future__ import annotations
 
-import json
 import subprocess
 import sys
 import tempfile
@@ -23,14 +25,14 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from companion.export_web_preview import generate_interactive_html
-from companion.render_primitive_2d import PRIMITIVE_VECTOR_SCHEMAS, render_primitive_svg
-from companion.scene_definitions import export_scenes_manifest, load_all_scenes, load_scene_definition
+from companion.render_primitive_2d import PRIMITIVE_STYLES, get_primitive_2d_data_url, render_primitive_svg
+from companion.scene_definitions import load_all_scenes
 
 
-class TestSceneDefinitionsAndPrimitivesMenu(unittest.TestCase):
+class TestSceneDefinitionsAndLeftSidebar(unittest.TestCase):
     def test_all_campaign_scenes_exist_and_load(self):
         scenes = load_all_scenes()
-        expected_scenes = ["border-march", "customs-house", "unwritten-ascent", "glass-cathedral"]
+        expected_scenes = ["customs-house", "border-march", "unwritten-ascent", "glass-cathedral"]
         for sid in expected_scenes:
             self.assertIn(sid, scenes, f"Scene '{sid}' must exist in library/scenes/")
             scene = scenes[sid]
@@ -38,8 +40,9 @@ class TestSceneDefinitionsAndPrimitivesMenu(unittest.TestCase):
             self.assertTrue(len(scene.name) > 0)
             self.assertTrue(len(scene.act) > 0)
             self.assertGreater(len(scene.primitives), 0, f"Scene '{sid}' must declare primitives")
+            self.assertGreater(len(scene.cast), 0, f"Scene '{sid}' must declare cast members")
 
-    def test_primitives_source_fragments_and_2d_images_exist(self):
+    def test_primitives_source_fragments_and_2d_stl_images_exist(self):
         scenes = load_all_scenes()
         for sid, scene in scenes.items():
             for p in scene.primitives:
@@ -50,131 +53,154 @@ class TestSceneDefinitionsAndPrimitivesMenu(unittest.TestCase):
                     f"Primitive '{p.id}' in scene '{sid}' references missing fragment: {p.fragment_id}"
                 )
 
-                # 2. 2D image must be a valid data URL or path
+                # 2. 2D image must be a valid PNG/SVG data URL rendered from the 3D STL
                 self.assertTrue(
-                    p.image_2d.startswith("data:image/svg+xml") or p.image_2d.endswith(".png"),
+                    p.image_2d.startswith("data:image/png;base64,") or p.image_2d.startswith("data:image/svg+xml"),
                     f"Primitive '{p.id}' must provide a 2D image data URL"
                 )
 
-                # 3. Valid dimensions and triangles
+                # 3. Valid dimensions, triangles, tree_group, and stage_role
                 self.assertEqual(len(p.dimensions), 3, f"Primitive '{p.id}' dimensions must be [w, l, h]")
                 self.assertGreater(p.triangle_count, 0)
+                self.assertTrue(len(p.tree_group) > 0)
+                self.assertTrue(len(p.stage_role) > 0)
                 self.assertTrue(len(p.description) > 5)
 
-    def test_vector_blueprints_generated_for_catalog(self):
-        for pid in PRIMITIVE_VECTOR_SCHEMAS.keys():
+    def test_2d_multi_view_sheets_generated_for_catalog(self):
+        for pid in PRIMITIVE_STYLES.keys():
+            url = get_primitive_2d_data_url(pid)
+            self.assertTrue(url.startswith("data:image/png;base64,"))
             svg = render_primitive_svg(pid)
             self.assertTrue(svg.startswith("<svg"))
             self.assertTrue(svg.endswith("</svg>"))
-            self.assertIn("FLUX 3 KLEIN READY", svg)
-            self.assertIn(pid, svg)
 
-    def test_viewer_runtime_scene_primitives_menu_api(self):
-        """Verify viewer.js scene selection, primitives menu, and lightbox in node runtime."""
+    def test_left_sidebar_dom_and_runtime_wiring(self):
+        """Verify Left Sidebar (Scene Picker -> Tree View -> Asset Preview) in generated HTML and runtime."""
         map_json_path = REPO_ROOT / "library" / "maps" / "border-march.json"
         with tempfile.TemporaryDirectory() as tmp_dir:
             out_html = Path(tmp_dir) / "test_preview.html"
             generate_interactive_html(map_json_path, out_html)
+            html_text = out_html.read_text(encoding="utf-8")
+
+            for req_id in [
+                'id="asset-nav-sidebar"',
+                'id="sidebar-scene-picker"',
+                'id="scene-selector"',
+                'id="sidebar-asset-tree"',
+                'id="sidebar-asset-preview"',
+                'id="sidebar-preview-img"',
+                'id="sidebar-preview-title"',
+                'id="sidebar-preview-role"',
+                'id="sidebar-preview-meta"',
+            ]:
+                self.assertIn(req_id, html_text, f"Missing Left Sidebar DOM element: {req_id}")
 
             test_script = """
             const fs = require('fs');
             const html = fs.readFileSync(process.argv[1], 'utf8');
             const scriptMatch = html.match(/<script>([\\s\\S]*?)<\\/script>/)[1];
 
-            const mockEl = {
-              style: {},
-              dataset: {},
-              classList: {
-                _classes: new Set(),
-                add: function(c) { this._classes.add(c); },
-                remove: function(c) { this._classes.delete(c); },
-                contains: function(c) { return this._classes.has(c); }
-              },
-              innerHTML: '',
-              innerText: '',
-              textContent: '',
-              querySelector: () => mockEl,
-              querySelectorAll: () => [],
-              setAttribute: () => {},
-              clientWidth: 600,
-              clientHeight: 700,
-              addEventListener: () => {},
-              appendChild: () => {},
-              getContext: () => ({
-                createImageData: () => ({ data: new Uint8ClampedArray(120*140*4) }),
-                putImageData: () => {},
-                clearRect: () => {},
-                drawImage: () => {},
-                createRadialGradient: () => ({ addColorStop: () => {} }),
-                save: () => {},
-                restore: () => {},
-                beginPath: () => {},
-                arc: () => {},
-                fill: () => {}
-              }),
-              getBoundingClientRect: () => ({ left: 0, top: 0, width: 600, height: 700 })
-            };
+            const elements = {};
+            function makeEl(id) {
+              return {
+                id,
+                style: {},
+                dataset: {},
+                classList: {
+                  _classes: new Set(),
+                  add: function(c) { this._classes.add(c); },
+                  remove: function(c) { this._classes.delete(c); },
+                  contains: function(c) { return this._classes.has(c); }
+                },
+                innerHTML: '',
+                innerText: '',
+                textContent: '',
+                src: '',
+                alt: '',
+                value: 'border-march',
+                querySelector: () => makeEl('sub'),
+                querySelectorAll: () => [],
+                setAttribute: () => {},
+                clientWidth: 600,
+                clientHeight: 700,
+                addEventListener: () => {},
+                appendChild: () => {},
+                getContext: () => ({
+                  createImageData: () => ({ data: new Uint8ClampedArray(120*140*4) }),
+                  putImageData: () => {},
+                  clearRect: () => {},
+                  drawImage: () => {},
+                  createRadialGradient: () => ({ addColorStop: () => {} }),
+                  save: () => {},
+                  restore: () => {},
+                  beginPath: () => {},
+                  arc: () => {},
+                  fill: () => {}
+                }),
+                getBoundingClientRect: () => ({ left: 0, top: 0, width: 600, height: 700 })
+              };
+            }
             const window = { addEventListener: () => {} };
             const document = {
-              getElementById: () => mockEl,
-              createElement: () => mockEl,
+              getElementById: (id) => {
+                if (!elements[id]) elements[id] = makeEl(id);
+                return elements[id];
+              },
+              createElement: (tag) => makeEl(tag),
               querySelectorAll: () => []
             };
 
             eval(scriptMatch);
 
-            // 1. Scene registry inspection
+            // 1. Scene registry has all 4 acts
             const scenes = window.viewer.getScenes();
             if (!Array.isArray(scenes) || scenes.length < 4) {
-              throw new Error(`Expected at least 4 scenes, got ${scenes ? scenes.length : 'none'}`);
+              throw new Error(`Expected 4 scenes, got ${scenes ? scenes.length : 'none'}`);
             }
 
-            // 2. Initial active scene is border-march
-            const curScene = window.viewer.getCurrentScene();
-            if (!curScene || curScene.id !== 'border-march') {
-              throw new Error(`Expected active scene 'border-march', got ${curScene ? curScene.id : 'null'}`);
-            }
-
-            // 3. Inspect primitives of border-march
-            const bmPrims = window.viewer.getScenePrimitives('border-march');
-            if (bmPrims.length !== 6) {
-              throw new Error(`Expected 6 primitives for border-march, got ${bmPrims.length}`);
-            }
-            if (!bmPrims.some(p => p.id === 'ancient-bastion')) {
-              throw new Error('Expected ancient-bastion in border-march primitives');
-            }
-
-            // 4. Switch scene to customs-house
+            // 2. Switch to Act I (customs-house) -> Tree View & Preview update automatically
             const chScene = window.viewer.selectScene('customs-house');
             if (!chScene || chScene.id !== 'customs-house') {
               throw new Error('Failed to switch to customs-house');
             }
-            const chPrims = window.viewer.getScenePrimitives();
-            if (chPrims.length !== 9) {
-              throw new Error(`Expected 9 primitives for customs-house, got ${chPrims.length}`);
-            }
-            if (!chPrims.some(p => p.id === 'glass-stasis-coffin')) {
-              throw new Error('Expected glass-stasis-coffin in customs-house primitives');
+            const treeHtml = elements['sidebar-asset-tree'].innerHTML;
+            if (!treeHtml.includes('Quest Relics &amp; Cargo') || !treeHtml.includes('Crate #00-NULL')) {
+              throw new Error('Tree view did not render grouped folders for Customs House');
             }
 
-            // 5. Switch scene to glass-cathedral
+            // 3. Select a specific tree node -> updates bottom preview AND syncs right-hand Asset Viewer
+            const item = window.viewer.selectScenePrimitive('common-table');
+            if (!item || item.id !== 'common-table') {
+              throw new Error('Failed to select common-table in sidebar tree');
+            }
+            if (!elements['sidebar-preview-title'].textContent.includes('Ledger Desk')) {
+              throw new Error(`Preview title mismatch: ${elements['sidebar-preview-title'].textContent}`);
+            }
+            if (!elements['sidebar-preview-img'].src.startsWith('data:image/png;base64,')) {
+              throw new Error('Preview image src was not updated with 2D STL render');
+            }
+            const rightAsset = window.viewer.getSelectedAsset();
+            if (!rightAsset || rightAsset.id !== 'quartermaster_desk') {
+              throw new Error(`Expected right-hand viewer to sync to 'quartermaster_desk', got ${rightAsset ? rightAsset.id : 'null'}`);
+            }
+
+            // 4. Focus on map moves player/viewport to asset coordinates
+            const focusRes = window.viewer.focusSceneAssetOnMap('common-table');
+            if (!focusRes || focusRes.x !== 63 || focusRes.y !== 69) {
+              throw new Error(`Expected focusSceneAssetOnMap to move to (63, 69), got ${JSON.stringify(focusRes)}`);
+            }
+
+            // 5. Switch to Act IV (glass-cathedral)
             const gcScene = window.viewer.selectScene('glass-cathedral');
             if (!gcScene || gcScene.id !== 'glass-cathedral') {
               throw new Error('Failed to switch to glass-cathedral');
             }
-            const gcPrims = window.viewer.getScenePrimitives();
-            if (!gcPrims.some(p => p.id === 'glass-column-fluted')) {
-              throw new Error('Expected glass-column-fluted in glass-cathedral primitives');
+            const lens = window.viewer.selectScenePrimitive('solar-focus-lens');
+            if (!lens || !elements['sidebar-preview-title'].textContent.includes('Solar Focus Lens')) {
+              throw new Error('Failed to preview solar-focus-lens in Act IV');
             }
 
-            // 6. Test menu toggle & lightbox controls
-            window.viewer.togglePrimitivesMenu(true);
-            window.viewer.filterPrimitives('architecture');
-            window.viewer.openPrimitiveLightbox('glass-column-fluted');
-            window.viewer.closePrimitiveLightbox();
-            window.viewer.closePrimitivesMenu();
-
-            console.log('All scene primitives menu API tests passed successfully');
+            console.log('All Left Sidebar Asset Navigation Panel tests passed');
             """
             proc = subprocess.run(
                 ["node", "-e", test_script, str(out_html)],

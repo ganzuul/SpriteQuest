@@ -1547,12 +1547,288 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
       font-family: inherit;
       font-size: 11px;
       padding: 3px 6px;
-      border-radius: 4px;
+    /* Left Sidebar: Asset Navigation Panel (Scene Picker -> Tree View -> Asset Preview) */
+    .asset-nav-sidebar {{
+      width: 330px;
+      min-width: 300px;
+      max-width: 350px;
+      background: var(--panel);
+      border-right: 1px solid #2e261f;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+      z-index: 20;
+      user-select: none;
+    }}
+    .asset-nav-sidebar.collapsed {{
+      display: none;
+    }}
+    .sidebar-scene-picker {{
+      padding: 12px 14px;
+      background: #1d1915;
+      border-bottom: 1px solid #332b24;
+      flex-shrink: 0;
+    }}
+    .sidebar-section-header {{
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }}
+    .sidebar-section-title {{
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+    }}
+    .scene-select {{
+      width: 100%;
+      background: #120f0d;
+      color: #f5eedf;
+      border: 1px solid #4a3e34;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 8px;
+      border-radius: 5px;
       outline: none;
       cursor: pointer;
+      margin-bottom: 8px;
     }}
     .scene-select:focus {{
       border-color: var(--accent);
+    }}
+    .sidebar-scene-act {{
+      font-size: 10.5px;
+      font-weight: 700;
+      color: var(--accent-gold);
+      margin-bottom: 3px;
+    }}
+    .sidebar-scene-desc {{
+      font-size: 10px;
+      line-height: 1.38;
+      color: #a8947f;
+    }}
+
+    /* Middle: Tree View of Scene Assets */
+    .sidebar-tree-header {{
+      padding: 7px 14px;
+      background: #171310;
+      border-bottom: 1px solid #2a231d;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }}
+    .sidebar-asset-tree {{
+      flex: 1;
+      overflow-y: auto;
+      padding: 6px 8px;
+      background: #14110e;
+    }}
+    .tree-folder {{
+      margin-bottom: 6px;
+      border: 1px solid #29221c;
+      border-radius: 5px;
+      background: #191512;
+      overflow: hidden;
+    }}
+    .tree-folder-summary {{
+      padding: 6px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #e6dfd5;
+      background: #211c17;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      list-style: none;
+    }}
+    .tree-folder-summary::-webkit-details-marker {{
+      display: none;
+    }}
+    .tree-folder-count {{
+      font-size: 9.5px;
+      font-family: monospace;
+      background: #120f0d;
+      color: #a8947f;
+      padding: 1px 6px;
+      border-radius: 99px;
+      border: 1px solid #332b24;
+    }}
+    .tree-folder-children {{
+      padding: 4px 4px 4px 10px;
+      border-top: 1px solid #29221c;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }}
+    .tree-node-item {{
+      display: flex;
+      align-items: flex-start;
+      gap: 7px;
+      padding: 5px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      border-left: 2px solid transparent;
+      transition: all 0.12s ease;
+    }}
+    .tree-node-item:hover {{
+      background: #26201a;
+      border-left-color: #786b59;
+    }}
+    .tree-node-item.active {{
+      background: rgba(45, 212, 191, 0.13);
+      border-left-color: var(--accent);
+    }}
+    .tree-node-icon {{
+      font-size: 13px;
+      line-height: 1.2;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }}
+    .tree-node-text {{
+      flex: 1;
+      min-width: 0;
+    }}
+    .tree-node-label {{
+      font-size: 11px;
+      font-weight: 600;
+      color: #f3ece2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }}
+    .tree-node-item.active .tree-node-label {{
+      color: #2dd4bf;
+    }}
+    .tree-node-sub {{
+      font-size: 9.5px;
+      font-family: monospace;
+      color: #8c7e70;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }}
+
+    /* Bottom: Docked Asset Preview Panel */
+    .sidebar-asset-preview {{
+      border-top: 2px solid #383028;
+      background: #181411;
+      padding: 10px 12px 12px 12px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }}
+    .sidebar-preview-img-wrap {{
+      position: relative;
+      width: 100%;
+      height: 175px;
+      background: #0d0b0a;
+      border: 1px solid #383028;
+      border-radius: 5px;
+      overflow: hidden;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }}
+    .sidebar-preview-img-wrap:hover {{
+      border-color: var(--accent);
+    }}
+    .sidebar-preview-img {{
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }}
+    .sidebar-preview-zoom-hint {{
+      position: absolute;
+      bottom: 5px;
+      right: 6px;
+      background: rgba(13, 11, 10, 0.88);
+      border: 1px solid #3d352d;
+      color: var(--accent);
+      font-size: 9px;
+      padding: 2px 6px;
+      border-radius: 3px;
+      pointer-events: none;
+    }}
+    .sidebar-preview-title {{
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #f5eedf;
+      line-height: 1.25;
+    }}
+    .sidebar-preview-role {{
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--accent-gold);
+      line-height: 1.25;
+    }}
+    .sidebar-preview-meta {{
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }}
+    .sidebar-preview-desc {{
+      font-size: 10px;
+      line-height: 1.35;
+      color: #b5a899;
+      max-height: 42px;
+      overflow-y: auto;
+    }}
+    .sidebar-preview-actions {{
+      display: flex;
+      gap: 5px;
+      margin-top: 2px;
+    }}
+    .prim-badge {{
+      display: inline-block;
+      font-size: 9px;
+      font-family: monospace;
+      padding: 1px 5px;
+      border-radius: 3px;
+      background: #241f1a;
+      border: 1px solid #3d352d;
+      color: #c4b5a5;
+    }}
+    .prim-badge-dim {{ color: #f59e0b; border-color: #78521e; }}
+    .prim-badge-tris {{ color: #38bdf8; border-color: #1e5a84; }}
+    .prim-badge-frag {{ color: #a855f7; border-color: #5b288c; }}
+    .prim-act-btn {{
+      flex: 1;
+      padding: 5px 6px;
+      font-size: 9.5px;
+      font-family: inherit;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.15s ease;
+      text-align: center;
+    }}
+    .prim-btn-blueprint {{
+      background: #26211c;
+      border: 1px solid #4a3e34;
+      color: #e6dfd5;
+    }}
+    .prim-btn-blueprint:hover {{
+      background: #383028;
+      border-color: #2dd4bf;
+      color: #ffffff;
+    }}
+    .prim-btn-forge {{
+      background: #1c2624;
+      border: 1px solid #1e4a42;
+      color: #2dd4bf;
+    }}
+    .prim-btn-forge:hover {{
+      background: #2dd4bf;
+      color: #0d0b0a;
     }}
     .header-btn {{
       background: #2a241e;
@@ -1573,241 +1849,6 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
       background: #3a322b;
       border-color: var(--accent);
       color: #ffffff;
-      box-shadow: 0 0 10px rgba(45, 212, 191, 0.25);
-    }}
-
-    /* Primitives Modal & Inspection Drawer */
-    .primitives-modal {{
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(8, 7, 6, 0.78);
-      backdrop-filter: blur(4px);
-      z-index: 1000;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 24px;
-    }}
-    .primitives-modal.hidden {{
-      display: none !important;
-    }}
-    .primitives-modal-content {{
-      background: #181512;
-      border: 1px solid #3d352d;
-      border-radius: 8px;
-      width: 100%;
-      max-width: 980px;
-      max-height: 88vh;
-      display: flex;
-      flex-direction: column;
-      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.95);
-      overflow: hidden;
-    }}
-    .primitives-modal-header {{
-      padding: 16px 20px;
-      background: #211c18;
-      border-bottom: 1px solid #383028;
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-    }}
-    .primitives-modal-header h2 {{
-      font-size: 16px;
-      font-weight: 700;
-      color: #f5eedf;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }}
-    .primitives-modal-subtitle {{
-      font-size: 11px;
-      color: #a8947f;
-      margin-top: 4px;
-    }}
-    .close-btn {{
-      background: transparent;
-      border: none;
-      color: #a8947f;
-      font-size: 16px;
-      cursor: pointer;
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-family: inherit;
-    }}
-    .close-btn:hover {{
-      background: #332b24;
-      color: #ffffff;
-    }}
-    .primitives-filter-bar {{
-      padding: 10px 20px;
-      background: #1a1613;
-      border-bottom: 1px solid #2e2720;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      overflow-x: auto;
-    }}
-    .filter-label {{
-      font-size: 11px;
-      color: #8c7e70;
-      font-weight: 600;
-    }}
-    .filter-tab {{
-      background: #26211c;
-      border: 1px solid #3d352d;
-      color: #c4b5a5;
-      font-family: inherit;
-      font-size: 11px;
-      padding: 3px 10px;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: all 0.15s ease;
-    }}
-    .filter-tab:hover {{
-      background: #332b24;
-      color: #f3ece2;
-    }}
-    .filter-tab.active {{
-      background: #2dd4bf;
-      color: #0d0b0a;
-      border-color: #2dd4bf;
-      font-weight: 600;
-    }}
-    .primitives-grid {{
-      padding: 20px;
-      overflow-y: auto;
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 16px;
-      flex: 1;
-    }}
-    .primitive-card {{
-      background: #1d1915;
-      border: 1px solid #383028;
-      border-radius: 6px;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      transition: transform 0.15s ease, border-color 0.15s ease;
-    }}
-    .primitive-card:hover {{
-      border-color: #2dd4bf;
-      transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
-    }}
-    .prim-img-wrap {{
-      position: relative;
-      background: #0d0b0a;
-      width: 100%;
-      height: 160px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      overflow: hidden;
-    }}
-    .prim-img {{
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-      transition: transform 0.25s ease;
-    }}
-    .prim-img-wrap:hover .prim-img {{
-      transform: scale(1.04);
-    }}
-    .prim-overlay-lens {{
-      position: absolute;
-      bottom: 6px;
-      right: 6px;
-      background: rgba(13, 11, 10, 0.85);
-      border: 1px solid #383028;
-      padding: 3px 7px;
-      font-size: 9.5px;
-      border-radius: 4px;
-      color: #2dd4bf;
-      pointer-events: none;
-    }}
-    .prim-card-body {{
-      padding: 12px 14px;
-      display: flex;
-      flex-direction: column;
-      flex: 1;
-    }}
-    .prim-card-header {{
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      margin-bottom: 6px;
-    }}
-    .prim-card-title {{
-      font-size: 13px;
-      font-weight: 700;
-      color: #f5eedf;
-    }}
-    .prim-card-id {{
-      font-size: 10px;
-      color: #8c7e70;
-      font-family: monospace;
-    }}
-    .prim-card-badges {{
-      display: flex;
-      flex-wrap: wrap;
-      gap: 4px;
-      margin-bottom: 8px;
-    }}
-    .prim-badge {{
-      display: inline-block;
-      font-size: 9.5px;
-      font-family: monospace;
-      padding: 1px 5px;
-      border-radius: 3px;
-      background: #241f1a;
-      border: 1px solid #3d352d;
-      color: #c4b5a5;
-    }}
-    .prim-badge-dim {{ color: #f59e0b; border-color: #78521e; }}
-    .prim-badge-tris {{ color: #38bdf8; border-color: #1e5a84; }}
-    .prim-badge-frag {{ color: #a855f7; border-color: #5b288c; }}
-    .prim-card-desc {{
-      font-size: 10.5px;
-      line-height: 1.4;
-      color: #a8947f;
-      flex: 1;
-      margin-bottom: 12px;
-    }}
-    .prim-card-actions {{
-      display: flex;
-      gap: 6px;
-    }}
-    .prim-act-btn {{
-      flex: 1;
-      padding: 5px 8px;
-      font-size: 10px;
-      font-family: inherit;
-      border-radius: 4px;
-      cursor: pointer;
-      font-weight: 600;
-      transition: all 0.15s ease;
-    }}
-    .prim-btn-blueprint {{
-      background: #26211c;
-      border: 1px solid #4a3e34;
-      color: #e6dfd5;
-    }}
-    .prim-btn-blueprint:hover {{
-      background: #383028;
-      border-color: #2dd4bf;
-      color: #ffffff;
-    }}
-    .prim-btn-forge {{
-      background: #1c2624;
-      border: 1px solid #1e4a42;
-      color: #2dd4bf;
-    }}
-    .prim-btn-forge:hover {{
-      background: #2dd4bf;
-      color: #0d0b0a;
     }}
 
     /* Lightbox Modal */
@@ -1919,11 +1960,10 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
       justify-content: flex-end;
     }}
     .no-primitives-notice {{
-      grid-column: 1 / -1;
       text-align: center;
       color: #8c7e70;
-      padding: 30px;
-      font-size: 12px;
+      padding: 20px 10px;
+      font-size: 11px;
     }}
   </style>
 </head>
@@ -1938,54 +1978,62 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
       <button class="view-tab" id="tab-depth" onclick="setLayerMode('depth')" title="Topographic Z-Depth Map">⛰️ Z-Depth Map</button>
       <button class="view-tab" id="tab-relief" onclick="setLayerMode('relief')" title="Hillshade & Contour Relief">📐 Topo Relief</button>
     </div>
-    <div class="scene-header-controls">
-      <div class="scene-select-wrap">
-        <label for="scene-selector" class="scene-menu-label">Act / Scene:</label>
-        <select id="scene-selector" class="scene-select" onchange="onSceneSelectChange(this.value)">
-          <option value="border-march" selected>Act II: Border March & Pass</option>
-          <option value="customs-house">Act I: Customs House Interior</option>
-          <option value="unwritten-ascent">Act III: The Unwritten Ascent</option>
-          <option value="glass-cathedral">Act IV: The Glass Cathedral</option>
-        </select>
-      </div>
-      <button class="header-btn" id="btn-primitives-menu" onclick="togglePrimitivesMenu()" title="Inspect 2D blueprint images of scene primitives">
-        📦 Scene Primitives (<span id="primitives-badge-count">6</span>) ▾
-      </button>
-    </div>
     <div class="controls-hint">
       WASD / Arrows / Click to Move • Hover probes elevation
     </div>
   </header>
 
   <div id="main-container">
-    <!-- Primitives Inspection Modal / Drawer -->
-    <div id="primitives-modal" class="primitives-modal hidden">
-      <div class="primitives-modal-content">
-        <div class="primitives-modal-header">
-          <div>
-            <h2 id="primitives-modal-title">📦 Scene Primitives: The Border March</h2>
-            <div id="primitives-modal-subtitle" class="primitives-modal-subtitle">
-              Inspect 2D blueprint renders, metric dimensions, and source fragments for this scene's physical assets
-            </div>
-          </div>
-          <button class="close-btn" onclick="togglePrimitivesMenu()">✕</button>
+    <!-- Left Sidebar: Asset Navigation Panel (1. Scene Picker -> 2. Tree View -> 3. Asset Preview) -->
+    <aside class="asset-nav-sidebar" id="asset-nav-sidebar">
+      <!-- 1. Top: Scene Picker -->
+      <div class="sidebar-scene-picker" id="sidebar-scene-picker">
+        <div class="sidebar-section-header">
+          <span class="sidebar-section-title">🗺️ Adventure Scene Staging</span>
+          <span class="section-summary-badge"><span id="primitives-badge-count">6</span> Assets</span>
         </div>
-
-        <div class="primitives-filter-bar">
-          <span class="filter-label">Filter:</span>
-          <button class="filter-tab active" data-filter="all" onclick="filterPrimitives('all')">All (<span id="filter-count-all">0</span>)</button>
-          <button class="filter-tab" data-filter="architecture" onclick="filterPrimitives('architecture')">Architecture</button>
-          <button class="filter-tab" data-filter="monuments" onclick="filterPrimitives('monuments')">Monuments</button>
-          <button class="filter-tab" data-filter="containers" onclick="filterPrimitives('containers')">Containers</button>
-          <button class="filter-tab" data-filter="instruments" onclick="filterPrimitives('instruments')">Instruments</button>
-          <button class="filter-tab" data-filter="furniture" onclick="filterPrimitives('furniture')">Furniture</button>
-        </div>
-
-        <div class="primitives-grid" id="primitives-grid">
-          <!-- Dynamically populated primitive cards -->
+        <select id="scene-selector" class="scene-select" onchange="onSceneSelectChange(this.value)">
+          <option value="customs-house">Act I: The Border Customs House</option>
+          <option value="border-march" selected>Act II: The Border March & Pass</option>
+          <option value="unwritten-ascent">Act III: The Unwritten Ascent</option>
+          <option value="glass-cathedral">Act IV: The Glass Cathedral</option>
+        </select>
+        <div class="sidebar-scene-act" id="sidebar-scene-act">Act II: The Mountain Pass & Ancient Overhang</div>
+        <div class="sidebar-scene-desc" id="sidebar-scene-desc">
+          An uneven frontier landscape stretching between two level chunks.
         </div>
       </div>
-    </div>
+
+      <!-- 2. Middle: Hierarchical Tree View of Scene Assets -->
+      <div class="sidebar-tree-header">
+        <span class="sidebar-section-title" style="color: #d6cbbd;">📂 Scene Asset Tree</span>
+        <span style="font-size: 9.5px; color: #8c7e70;">Click to inspect & stage</span>
+      </div>
+      <div class="sidebar-asset-tree" id="sidebar-asset-tree">
+        <!-- Dynamically populated collapsible tree folders -->
+      </div>
+
+      <!-- 3. Bottom: Selected Asset Preview -->
+      <div class="sidebar-asset-preview" id="sidebar-asset-preview">
+        <div class="sidebar-section-header" style="margin-bottom: 2px;">
+          <span class="sidebar-section-title">🖼️ 2D Asset Preview (From 3D STL)</span>
+          <button class="log-btn" onclick="window.viewer && window.viewer.openPrimitiveLightbox && window.viewer.openPrimitiveLightbox()" title="Enlarge 2D multi-view blueprint">🔍 Enlarge</button>
+        </div>
+        <div class="sidebar-preview-img-wrap" onclick="window.viewer && window.viewer.openPrimitiveLightbox && window.viewer.openPrimitiveLightbox()">
+          <img id="sidebar-preview-img" class="sidebar-preview-img" src="" alt="Selected Asset 2D Preview" />
+          <div class="sidebar-preview-zoom-hint">🔍 Click to Enlarge</div>
+        </div>
+        <div class="sidebar-preview-title" id="sidebar-preview-title">Select an asset</div>
+        <div class="sidebar-preview-role" id="sidebar-preview-role">Staging role</div>
+        <div class="sidebar-preview-meta" id="sidebar-preview-meta"></div>
+        <div class="sidebar-preview-desc" id="sidebar-preview-desc"></div>
+        <div class="sidebar-preview-actions">
+          <button class="prim-act-btn prim-btn-blueprint" onclick="window.viewer && window.viewer.focusSceneAssetOnMap && window.viewer.focusSceneAssetOnMap()" title="Pan & move probe to this asset on the map">📍 Focus Map</button>
+          <button class="prim-act-btn prim-btn-blueprint" onclick="window.viewer && window.viewer.compileSelectedAssetBrief && window.viewer.compileSelectedAssetBrief()" title="Compile Lattice prompt from fragments">⚡ Compile</button>
+          <button class="prim-act-btn prim-btn-forge" onclick="window.viewer && window.viewer.forgeScenePrimitive && window.viewer.forgeScenePrimitive()" title="Render 2D art via Flux 3 Klein">✨ Forge Art</button>
+        </div>
+      </div>
+    </aside>
 
     <!-- 2D Image Lightbox Modal for deep inspection -->
     <div id="primitive-lightbox" class="primitive-lightbox hidden" onclick="closePrimitiveLightbox()">

@@ -6,67 +6,117 @@
   "world_id": "grey-wind",
   "category": "outdoor_map",
   "map_ref": "library/maps/border-march.json",
-  "description": "An uneven frontier landscape stretching between two level chunks. Centered around a plateau hosting the Border Customs House, bounded by an eastern mountain pass and ancient 45-degree overhang ruin ramparts in the north.",
+  "description": "Act II staging ground: The frontier valley surrounding the Customs House plateau, bounded by the eastern mountain pass and ancient 45-degree overhang ruin ramparts in the north.",
+  "cast": [
+    {
+      "id": "surveyor-vellum",
+      "name": "Surveyor Vellum",
+      "role": "Field Cartographer of the Unwritten Atlas",
+      "fragment_id": "cartographers/epistemic-survey",
+      "world_pos": [24.0, 28.0],
+      "description": "Measures terrain slope and sightlines with a brass theodolite; issues Field Notes (0.40) and Canon Warrants (0.90)."
+    },
+    {
+      "id": "orom",
+      "name": "Orom the Literal Smith",
+      "role": "Master of the Grey Wind Forge",
+      "fragment_id": "grey-wind/wish-granting",
+      "world_pos": [86.0, 68.0],
+      "description": "Answers underdetermined wishes coarsely and literally in quarried stone and iron."
+    },
+    {
+      "id": "pell",
+      "name": "Pell the Underwritten",
+      "role": "Expedition Carrier",
+      "fragment_id": "scaffolded-kingdom/understudy",
+      "world_pos": [35.0, 65.0],
+      "description": "Hauling the cleared consignment from the western approach toward the northern scree trail."
+    }
+  ],
   "primitives": [
     {
       "id": "ancient-bastion",
-      "name": "Ancient 45-Degree Stepped Bastion",
+      "asset_id": "prop-relic-cairn",
+      "name": "Ancient 45° Stepped Bastion (North Rampart)",
+      "tree_group": "Architecture & Terrain",
+      "stage_role": "Non-Navigable Ancient Relic Rampart (≥45° overhang rule)",
       "fragment_id": "grey-wind/named-ruins",
       "category": "architecture",
       "dimensions": [22.0, 22.0, 12.0],
       "triangle_count": 30,
+      "world_pos": [24.0, 24.0],
       "stl_path": "library/stl_primitives/ancient-bastion.stl",
       "description": "Cantilevered megalithic stone rampart obeying the 45-degree overhang rule. The ruin has no foundations below the seam."
     },
     {
       "id": "relic-cairn",
+      "asset_id": "prop-relic-cairn",
       "name": "Theodolite Station & Relic Cairn",
+      "tree_group": "Instruments & Monuments",
+      "stage_role": "Surveyor Vellum's Geodetic Triangulation Point",
       "fragment_id": "cartographers/epistemic-survey",
       "category": "monuments",
       "dimensions": [1.8, 1.8, 1.6],
       "triangle_count": 104,
+      "world_pos": [24.0, 24.0],
       "stl_path": "library/stl_primitives/relic-cairn.stl",
       "description": "Conical dry-stone cairn crowned with a bronze geodetic mounting post holding Surveyor Vellum's calibrated theodolite."
     },
     {
       "id": "wish-stone-slab",
+      "asset_id": "unmodelled_placeholder_slab",
       "name": "Orom's Literal Wish-Stone Slab",
+      "tree_group": "Architecture & Terrain",
+      "stage_role": "Forged Megalithic Bridge / Literal Wish Artifact",
       "fragment_id": "grey-wind/wish-granting",
       "category": "monuments",
       "dimensions": [3.0, 8.0, 0.6],
       "triangle_count": 20,
+      "world_pos": [42.0, 74.0],
       "stl_path": "library/stl_primitives/wish-stone-slab.stl",
       "description": "Monolithic quarried granite slab bridging chasm drops, chiseled with coarse runes and answered literally by Orom."
     },
     {
+      "id": "r6-ship-crate",
+      "asset_id": "prop-approach-crates",
+      "name": "Impounded R6-SHIP Approach Crates",
+      "tree_group": "Quest Relics & Cargo",
+      "stage_role": "Roadside Freight Stack at Customs Approach",
+      "fragment_id": "customs-house/r6-ship",
+      "category": "containers",
+      "dimensions": [1.2, 1.2, 1.0],
+      "triangle_count": 12,
+      "world_pos": [33.0, 72.0],
+      "stl_path": "library/stl_primitives/r6-ship-crate.stl",
+      "description": "Impounded freight containers stacked alongside the cobblestone road approach."
+    },
+    {
       "id": "frontier-brazier",
+      "asset_id": "prop-checkpoint-brazier",
       "name": "Frontier Cast-Iron Brazier",
+      "tree_group": "Stations & Furnishings",
+      "stage_role": "Warmth & Night/Cryo Lighting Beacon at Intake Gate",
       "fragment_id": "shared/unmodelled-prop",
       "category": "hearth",
       "dimensions": [1.26, 1.2, 1.0],
       "triangle_count": 30,
+      "world_pos": [37.5, 47.0],
       "stl_path": "library/stl_primitives/frontier-brazier.stl",
       "description": "Octagonal cast-iron fire basin resting on tripod legs, burning charcoal embers to warm frontier guards."
     },
     {
       "id": "border-signpost",
+      "asset_id": "prop-border-signpost",
       "name": "Border Milestone Signpost",
+      "tree_group": "Stations & Furnishings",
+      "stage_role": "Wayfinding Marker between Intake Road & Mountain Pass",
       "fragment_id": "shared/unmodelled-prop",
       "category": "markers",
       "dimensions": [0.84, 0.18, 2.2],
       "triangle_count": 20,
+      "world_pos": [32.0, 64.0],
       "stl_path": "library/stl_primitives/border-signpost.stl",
       "description": "Weathered oak milestone post with directional arm pointing travellers toward the mountain pass."
-    },
-    {
-      "id": "r6-ship-crate",
-      "name": "R6-SHIP Standard Bounding Crate",
-      "fragment_id": "customs-house/r6-ship",
-      "category": "containers",
-      "dimensions": [1.2, 1.2, 1.0],
-      "triangle_count": 12,
-      "stl_path": "library/stl_primitives/r6-ship-crate.stl",
-      "description": "Impounded freight containers stacked alongside the road approach."
     }
   ]
 }

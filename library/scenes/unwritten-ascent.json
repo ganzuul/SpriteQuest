@@ -6,35 +6,65 @@
   "world_id": "scaffolded-kingdom",
   "category": "frontier_road",
   "map_ref": "library/maps/border-march.json",
-  "description": "The northern scree trail climbing above the fog line where the world literally unloads into raw wireframe void unless stabilized by certified survey instruments.",
+  "description": "Act III staging ground: The high scree trail where the road unloads into raw wireframe void over a 6-meter chasm. Requires geodetic triangulation and Orom's literal wish-stone to cross.",
+  "cast": [
+    {
+      "id": "orom",
+      "name": "Orom the Literal Smith",
+      "role": "Anvil-Keeper of the Ridge",
+      "fragment_id": "grey-wind/wish-granting",
+      "world_pos": [90.0, 45.0],
+      "description": "Demands exact material, dimensions, and load capacity before striking a bridge slab; punishes vague prompts literally."
+    },
+    {
+      "id": "surveyor-vellum",
+      "name": "Surveyor Vellum",
+      "role": "Epistemic Navigator",
+      "fragment_id": "cartographers/epistemic-survey",
+      "world_pos": [85.0, 40.0],
+      "description": "Locks local coordinates with her brass theodolite so the unwritten road does not dissolve into fog."
+    }
+  ],
   "primitives": [
     {
       "id": "cryo-entropy-beacon",
+      "asset_id": "cryo-entropy-beacon",
       "name": "Cryo-Entropy Beacon Monolith",
+      "tree_group": "Architecture & Terrain",
+      "stage_role": "Environmental Hazard: Radiates -273°C entropy aura along the ridge",
       "fragment_id": "space-vampires/glyph-entropy-matrix",
       "category": "hazards",
       "dimensions": [1.17, 1.17, 3.2],
       "triangle_count": 22,
+      "world_pos": [90.0, 35.0],
       "stl_path": "library/stl_primitives/cryo-entropy-beacon.stl",
       "description": "Tapered obsidian obelisk with pyramidion apex projecting absolute zero cold, spiked into the mountain bedrock."
     },
     {
       "id": "wish-stone-slab",
+      "asset_id": "unmodelled_placeholder_slab",
       "name": "Orom's Granite Bridge Slab",
+      "tree_group": "Architecture & Terrain",
+      "stage_role": "Chasm Crossing: Spans the 6-meter unwritten void when properly specified",
       "fragment_id": "grey-wind/wish-granting",
       "category": "monuments",
       "dimensions": [3.0, 8.0, 0.6],
       "triangle_count": 20,
+      "world_pos": [90.0, 52.0],
       "stl_path": "library/stl_primitives/wish-stone-slab.stl",
       "description": "Spanned across the 6-meter chasm to bridge the void where the road unloads into unwritten grey mist."
     },
     {
       "id": "relic-cairn",
+      "asset_id": "prop-relic-cairn",
       "name": "Geodetic Triangulation Cairn",
+      "tree_group": "Instruments & Monuments",
+      "stage_role": "Reality Anchor: Certifies the northern pass into warranted terrain",
       "fragment_id": "cartographers/epistemic-survey",
       "category": "monuments",
       "dimensions": [1.8, 1.8, 1.6],
       "triangle_count": 104,
+      "world_pos": [24.0, 24.0],
       "stl_path": "library/stl_primitives/relic-cairn.stl",
       "description": "Marker cairn stabilizing local coordinate mesh with a certified brass theodolite and surveyor's slate tally."
     }

@@ -2049,6 +2049,9 @@ export function initViewer(config) {
     selectedAsset = entity;
     log('STAGE', `Selected ${entity.kind}: ${entity.label} [${entity.id}]`);
     renderAssetViewerDOM();
+    if (typeof syncSidebarToSelectedAsset === 'function') {
+      syncSidebarToSelectedAsset(entity.id);
+    }
     return selectedAsset;
   }
 
@@ -2714,12 +2717,13 @@ export function initViewer(config) {
     };
   }
 
-  // --- Scene Primitives Inspection & 2D Blueprint Lightbox Engine ---
+  // --- Left Sidebar Asset Navigation Panel: Scene Picker -> Tree View -> Asset Preview ---
   const scenesManifest = features?.scenes || { scenes: [], scenes_by_id: {} };
   let currentSceneId = (features?.scenes?.scenes_by_id && features.scenes.scenes_by_id['border-march'])
     ? 'border-march'
     : (features?.scenes?.scenes?.[0]?.id || 'border-march');
   let currentPrimitiveFilter = 'all';
+  let selectedPrimitiveId = null;
 
   function getScenes() {
     return scenesManifest.scenes || [];
@@ -2738,6 +2742,28 @@ export function initViewer(config) {
     return sc?.primitives || [];
   }
 
+  function _findItemInScene(sc, itemId) {
+    if (!sc || !itemId) return null;
+    const prim = (sc.primitives || []).find((p) => p.id === itemId || p.asset_id === itemId);
+    if (prim) return { ...prim, _kind: 'primitive' };
+    const cast = (sc.cast || []).find((c) => c.id === itemId);
+    if (cast) return { ...cast, _kind: 'cast' };
+    return null;
+  }
+
+  function getSelectedScenePrimitive() {
+    const sc = getCurrentScene();
+    if (!sc) return null;
+    if (selectedPrimitiveId) {
+      const found = _findItemInScene(sc, selectedPrimitiveId);
+      if (found) return found;
+    }
+    if (sc.primitives && sc.primitives.length > 0) {
+      return { ...sc.primitives[0], _kind: 'primitive' };
+    }
+    return null;
+  }
+
   function selectScene(sceneId) {
     if (!scenesManifest.scenes_by_id?.[sceneId]) {
       log('SCENE', `Scene '${sceneId}' not found in manifest.`, 'warn');
@@ -2745,6 +2771,7 @@ export function initViewer(config) {
     }
     currentSceneId = sceneId;
     const sc = getCurrentScene();
+    selectedPrimitiveId = sc.primitives?.[0]?.id || null;
     log('SCENE', `Active scene switched to: '${sc.name}' (${sc.id}) · ${sc.primitives.length} primitives.`);
 
     if (typeof document !== 'undefined') {
@@ -2757,21 +2784,126 @@ export function initViewer(config) {
     }
 
     renderPrimitivesMenuDOM();
+    if (selectedPrimitiveId) {
+      selectScenePrimitive(selectedPrimitiveId, { syncViewer: true });
+    }
     return sc;
+  }
+
+  function selectScenePrimitive(itemId, options = {}) {
+    const sc = getCurrentScene();
+    let item = _findItemInScene(sc, itemId);
+    if (!item) {
+      // Search across all scenes if not in current scene
+      for (const s of Object.values(scenesManifest.scenes_by_id || {})) {
+        const candidate = _findItemInScene(s, itemId);
+        if (candidate) {
+          currentSceneId = s.id;
+          item = candidate;
+          break;
+        }
+      }
+    }
+    if (!item) return null;
+
+    selectedPrimitiveId = item.id;
+
+    // Update active state in tree view DOM
+    if (typeof document !== 'undefined' && typeof document.querySelectorAll === 'function') {
+      const nodes = document.querySelectorAll('.tree-node-item');
+      nodes.forEach((n) => {
+        const nid = n.dataset ? n.dataset.nodeId : null;
+        if (nid === item.id) {
+          n.classList.add('active');
+        } else {
+          n.classList.remove('active');
+        }
+      });
+    }
+
+    renderSidebarPreviewDOM(item);
+
+    if (options.syncViewer !== false) {
+      const targetAssetId = item.asset_id || item.id;
+      if (item._kind === 'cast') {
+        selectAsset(item.id);
+      } else if (physicalPropsMap.has(targetAssetId)) {
+        selectAsset(targetAssetId);
+      } else if (physicalPropsMap.has(item.id)) {
+        selectAsset(item.id);
+      } else {
+        selectAsset({
+          id: item.id,
+          kind: 'prop',
+          label: item.name,
+          fragment_id: item.fragment_id,
+          salience: 'major',
+          image_url: item.image_2d || null,
+          lore: item.description,
+          diffusion_prompt: `orthographic top-down 2.5D isometric game asset cutout, ${item.name}, ${item.description}, source fragment: ${item.fragment_id}, isolated on neutral solid grey background (#707070), subtle directional studio lighting, soft ground contact occlusion shadow, crisp 16-bit painterly texture, highly detailed tactile physical prop, Black Forest Labs Flux 3 Klein render, 1024x1024`,
+        });
+      }
+
+      if (options.focusMap && Array.isArray(item.world_pos) && item.world_pos.length >= 2) {
+        focusSceneAssetOnMap(item.id);
+      }
+    }
+
+    return item;
+  }
+
+  function syncSidebarToSelectedAsset(assetId) {
+    const sc = getCurrentScene();
+    if (!sc) return;
+    const item = _findItemInScene(sc, assetId);
+    if (item && item.id !== selectedPrimitiveId) {
+      selectedPrimitiveId = item.id;
+      if (typeof document !== 'undefined' && typeof document.querySelectorAll === 'function') {
+        const nodes = document.querySelectorAll('.tree-node-item');
+        nodes.forEach((n) => {
+          const nid = n.dataset ? n.dataset.nodeId : null;
+          if (nid === item.id) n.classList.add('active');
+          else n.classList.remove('active');
+        });
+      }
+      renderSidebarPreviewDOM(item);
+    }
+  }
+
+  function focusSceneAssetOnMap(itemId) {
+    const sc = getCurrentScene();
+    const item = _findItemInScene(sc, itemId || selectedPrimitiveId) || getSelectedScenePrimitive();
+    if (!item) return false;
+
+    let wx = null;
+    let wy = null;
+    if (Array.isArray(item.world_pos) && item.world_pos.length >= 2) {
+      wx = Number(item.world_pos[0]);
+      wy = Number(item.world_pos[1]);
+    } else if (item.asset_id && physicalPropsMap.has(item.asset_id)) {
+      const p = physicalPropsMap.get(item.asset_id);
+      wx = p.world_x;
+      wy = p.world_y;
+    }
+
+    if (wx !== null && wy !== null) {
+      updatePlayerPosition(wx, wy);
+      log('STAGE', `Focused map viewport on '${item.name}' at (${wx.toFixed(1)}m, ${wy.toFixed(1)}m).`);
+      playAudioCue('click');
+      return { x: wx, y: wy, id: item.id };
+    }
+    return false;
   }
 
   function togglePrimitivesMenu(forceOpen) {
     if (typeof document === 'undefined') return;
-    const modal = document.getElementById('primitives-modal');
-    if (!modal) return;
-    const shouldOpen = forceOpen !== undefined ? forceOpen : modal.classList.contains('hidden');
-    if (shouldOpen) {
-      modal.classList.remove('hidden');
-      renderPrimitivesMenuDOM();
-      playAudioCue('click');
-    } else {
-      modal.classList.add('hidden');
+    const sidebar = document.getElementById('asset-nav-sidebar');
+    if (sidebar) {
+      const shouldCollapse = forceOpen !== undefined ? !forceOpen : !sidebar.classList.contains('collapsed');
+      if (shouldCollapse) sidebar.classList.add('collapsed');
+      else sidebar.classList.remove('collapsed');
     }
+    renderPrimitivesMenuDOM();
   }
 
   function openPrimitivesMenu(filter = 'all') {
@@ -2788,80 +2920,181 @@ export function initViewer(config) {
     renderPrimitivesMenuDOM();
   }
 
+  function _getCategoryIcon(cat) {
+    if (cat === 'containers' || cat === 'vessels') return '📦';
+    if (cat === 'architecture') return '🏛️';
+    if (cat === 'instruments' || cat === 'monuments') return '🧭';
+    if (cat === 'hazards') return '❄️';
+    if (cat === 'hearth') return '🔥';
+    if (cat === 'markers') return '🪧';
+    if (cat === 'cast') return '🎭';
+    return '🪑';
+  }
+
+  function renderSidebarPreviewDOM(item) {
+    if (typeof document === 'undefined') return;
+    const activeItem = item || getSelectedScenePrimitive();
+    if (!activeItem) return;
+
+    const previewImg = document.getElementById('sidebar-preview-img');
+    const previewTitle = document.getElementById('sidebar-preview-title');
+    const previewRole = document.getElementById('sidebar-preview-role');
+    const previewMeta = document.getElementById('sidebar-preview-meta');
+    const previewDesc = document.getElementById('sidebar-preview-desc');
+
+    let imgUrl = activeItem.image_2d || '';
+    if (!imgUrl && activeItem._kind === 'cast') {
+      imgUrl = synthesizeForgeRender({
+        id: activeItem.id,
+        kind: 'actor',
+        label: activeItem.name,
+      });
+    }
+
+    if (previewImg) {
+      previewImg.src = imgUrl;
+      previewImg.alt = activeItem.name || activeItem.id;
+    }
+    if (previewTitle) {
+      previewTitle.textContent = activeItem.name || activeItem.id;
+    }
+    if (previewRole) {
+      previewRole.textContent = activeItem.stage_role || activeItem.role || activeItem.category || 'Scene Asset';
+    }
+    if (previewMeta) {
+      const dims = activeItem.dimensions
+        ? `${activeItem.dimensions[0]}m × ${activeItem.dimensions[1]}m × ${activeItem.dimensions[2]}m`
+        : 'Actor';
+      const tris = activeItem.triangle_count ? `${activeItem.triangle_count} tris` : 'NPC Sheet';
+      const posStr = Array.isArray(activeItem.world_pos)
+        ? `📍 (${activeItem.world_pos[0]}, ${activeItem.world_pos[1]})m`
+        : '';
+      previewMeta.innerHTML = `
+        <span class="prim-badge prim-badge-dim" title="Metric Bounding Box">📐 ${escapeHtml(dims)}</span>
+        <span class="prim-badge prim-badge-tris" title="3D STL Mesh Complexity">🔺 ${escapeHtml(tris)}</span>
+        <span class="prim-badge prim-badge-frag" title="Source Lore Fragment">📜 ${escapeHtml(activeItem.fragment_id || '')}</span>
+        ${posStr ? `<span class="prim-badge" style="color:#34d399; border-color:#065f46;">${escapeHtml(posStr)}</span>` : ''}
+      `;
+    }
+    if (previewDesc) {
+      previewDesc.textContent = activeItem.description || '';
+    }
+  }
+
   function renderPrimitivesMenuDOM() {
     if (typeof document === 'undefined') return;
     const sc = getCurrentScene();
     if (!sc) return;
 
-    const modalTitle = document.getElementById('primitives-modal-title');
-    if (modalTitle) modalTitle.innerHTML = `📦 Scene Primitives: <span style="color: #2dd4bf;">${escapeHtml(sc.name)}</span>`;
+    if (!selectedPrimitiveId || !_findItemInScene(sc, selectedPrimitiveId)) {
+      selectedPrimitiveId = sc.primitives?.[0]?.id || null;
+    }
 
-    const modalSub = document.getElementById('primitives-modal-subtitle');
-    if (modalSub) modalSub.textContent = `${sc.act || sc.id} • ${sc.description || ''}`;
+    const actEl = document.getElementById('sidebar-scene-act');
+    if (actEl) actEl.textContent = sc.act || sc.name;
+
+    const descEl = document.getElementById('sidebar-scene-desc');
+    if (descEl) descEl.textContent = sc.description || '';
 
     const badgeCount = document.getElementById('primitives-badge-count');
     if (badgeCount) badgeCount.textContent = sc.primitives.length;
 
-    const allCount = document.getElementById('filter-count-all');
-    if (allCount) allCount.textContent = sc.primitives.length;
+    const treeContainer = document.getElementById('sidebar-asset-tree');
+    const grid = document.getElementById('primitives-grid');
 
-    const filterTabs = (typeof document !== 'undefined' && typeof document.querySelectorAll === 'function')
-      ? document.querySelectorAll('.filter-tab')
-      : [];
-    filterTabs.forEach((tab) => {
-      if (tab.dataset && tab.dataset.filter) {
-        if (tab.dataset.filter === currentPrimitiveFilter) {
-          tab.classList.add('active');
-        } else {
-          tab.classList.remove('active');
-        }
-      }
+    const filteredPrims = (sc.primitives || []).filter(
+      (p) => currentPrimitiveFilter === 'all' || p.category === currentPrimitiveFilter
+    );
+
+    // Group primitives into hierarchical tree folders
+    const groupsMap = new Map();
+    filteredPrims.forEach((p) => {
+      const gName = p.tree_group || 'Scene Assets';
+      if (!groupsMap.has(gName)) groupsMap.set(gName, []);
+      groupsMap.get(gName).push(p);
     });
 
-    const grid = document.getElementById('primitives-grid');
-    if (!grid) return;
+    if (treeContainer) {
+      let treeHtml = '';
+      for (const [groupName, items] of groupsMap.entries()) {
+        const folderIcon = groupName.includes('Relics')
+          ? '📦'
+          : groupName.includes('Architecture')
+            ? '🏛️'
+            : groupName.includes('Instruments')
+              ? '🧭'
+              : '🪑';
+        treeHtml += `
+          <details class="tree-folder" open>
+            <summary class="tree-folder-summary">
+              <span class="tree-folder-title">${folderIcon} ${escapeHtml(groupName)}</span>
+              <span class="tree-folder-count">${items.length}</span>
+            </summary>
+            <div class="tree-folder-children">
+              ${items.map((p) => {
+                const isActive = p.id === selectedPrimitiveId;
+                const icon = _getCategoryIcon(p.category);
+                const dims = p.dimensions ? `${p.dimensions[0]}×${p.dimensions[1]}×${p.dimensions[2]}m` : '';
+                return `
+                  <div class="tree-node-item ${isActive ? 'active' : ''}" data-node-id="${escapeHtml(p.id)}" data-primitive-id="${escapeHtml(p.id)}" data-asset-id="${escapeHtml(p.asset_id || p.id)}" onclick="window.viewer && window.viewer.selectScenePrimitive && window.viewer.selectScenePrimitive('${escapeHtml(p.id)}')">
+                    <span class="tree-node-icon">${icon}</span>
+                    <div class="tree-node-text">
+                      <div class="tree-node-label">${escapeHtml(p.name)}</div>
+                      <div class="tree-node-sub">${escapeHtml(p.id)}.stl · ${escapeHtml(dims)}</div>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </details>
+        `;
+      }
 
-    const prims = sc.primitives.filter((p) => currentPrimitiveFilter === 'all' || p.category === currentPrimitiveFilter);
+      if (currentPrimitiveFilter === 'all' && Array.isArray(sc.cast) && sc.cast.length > 0) {
+        treeHtml += `
+          <details class="tree-folder" open>
+            <summary class="tree-folder-summary">
+              <span class="tree-folder-title">🎭 Cast & Dramatis Personae</span>
+              <span class="tree-folder-count">${sc.cast.length}</span>
+            </summary>
+            <div class="tree-folder-children">
+              ${sc.cast.map((c) => {
+                const isActive = c.id === selectedPrimitiveId;
+                return `
+                  <div class="tree-node-item ${isActive ? 'active' : ''}" data-node-id="${escapeHtml(c.id)}" onclick="window.viewer && window.viewer.selectScenePrimitive && window.viewer.selectScenePrimitive('${escapeHtml(c.id)}')">
+                    <span class="tree-node-icon">🎭</span>
+                    <div class="tree-node-text">
+                      <div class="tree-node-label">${escapeHtml(c.name)}</div>
+                      <div class="tree-node-sub">${escapeHtml(c.role || 'Actor')}</div>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </details>
+        `;
+      }
 
-    if (prims.length === 0) {
-      grid.innerHTML = `<div class="no-primitives-notice">No primitives matching category '${escapeHtml(currentPrimitiveFilter)}' in ${escapeHtml(sc.name)}.</div>`;
-      return;
+      treeContainer.innerHTML = treeHtml || `<div class="no-primitives-notice">No assets in category '${escapeHtml(currentPrimitiveFilter)}'.</div>`;
     }
 
-    grid.innerHTML = prims.map((p) => {
-      const dims = p.dimensions ? `${p.dimensions[0]}m × ${p.dimensions[1]}m × ${p.dimensions[2]}m` : 'Metric';
-      return `
-        <div class="primitive-card" data-primitive-id="${escapeHtml(p.id)}">
-          <div class="prim-img-wrap" onclick="window.viewer && window.viewer.openPrimitiveLightbox && window.viewer.openPrimitiveLightbox('${escapeHtml(p.id)}')">
-            <img src="${p.image_2d}" alt="${escapeHtml(p.name)}" class="prim-img" />
-            <div class="prim-overlay-lens">🔍 Inspect 2D Blueprint</div>
-          </div>
-          <div class="prim-card-body">
-            <div class="prim-card-header">
-              <span class="prim-card-title">${escapeHtml(p.name)}</span>
-              <span class="prim-card-id">${escapeHtml(p.id)}</span>
-            </div>
-            <div class="prim-card-badges">
-              <span class="prim-badge prim-badge-dim">📐 ${dims}</span>
-              <span class="prim-badge prim-badge-tris">🔺 ${p.triangle_count} tris</span>
-              <span class="prim-badge prim-badge-frag">📜 ${escapeHtml(p.fragment_id)}</span>
-            </div>
-            <div class="prim-card-desc">${escapeHtml(p.description)}</div>
-            <div class="prim-card-actions">
-              <button class="prim-act-btn prim-btn-blueprint" onclick="window.viewer && window.viewer.openPrimitiveLightbox && window.viewer.openPrimitiveLightbox('${escapeHtml(p.id)}')">🖼️ 2D Blueprint</button>
-              <button class="prim-act-btn prim-btn-forge" onclick="window.viewer && window.viewer.forgeScenePrimitive && window.viewer.forgeScenePrimitive('${escapeHtml(p.id)}')">✨ Forge (F3K)</button>
-            </div>
-          </div>
-        </div>
-      `;
-    }).join('');
+    // Also populate legacy #primitives-grid if present in DOM
+    if (grid) {
+      grid.innerHTML = filteredPrims.map((p) => {
+        const dims = p.dimensions ? `${p.dimensions[0]}m × ${p.dimensions[1]}m × ${p.dimensions[2]}m` : 'Metric';
+        return `<div class="primitive-card" data-primitive-id="${escapeHtml(p.id)}"><img src="${p.image_2d}" alt="${escapeHtml(p.name)}" class="prim-img" /><span class="prim-card-title">${escapeHtml(p.name)}</span><span class="prim-badge-dim">${dims}</span></div>`;
+      }).join('');
+    }
+
+    renderSidebarPreviewDOM(getSelectedScenePrimitive());
   }
 
   function openPrimitiveLightbox(primitiveId) {
     if (typeof document === 'undefined') return;
+    const targetId = primitiveId || selectedPrimitiveId;
     const sc = getCurrentScene();
-    const prim = sc?.primitives?.find((p) => p.id === primitiveId) ||
-      Object.values(scenesManifest.scenes_by_id || {}).flatMap((s) => s.primitives).find((p) => p.id === primitiveId);
+    const prim = _findItemInScene(sc, targetId) ||
+      Object.values(scenesManifest.scenes_by_id || {}).flatMap((s) => s.primitives).find((p) => p.id === targetId);
 
     if (!prim) return;
 
@@ -2870,22 +3103,23 @@ export function initViewer(config) {
     const detailsEl = document.getElementById('lightbox-details');
     if (!modal || !imgEl || !detailsEl) return;
 
-    imgEl.src = prim.image_2d;
+    const imgUrl = prim.image_2d || synthesizeForgeRender({ id: prim.id, kind: 'actor', label: prim.name });
+    imgEl.src = imgUrl;
     imgEl.alt = prim.name;
 
-    const dims = prim.dimensions ? `${prim.dimensions[0]}m × ${prim.dimensions[1]}m × ${prim.dimensions[2]}m` : 'N/A';
+    const dims = prim.dimensions ? `${prim.dimensions[0]}m × ${prim.dimensions[1]}m × ${prim.dimensions[2]}m` : 'Character Sheet';
     detailsEl.innerHTML = `
       <div class="lightbox-title">${escapeHtml(prim.name)}</div>
       <div class="lightbox-meta">
         <span class="prim-badge prim-badge-dim">📐 Dimensions: ${dims}</span>
-        <span class="prim-badge prim-badge-tris">🔺 Triangles: ${prim.triangle_count}</span>
-        <span class="prim-badge prim-badge-frag">📜 Fragment: ${escapeHtml(prim.fragment_id)}</span>
-        <span class="prim-badge" style="color: #a855f7; border-color: #7e22ce;">🏷️ Category: ${escapeHtml(prim.category)}</span>
+        <span class="prim-badge prim-badge-tris">🔺 Triangles: ${prim.triangle_count || 'N/A'}</span>
+        <span class="prim-badge prim-badge-frag">📜 Fragment: ${escapeHtml(prim.fragment_id || '')}</span>
+        <span class="prim-badge" style="color: #a855f7; border-color: #7e22ce;">🏷️ Role: ${escapeHtml(prim.stage_role || prim.role || prim.category || '')}</span>
       </div>
       <div class="lightbox-desc">${escapeHtml(prim.description)}</div>
       <div class="lightbox-prompt-box">
         <div class="prompt-box-label">BLACK FOREST LABS FLUX 3 KLEIN DIFFUSION PROMPT SPECIFICATION:</div>
-        <div class="prompt-box-content">orthographic top-down 2.5D isometric game asset cutout, ${escapeHtml(prim.name)}, ${escapeHtml(prim.description)}, source fragment: ${escapeHtml(prim.fragment_id)}, isolated on neutral solid grey background (#707070), subtle directional studio lighting, soft ground contact occlusion shadow, crisp 16-bit painterly texture, highly detailed tactile physical prop, Black Forest Labs Flux 3 Klein render, 1024x1024</div>
+        <div class="prompt-box-content">orthographic top-down 2.5D isometric game asset cutout, ${escapeHtml(prim.name)}, ${escapeHtml(prim.description)}, source fragment: ${escapeHtml(prim.fragment_id || '')}, isolated on neutral solid grey background (#707070), subtle directional studio lighting, soft ground contact occlusion shadow, crisp 16-bit painterly texture, highly detailed tactile physical prop, Black Forest Labs Flux 3 Klein render, 1024x1024</div>
       </div>
       <div class="lightbox-actions">
         <button class="header-btn" onclick="window.viewer && window.viewer.forgeScenePrimitive && window.viewer.forgeScenePrimitive('${escapeHtml(prim.id)}')">✨ Dispatch to Asset Forge (Flux 3 Klein)</button>
@@ -2904,27 +3138,27 @@ export function initViewer(config) {
   }
 
   function forgeScenePrimitive(primitiveId) {
+    const targetId = primitiveId || selectedPrimitiveId;
     closePrimitiveLightbox();
-    closePrimitivesMenu();
-    if (physicalPropsMap.has(primitiveId)) {
-      selectAsset(primitiveId);
-      renderAssetInForge(primitiveId);
-    } else {
-      const sc = getCurrentScene();
-      const prim = sc?.primitives?.find((p) => p.id === primitiveId) ||
-        Object.values(scenesManifest.scenes_by_id || {}).flatMap((s) => s.primitives).find((p) => p.id === primitiveId);
-      if (prim) {
-        selectAsset({
-          id: prim.id,
-          label: prim.name,
-          fragment_id: prim.fragment_id,
-          salience: 'moderate',
-          lore_snippet: prim.description,
-          diffusion_prompt: `orthographic top-down 2.5D isometric game asset cutout, ${prim.name}, ${prim.description}, source fragment: ${prim.fragment_id}, isolated on neutral solid grey background (#707070), subtle directional studio lighting, soft ground contact occlusion shadow, crisp 16-bit painterly texture, highly detailed tactile physical prop, Black Forest Labs Flux 3 Klein render, 1024x1024`,
-        });
-        renderAssetInForge(prim.id);
-      }
+    const sc = getCurrentScene();
+    const prim = _findItemInScene(sc, targetId) ||
+      Object.values(scenesManifest.scenes_by_id || {}).flatMap((s) => s.primitives).find((p) => p.id === targetId);
+    const assetKey = prim?.asset_id || targetId;
+    if (physicalPropsMap.has(assetKey)) {
+      selectAsset(assetKey);
+      return renderAssetInForge(assetKey);
+    } else if (prim) {
+      selectAsset({
+        id: prim.id,
+        label: prim.name,
+        fragment_id: prim.fragment_id,
+        salience: 'major',
+        lore_snippet: prim.description,
+        diffusion_prompt: `orthographic top-down 2.5D isometric game asset cutout, ${prim.name}, ${prim.description}, source fragment: ${prim.fragment_id}, isolated on neutral solid grey background (#707070), subtle directional studio lighting, soft ground contact occlusion shadow, crisp 16-bit painterly texture, highly detailed tactile physical prop, Black Forest Labs Flux 3 Klein render, 1024x1024`,
+      });
+      return renderAssetInForge(prim.id);
     }
+    return null;
   }
 
   function handleClick(pxX, pxY, wWidth = (world ? world.clientWidth || 600 : 600), wHeight = (world ? world.clientHeight || 700 : 700)) {
@@ -3812,6 +4046,10 @@ export function initViewer(config) {
     getCurrentScene,
     getScenePrimitives,
     selectScene,
+    selectScenePrimitive,
+    getSelectedScenePrimitive,
+    focusSceneAssetOnMap,
+    renderSidebarPreviewDOM,
     togglePrimitivesMenu,
     openPrimitivesMenu,
     closePrimitivesMenu,
@@ -3893,6 +4131,10 @@ export function initViewer(config) {
     globalRoot.getCurrentScene = getCurrentScene;
     globalRoot.getScenePrimitives = getScenePrimitives;
     globalRoot.selectScene = selectScene;
+    globalRoot.selectScenePrimitive = selectScenePrimitive;
+    globalRoot.getSelectedScenePrimitive = getSelectedScenePrimitive;
+    globalRoot.focusSceneAssetOnMap = focusSceneAssetOnMap;
+    globalRoot.renderSidebarPreviewDOM = renderSidebarPreviewDOM;
     globalRoot.togglePrimitivesMenu = togglePrimitivesMenu;
     globalRoot.openPrimitivesMenu = openPrimitivesMenu;
     globalRoot.closePrimitivesMenu = closePrimitivesMenu;

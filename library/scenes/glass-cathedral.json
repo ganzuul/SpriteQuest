@@ -6,55 +6,93 @@
   "world_id": "wizard-tower",
   "category": "interior_floorplan",
   "floorplan_ref": "library/floorplans/glass-cathedral.json",
-  "description": "Monumental airborne cathedral constructed from solar-melted asteroid glass. Soaring fluted columns flank the grand nave leading to the equatorial solar focus dais.",
-  "primitives": [
+  "description": "Act IV climax staging ground: Monumental airborne cathedral spun from solar-melted asteroid glass. The party must align or shatter the Solarium Mirrors before the Stasis Coffin reaches the Solar Focus.",
+  "cast": [
     {
-      "id": "glass-column-fluted",
-      "name": "Fluted Asteroid-Glass Cathedral Column",
-      "fragment_id": "wizard-tower/glass-cathedral",
-      "category": "architecture",
-      "dimensions": [3.75, 3.75, 45.0],
-      "triangle_count": 160,
-      "stl_path": "library/stl_primitives/glass-column-fluted.stl",
-      "description": "Soaring 16-fluted cylindrical column of spun silica and asteroid glass providing cover against the sweeping beam of the Solar Focus."
+      "id": "solar-celebrant",
+      "name": "The Solar Celebrant",
+      "role": "Arch-Optician of the High Chancel",
+      "fragment_id": "wizard-tower/first-cast-beats",
+      "world_pos": [60.0, 30.0],
+      "description": "Conducts the First Cast at the equatorial gimbal ring, seeking to vitrify or awaken the sleeper inside the Stasis Coffin."
     },
     {
+      "id": "pell",
+      "name": "Pell the Twice-Tested",
+      "role": "Claimant at the Chancel Dais",
+      "fragment_id": "scaffolded-kingdom/understudy",
+      "world_pos": [60.0, 50.0],
+      "description": "Must choose between delivering the coffin to the Solar Focus, shattering the containment, or locking it by Canon Warrant."
+    }
+  ],
+  "primitives": [
+    {
       "id": "solar-focus-lens",
+      "asset_id": "solar-focus-lens",
       "name": "High Chancel Solar Focus Lens & Gimbal Dais",
+      "tree_group": "Instruments & Monuments",
+      "stage_role": "Act IV Climax Altar: Concentrates solar light onto the Chancel Cradle",
       "fragment_id": "wizard-tower/first-cast-beats",
       "category": "instruments",
       "dimensions": [6.0, 6.0, 5.5],
       "triangle_count": 178,
+      "world_pos": [60.0, 28.0],
       "stl_path": "library/stl_primitives/solar-focus-lens.stl",
       "description": "Three-tiered glass dais supporting an equatorial gimbal ring and biconvex astronomical lens where the Cast occurs."
     },
     {
       "id": "solarium-mirror",
+      "asset_id": "solarium-mirror",
       "name": "Solarium Articulated Alignment Mirror",
+      "tree_group": "Instruments & Monuments",
+      "stage_role": "Interactive Optical Puzzle: Rotates to redirect or diffuse the solar beam",
       "fragment_id": "wizard-tower/three-registers",
       "category": "instruments",
       "dimensions": [3.0, 2.121, 3.461],
       "triangle_count": 76,
+      "world_pos": [48.0, 36.0],
       "stl_path": "library/stl_primitives/solarium-mirror.stl",
       "description": "Concave parabolic reflector dish set in a bronze trunnion fork atop an octagonal pedestal with handwheel orientation."
     },
     {
       "id": "glass-stasis-coffin",
+      "asset_id": "glass_stasis_coffin",
       "name": "Hexagonal Borosilicate Stasis Coffin",
+      "tree_group": "Quest Relics & Cargo",
+      "stage_role": "The Delivered Consignment on the Focal Cradle",
       "fragment_id": "space-vampires/glass-stasis-coffin",
       "category": "vessels",
-      "dimensions": [0.85, 2.2, 0.76],
+      "dimensions": [0.74, 2.2, 0.76],
       "triangle_count": 30,
+      "world_pos": [44.0, 84.0],
       "stl_path": "library/stl_primitives/glass-stasis-coffin.stl",
       "description": "The smuggled cryogenic coffin placed upon the chancel focal cradle under the burning lens."
     },
     {
+      "id": "glass-column-fluted",
+      "asset_id": "glass-column-fluted",
+      "name": "Fluted Asteroid-Glass Cathedral Column",
+      "tree_group": "Architecture & Terrain",
+      "stage_role": "Nave Cover Pillar: Refracts and blocks sweeping solar glare",
+      "fragment_id": "wizard-tower/glass-cathedral",
+      "category": "architecture",
+      "dimensions": [3.75, 3.75, 45.0],
+      "triangle_count": 160,
+      "world_pos": [52.0, 44.0],
+      "stl_path": "library/stl_primitives/glass-column-fluted.stl",
+      "description": "Soaring 16-fluted cylindrical column of spun silica and asteroid glass providing cover against the sweeping beam of the Solar Focus."
+    },
+    {
       "id": "common-bookcase",
+      "asset_id": "ancient_grimoire_lectern",
       "name": "Airborne Spun-Silica Archive Bookcase",
+      "tree_group": "Stations & Furnishings",
+      "stage_role": "Chancel Ephemeris Shelf: Holds the Three Registers & Solar Charts",
       "fragment_id": "wizard-tower/the-shelf",
       "category": "furniture",
       "dimensions": [1.336, 0.739, 1.832],
       "triangle_count": 500,
+      "world_pos": [68.0, 73.0],
       "stl_path": "library/stl_primitives/common-bookcase.stl",
       "description": "Curved glass shelves containing stellar ephemerides, astral charts, and grimoire folios."
     }
