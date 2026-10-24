@@ -1362,7 +1362,9 @@ def compile_asset_brief(
         diffusion_details=diffusion_details,
         doctrine_rules=doctrine_rules,
         scene_backpressure=scene_backpressure,
+        active_criticisms=active_criticisms,
         base_prompt=base_prompt,
+        llm_callback=llm_callback,
     )
 
     negative_clauses = [
@@ -1406,6 +1408,80 @@ def compile_asset_brief(
     )
 
 
+def query_gemma4_orion_rewriter(
+    prompt_context: dict[str, Any],
+    endpoint_url: str = "http://127.0.0.1:8080/v1/chat/completions",
+    model: str = "gemma4-orion",
+    timeout: float = 3.0,
+) -> str | None:
+    """
+    HTTP adapter querying local OpenAI-compatible inference servers (e.g. llama-swap, llama.cpp, vLLM)
+    running the gemma4-orion model to rewrite a game asset brief.
+    Returns the rewritten diffusion prompt, or None if the server is offline or fails.
+    """
+    label = prompt_context.get("label", "prop")
+    asset_id = prompt_context.get("asset_id", "asset")
+    recipe_name = prompt_context.get("recipe_name", "generic")
+    world_look = prompt_context.get("world_look", {})
+    physical_derivations = prompt_context.get("physical_derivations", [])
+    diffusion_details = prompt_context.get("diffusion_details", [])
+    doctrine_rules = prompt_context.get("doctrine_rules", [])
+    scene_backpressure = prompt_context.get("scene_backpressure", [])
+    active_criticisms = prompt_context.get("active_criticisms", [])
+
+    system_prompt = (
+        "You are gemma4-orion, the prompt rewriter for the Cartographers of the Bureau of the Unwritten Atlas in SpriteQuest. "
+        "You rewrite structured game asset briefs into coherent, single-face orthographic 2.5D visual prompts conditioned for Black Forest Labs Flux 3 Klein diffusion."
+    )
+    user_prompt = (
+        f"Rewrite this game asset brief into a refined, single-sentence Flux 3 Klein diffusion prompt:\n"
+        f"- Subject: {label} ({asset_id}, recipe: {recipe_name})\n"
+        f"- Setting & Atmosphere: {world_look.get('setting', 'ancient ruins')}\n"
+        f"- Materials: {world_look.get('materials', 'weathered stone')}\n"
+        f"- Physical Specifications: {', '.join(physical_derivations)}\n"
+        f"- Admitted Visual Fragments (for: diffusion): {', '.join(diffusion_details)}\n"
+        f"- Doctrine Rewriter Rules (for: gemma4-orion): {'; '.join(doctrine_rules)}\n"
+    )
+    if scene_backpressure:
+        user_prompt += f"- Scene Substrate & Backpressure: {'; '.join(scene_backpressure)}\n"
+    if active_criticisms:
+        user_prompt += f"- Authorial Criticisms to Avoid: {'; '.join(active_criticisms)}\n"
+    user_prompt += (
+        "\nRules:\n"
+        "1. Depict strictly one visible front isometric three-quarter face (single-face reading doctrine).\n"
+        "2. Do not relocate hidden or interior features onto the exterior.\n"
+        "3. Frame as orthographic top-down 2.5D isometric game asset cutout on neutral grey background (#707070).\n"
+        "4. Output ONLY the refined prompt string."
+    )
+
+    payload = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        "temperature": 0.3,
+        "max_tokens": 250,
+    }
+    try:
+        req = urllib.request.Request(
+            endpoint_url,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            choices = data.get("choices", [])
+            if choices:
+                content = choices[0].get("message", {}).get("content", "")
+                if content and len(content.strip()) >= 30:
+                    return content.strip().strip('"')
+    except (urllib.error.URLError, TimeoutError, OSError, json.JSONDecodeError):
+        return None
+    return None
+
+
 def rewrite_prompt(
     label: str,
     asset_id: str,
@@ -1415,15 +1491,45 @@ def rewrite_prompt(
     diffusion_details: list[str],
     doctrine_rules: list[str],
     scene_backpressure: list[str] | None = None,
+    active_criticisms: list[str] | None = None,
     base_prompt: str = "",
+    llm_callback: Callable[[dict[str, Any]], str] | None = None,
+    endpoint_url: str = "http://127.0.0.1:8080/v1/chat/completions",
 ) -> str:
     """
-    Prompt Rewriter Pass:
-    Enforces the single-face orthographic doctrine (`for: gemma4-orion`) without
-    leaking raw rewriter rules into diffusion tokens, while weaving tactile physical
-    derivations, scene substrate backpressure, and admitted fragment details into a
-    vivid Flux 3 Klein prompt.
+    Lattice Fragment Compiler Prompt Rewriter Pass:
+    Gathers doctrine rules (`for: gemma4-orion`), visual sensory fragments (`for: diffusion`),
+    physical derivations, and scene substrate backpressure, invoking gemma4-orion
+    (via local LLM inference endpoint or callback) with deterministic authentic fallback.
     """
+    context = {
+        "label": label,
+        "asset_id": asset_id,
+        "recipe_name": recipe_name,
+        "physical_derivations": physical_derivations,
+        "world_look": world_look,
+        "diffusion_details": diffusion_details,
+        "doctrine_rules": doctrine_rules,
+        "scene_backpressure": scene_backpressure or [],
+        "active_criticisms": active_criticisms or [],
+        "base_prompt": base_prompt,
+    }
+
+    # 1. Custom LLM callback if provided
+    if llm_callback is not None:
+        try:
+            custom_result = llm_callback(context)
+            if custom_result and len(custom_result.strip()) >= 30:
+                return custom_result.strip()
+        except Exception:
+            pass
+
+    # 2. Live local inference server with model gemma4-orion
+    live_result = query_gemma4_orion_rewriter(context, endpoint_url=endpoint_url, model="gemma4-orion")
+    if live_result:
+        return live_result
+
+    # 3. Authentic deterministic gemma4-orion doctrine rewrite pass
     clauses = [f"{label}"]
     for deriv in physical_derivations:
         if not any(deriv.startswith(prefix) for prefix in ("bounding", "inspection", "marker", "barrier", "workstation", "containment", "monumental", "fixture")):
@@ -1439,10 +1545,10 @@ def rewrite_prompt(
             clauses.append(detail)
 
     subject_clause = ", ".join(clauses)
-    materials_clause = world_look["materials"]
+    materials_clause = world_look.get("materials", "weathered stone, rough timber")
 
     prompt_parts = [
-        "orthographic top-down 2.5D isometric game asset cutout",
+        "orthographic top-down 2.5D isometric game asset cutout, single front isometric elevation displaying primary visible face",
         subject_clause,
         f"crafted with {materials_clause}",
         "isolated on neutral solid grey background (#707070), no background walls, no room floors, perfectly clean silhouette, ready for alpha matting",

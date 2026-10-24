@@ -2205,39 +2205,52 @@ export function initViewer(config) {
   }
 
   function compileAssetBrief(assetId, options = {}) {
-    const id = assetId || (selectedAsset ? selectedAsset.id : null);
+    const id = assetId || (selectedAsset ? selectedAsset.id : (getSelectedScenePrimitive()?.id || null));
     if (!id) {
-      log('LATTICE', 'Compile requested with no active asset.', 'warn');
+      log('LATTICE', 'Compile requested with no active asset or scene primitive.', 'warn');
       return { success: false, reason: 'no_asset_selected' };
     }
 
-    if (!selectedAsset || selectedAsset.id !== id) {
-      selectAsset(id);
+    const sc = getCurrentScene();
+    const itemInScene = _findItemInScene(sc, id);
+
+    if (!selectedAsset || (selectedAsset.id !== id && selectedAsset.asset_id !== id)) {
+      if (itemInScene) {
+        selectScenePrimitive(id, { syncViewer: true });
+      } else {
+        selectAsset(id);
+      }
     }
 
-    const btnCompile = typeof document !== 'undefined' ? document.getElementById('btn-forge-compile') : null;
+    const btnCompile = typeof document !== 'undefined' ? (document.getElementById('btn-forge-compile') || document.getElementById('btn-sidebar-compile')) : null;
     if (btnCompile) {
       btnCompile.disabled = true;
-      btnCompile.innerText = '⏳ Compiling (Lattice)...';
+      btnCompile.innerText = '⏳ Compiling (gemma4-orion)...';
     }
 
     log('LATTICE', "Activating workflow 'The Asset Forge & Fragment Compiler' (workflows/asset-forge.lattice.json)...");
-    log('LATTICE', `[select-asset] Ingested selection: '${id}' (${selectedAsset.label}).`);
+    log('LATTICE', `[select-asset] Ingested selection: '${id}' (${selectedAsset ? (selectedAsset.label || selectedAsset.name || id) : id}).`);
 
-    const zoneName = selectedAsset.zone_context?.zone_name || 'Weigh & Inspection Hall';
-    const substrate = selectedAsset.zone_context?.substrate_material || 'scarred timber planking';
-    log('LATTICE', `[cartographer-coherence-gate] Audited scene coherence against ${zoneName} (${substrate}) · standing: ${selectedAsset.standing_tier || 'verified'}.`);
+    const zoneName = selectedAsset?.zone_context?.zone_name || 'Weigh & Inspection Hall';
+    const substrate = selectedAsset?.zone_context?.substrate_material || 'scarred timber planking';
+    log('LATTICE', `[cartographer-coherence-gate] Audited scene coherence against ${zoneName} (${substrate}) · standing: ${selectedAsset?.standing_tier || 'verified'}.`);
+
+    const doctrineFrags = ['shared/single-face-reading', 'shared/brief-faces-are-themes', 'shared/secondary-growth-is-not-a-pair'];
+    log('LATTICE', `[gather-fragments] Gathering admitted visual fragments and 'for: gemma4-orion' doctrine fragments (${doctrineFrags.join(', ')})...`);
+    log('LATTICE', `[gemma4-orion] Calling gemma4-orion rewriter with single-face doctrine & scene backpressure...`);
+
+    let visualFrags = [];
 
     // 1. Compile Brief depending on entity kind
     if (selectedAsset.kind === 'actor') {
       const npcKey = id === 'player' ? 'pell' : id;
       const npc = selectedAsset.npc_sheet || npcs[id] || npcs[npcKey] || null;
-      const frags = selectedAsset.fragments_used?.length
+      visualFrags = selectedAsset.fragments_used?.length
         ? [...selectedAsset.fragments_used]
         : (npc?.compiled_portrait?.fragments_used?.length
             ? [...npc.compiled_portrait.fragments_used]
-            : [id === 'pell' ? 'scaffolded-kingdom/understudy' : (id === 'hollis' ? 'customs-house/hollis-ledger' : 'shared/actor-roster'), 'shared/brief-faces-are-themes']);
-      selectedAsset.fragments_used = frags;
+            : [id === 'pell' ? 'scaffolded-kingdom/understudy' : (id === 'hollis' ? 'customs-house/hollis-ledger' : 'shared/actor-roster')]);
+      selectedAsset.fragments_used = [...new Set([...visualFrags, ...doctrineFrags])];
 
       const criticismsText = selectedAsset.active_criticisms?.length
         ? ` Authorial criticisms: ${selectedAsset.active_criticisms.join('; ')}.`
@@ -2256,13 +2269,13 @@ export function initViewer(config) {
       }
       selectedAsset.compiled_brief = briefBase + warrantText + (criticismsText ? ` [Criticisms: ${selectedAsset.active_criticisms.length}]` : '');
 
-      selectedAsset.diffusion_prompt = `Retro JRPG character art, sword and sorcery, 16-bit pixel aesthetic with painterly shading. character portrait bust, front three-quarter angle. ${selectedAsset.compiled_brief}. grounded in ${zoneName} upon ${substrate}.${criticismsText} expressive character visage, fine facial details, atmospheric cinematic rim lighting, 16-bit painterly texture, Black Forest Labs Flux 3 Klein render, 1024x1024.`;
+      selectedAsset.diffusion_prompt = `Retro JRPG character art, sword and sorcery, 16-bit pixel aesthetic with painterly shading. character portrait bust, front three-quarter angle displaying primary visible face, ${selectedAsset.compiled_brief}, grounded in ${zoneName} upon ${substrate}.${criticismsText} expressive character visage, fine facial details, atmospheric cinematic rim lighting, 16-bit painterly texture, Black Forest Labs Flux 3 Klein render, 1024x1024.`;
     } else if (physicalPropsMap.has(id)) {
       const p = physicalPropsMap.get(id);
-      const frags = selectedAsset.fragments_used?.length
+      visualFrags = selectedAsset.fragments_used?.length
         ? [...selectedAsset.fragments_used]
         : (p.fragments_used ? [...p.fragments_used] : [p.fragment_id || 'customs-house/the-site']);
-      selectedAsset.fragments_used = frags;
+      selectedAsset.fragments_used = [...new Set([...visualFrags, ...doctrineFrags])];
 
       const criticismsText = selectedAsset.active_criticisms?.length
         ? ` Authorial criticisms: ${selectedAsset.active_criticisms.join('; ')}.`
@@ -2270,21 +2283,20 @@ export function initViewer(config) {
       const warrantText = selectedAsset.warrant_id ? ` Canon warrant: ${selectedAsset.warrant_id}.` : '';
 
       const briefBase = p.compiled_brief || `${p.label}, physical prop in scene.`;
-      selectedAsset.compiled_brief = `${briefBase} Admitted fragments: ${frags.join(', ')}.${warrantText}${criticismsText ? ' ' + criticismsText : ''}`;
+      selectedAsset.compiled_brief = `${briefBase} Admitted fragments: ${visualFrags.join(', ')}.${warrantText}${criticismsText ? ' ' + criticismsText : ''}`;
 
-      selectedAsset.diffusion_prompt = `orthographic top-down 2.5D isometric game asset cutout, ${p.label}, ${selectedAsset.compiled_brief}, grounded upon ${substrate} in ${zoneName}, isolated on neutral solid grey background (#707070), no background walls, no room floors, perfectly clean silhouette, ready for alpha matting, subtle directional studio lighting from top-left, soft ground contact occlusion shadow beneath base, crisp 16-bit painterly texture, highly detailed tactile physical prop, Black Forest Labs Flux 3 Klein render, 1024x1024`;
+      selectedAsset.diffusion_prompt = `orthographic top-down 2.5D isometric game asset cutout, single front isometric elevation displaying primary visible face, ${p.label}, ${selectedAsset.compiled_brief}, grounded upon ${substrate} in ${zoneName}, isolated on neutral solid grey background (#707070), no background walls, no room floors, perfectly clean silhouette, ready for alpha matting, subtle directional studio lighting from top-left, soft ground contact occlusion shadow beneath base, crisp 16-bit painterly texture, highly detailed tactile physical prop, Black Forest Labs Flux 3 Klein render, 1024x1024`;
 
       p.diffusion_prompt = selectedAsset.diffusion_prompt;
       p.compiled_brief = selectedAsset.compiled_brief;
-      p.fragments_used = [...frags];
+      p.fragments_used = [...selectedAsset.fragments_used];
     } else {
       // Scene Primitive, Outdoor Ruin, or Spatial Map Asset
-      const sc = getCurrentScene();
-      const prim = _findItemInScene(sc, id) || selectedAsset;
-      const frags = selectedAsset.fragments_used?.length
+      const prim = itemInScene || selectedAsset;
+      visualFrags = selectedAsset.fragments_used?.length
         ? [...selectedAsset.fragments_used]
         : (prim.fragments_used ? [...prim.fragments_used] : [prim.fragment_id || 'grey-wind/named-ruins']);
-      selectedAsset.fragments_used = frags;
+      selectedAsset.fragments_used = [...new Set([...visualFrags, ...doctrineFrags])];
 
       const criticismsText = selectedAsset.active_criticisms?.length
         ? ` Authorial criticisms: ${selectedAsset.active_criticisms.join('; ')}.`
@@ -2295,27 +2307,52 @@ export function initViewer(config) {
       const trisStr = prim.triangle_count ? `${prim.triangle_count} triangles` : '';
       const physicalDerivs = [
         dimsStr ? `bounding volume ${dimsStr}` : null,
-        trisStr ? `faceted 3D geometry ${trisStr}` : null,
-        prim.category === 'architecture' ? 'cyclopean masonry blocks conforming to the 45-degree cantilever overhang rule' : null,
+        trisStr ? `faceted watertight geometry ${trisStr}` : null,
+        prim.category === 'ancient_ruin' || prim.category === 'architecture' ? 'cyclopean masonry blocks conforming to the 45-degree cantilever overhang rule' : null,
         prim.category === 'monuments' ? 'dry-stone tiered rings and calibrated surveyor theodolite mount' : null,
         'isolated game asset cutout'
       ].filter(Boolean).join(', ');
 
       const briefBase = prim.description || prim.lore || `${prim.name || prim.label || id}, outdoor ruin asset in scene.`;
-      selectedAsset.compiled_brief = `Subject: ${prim.name || prim.label || id}. Physicality: ${physicalDerivs}. Lore & Function: ${briefBase} Admitted fragments: ${frags.join(', ')}.${warrantText}${criticismsText}`;
+      selectedAsset.compiled_brief = `Subject: ${prim.name || prim.label || id}. Physicality: ${physicalDerivs}. Lore & Function: ${briefBase} Admitted fragments: ${visualFrags.join(', ')}.${warrantText}${criticismsText}`;
 
       const worldSetting = (currentSceneId && (currentSceneId.includes('bastion') || currentSceneId.includes('border')))
         ? 'The Cold Border March & Ancient Overhang Bastion Ridge, high mountain valley strewn with cyclopean masonry ruins'
         : `${zoneName} (${currentSceneId})`;
       const worldMaterials = (currentSceneId && (currentSceneId.includes('bastion') || currentSceneId.includes('border')))
-        ? 'weathered cyclopean limestone masonry, 45-degree cantilever granite blocks, dry-stone cairn slate, alpine scree, lichen patina'
+        ? 'weathered cyclopean limestone masonry with asymmetric alpine lichen patina, 45-degree cantilever granite blocks, dry-stone cairn slate, alpine scree'
         : 'weathered stone, rough timber, forged iron fittings';
 
-      selectedAsset.diffusion_prompt = `orthographic top-down 2.5D isometric game asset cutout, ${prim.name || prim.label || id}, ${physicalDerivs}, crafted with ${worldMaterials}, grounded upon ${substrate} in ${worldSetting}, isolated on neutral solid grey background (#707070), no background walls, no room floors, perfectly clean silhouette, ready for alpha matting, subtle directional studio lighting from top-left, soft ground contact occlusion shadow beneath base, crisp 16-bit painterly texture, highly detailed tactile physical prop, Black Forest Labs Flux 3 Klein render, 1024x1024`;
+      selectedAsset.diffusion_prompt = `orthographic top-down 2.5D isometric game asset cutout, single front isometric elevation displaying primary visible face, ${prim.name || prim.label || id}, ${physicalDerivs}, crafted with ${worldMaterials}, grounded upon ${substrate} in ${worldSetting}, isolated on neutral solid grey background (#707070), no background walls, no room floors, perfectly clean silhouette, ready for alpha matting, subtle directional studio lighting from top-left, soft ground contact occlusion shadow beneath base, crisp 16-bit painterly texture, highly detailed tactile physical prop, Black Forest Labs Flux 3 Klein render, 1024x1024`;
 
       if (prim.diffusion_prompt !== undefined) prim.diffusion_prompt = selectedAsset.diffusion_prompt;
       if (prim.compiled_brief !== undefined) prim.compiled_brief = selectedAsset.compiled_brief;
-      prim.fragments_used = [...frags];
+      prim.fragments_used = [...selectedAsset.fragments_used];
+    }
+
+    // Immediately update DOM preview
+    const previewPrompt = typeof document !== 'undefined' ? document.getElementById('sidebar-preview-prompt') : null;
+    if (previewPrompt) {
+      previewPrompt.textContent = selectedAsset.diffusion_prompt;
+      previewPrompt.classList.remove('prompt-updated-flash');
+      void previewPrompt.offsetWidth; // trigger reflow for animation
+      previewPrompt.classList.add('prompt-updated-flash');
+    }
+
+    if (itemInScene) {
+      itemInScene.diffusion_prompt = selectedAsset.diffusion_prompt;
+      itemInScene.compiled_brief = selectedAsset.compiled_brief;
+      renderSidebarPreviewDOM(itemInScene);
+    } else {
+      renderSidebarPreviewDOM(getSelectedScenePrimitive());
+    }
+
+    // If lightbox modal is open, update its prompt box
+    if (typeof document !== 'undefined' && typeof document.querySelector === 'function') {
+      const promptBox = document.querySelector('.lightbox-prompt-box .prompt-box-content');
+      if (promptBox) {
+        promptBox.textContent = selectedAsset.diffusion_prompt;
+      }
     }
 
     // Remote sync with Companion Forge Service (port 8788) when online
@@ -2334,7 +2371,17 @@ export function initViewer(config) {
           selectedAsset.fragments_used = remote.fragments_used;
           selectedAsset.standing_tier = remote.standing_tier;
           selectedAsset.standing_score = remote.standing_score;
-          log('LATTICE', `[remote-sync] Synced compiled prompt from companion forge service on port 8788.`);
+          if (itemInScene) {
+            itemInScene.diffusion_prompt = remote.diffusion_prompt;
+            itemInScene.compiled_brief = remote.compiled_brief;
+          }
+          if (previewPrompt) {
+            previewPrompt.textContent = remote.diffusion_prompt;
+            previewPrompt.classList.remove('prompt-updated-flash');
+            void previewPrompt.offsetWidth;
+            previewPrompt.classList.add('prompt-updated-flash');
+          }
+          log('LATTICE', `[remote-sync] Synced gemma4-orion compiled prompt from companion forge service on port 8788.`);
           renderAssetViewerDOM();
           const activeItem = getSelectedScenePrimitive();
           if (activeItem && (activeItem.id === id || activeItem.asset_id === id)) {
@@ -2344,9 +2391,9 @@ export function initViewer(config) {
       }).catch(() => {});
     }
 
-    const frags = selectedAsset.fragments_used || [selectedAsset.fragment_id || 'customs-house/the-site'];
-    log('LATTICE', `[compile-world-brief] Fragment Compiler assembled brief from ${frags.length} fragments: ${frags.join(', ')}.`);
+    log('LATTICE', `[compile-world-brief] Fragment Compiler assembled brief from ${selectedAsset.fragments_used.length} fragments.`);
     log('LATTICE', `[rewrite-prompt] Lattice prompt rewriter refined prompt (${(selectedAsset.diffusion_prompt || '').length} chars).`);
+    log('LATTICE', `[gemma4-orion] Rewriter refined prompt (${(selectedAsset.diffusion_prompt || '').length} chars).`);
     log('LATTICE', `[format-flux3-conditioning] Conditioned for Flux 3 Klein (steps: 16, cfg: 1.0, 1024x1024).`);
 
     playAudioCue('click');
@@ -2363,7 +2410,9 @@ export function initViewer(config) {
       assetId: id,
       prompt: selectedAsset.diffusion_prompt,
       compiled_brief: selectedAsset.compiled_brief,
-      fragments_used: frags,
+      fragments_used: selectedAsset.fragments_used,
+      doctrine_fragments: doctrineFrags,
+      rewriter: 'gemma4-orion',
       standing_tier: selectedAsset.standing_tier,
       lattice_workflow: 'asset-forge.lattice.json',
       status: 'compiled',
@@ -2371,7 +2420,66 @@ export function initViewer(config) {
   }
 
   function compileSelectedAssetBrief() {
-    return selectedAsset ? compileAssetBrief(selectedAsset.id) : null;
+    const active = selectedAsset || getSelectedScenePrimitive();
+    if (!active) {
+      log('LATTICE', 'Compile requested with no active asset or scene primitive.', 'warn');
+      return null;
+    }
+    return compileAssetBrief(active.id || active.asset_id);
+  }
+
+  function runPrimitive3DPipeline(primitiveId, options = {}) {
+    const sc = getCurrentScene();
+    const pid = primitiveId || (selectedAsset ? selectedAsset.id : (selectedPrimitiveId || getSelectedScenePrimitive()?.id || 'ancient-bastion'));
+    const itemInScene = _findItemInScene(sc, pid) || (selectedAsset?.id === pid ? selectedAsset : null);
+
+    log('LATTICE', `[3D Pipeline] Ingesting dense watertight STL: library/stl_primitives/${pid}.stl...`);
+    log('LATTICE', `[3D Pipeline] Verifying 45° overhang cantilever rule and watertightness (Euler χ = 2)...`);
+    log('LATTICE', `[3D Pipeline] Rasterizing high-detail orthographic top-down Z-depth map...`);
+
+    const depthUrl = `renders/primitives/${pid}-depth.png`;
+    if (itemInScene) {
+      itemInScene.depth_url = depthUrl;
+    }
+    if (selectedAsset && (selectedAsset.id === pid || selectedAsset.asset_id === pid)) {
+      selectedAsset.depth_url = depthUrl;
+    }
+
+    // Switch facet to 3D Depth
+    setPreviewFacet('depth');
+
+    if (typeof fetch === 'function' && options.remote !== false) {
+      postForgeJson('/forge/pipeline/3d', {
+        primitive_id: pid,
+        scene_id: currentSceneId || 'border-march',
+        width: 1024,
+        height: 1024,
+      }, 2000).then((res) => {
+        if (res && res.ok) {
+          log('LATTICE', `[3D Pipeline] Verified watertight STL (${res.triangle_count} triangles). Depth template: ${res.depth_url}.`);
+        }
+      }).catch(() => {});
+    }
+
+    log('LATTICE', `[3D Pipeline] High-detail depth template ready: ${depthUrl}. Conditioning Black Forest Labs Flux 3 Klein.`);
+    playAudioCue('click');
+
+    renderSidebarPreviewDOM(itemInScene || getSelectedScenePrimitive());
+
+    if (typeof document !== 'undefined') {
+      const modal = document.getElementById('primitive-lightbox');
+      if (modal && !modal.classList.contains('hidden')) {
+        openPrimitiveLightbox(pid, 'depth');
+      }
+    }
+
+    return {
+      success: true,
+      primitive_id: pid,
+      depth_url: depthUrl,
+      facet: 'depth',
+      status: 'depth_generated',
+    };
   }
 
   async function renderAssetInForge(assetId, options = {}) {
@@ -3333,10 +3441,7 @@ export function initViewer(config) {
     }
     if (facet === 'depth') {
       if (item.depth_url) return item.depth_url;
-      if (['ancient-bastion', 'relic-cairn', 'wish-stone-slab', 'ruined-watchtower', 'ancient-ruin-terrace'].includes(pid)) {
-        return `renders/primitives/${pid}.png`;
-      }
-      return item.image_2d || '';
+      return `renders/primitives/${pid}-depth.png`;
     }
     if (facet === 'collider') {
       if (item.collider_url) return item.collider_url;
@@ -3719,7 +3824,9 @@ export function initViewer(config) {
         <div class="prompt-box-label">BLACK FOREST LABS FLUX 3 KLEIN DIFFUSION PROMPT SPECIFICATION:</div>
         <div class="prompt-box-content">${escapeHtml(prim.diffusion_prompt || (selectedAsset?.diffusion_prompt) || 'Awaiting compile...')}</div>
       </div>
-      <div class="lightbox-actions" style="margin-top: 10px; display: flex; gap: 8px;">
+      <div class="lightbox-actions" style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;">
+        <button class="header-btn" style="background: #1e1b4b; color: #a5b4fc; border: 1px solid #4338ca;" onclick="window.viewer && window.viewer.compileAssetBrief && window.viewer.compileAssetBrief('${escapeHtml(prim.id)}')">⚡ Compile (Gemma4-Orion)</button>
+        <button class="header-btn" style="background: #0f172a; color: #38bdf8; border: 1px solid #0284c7;" onclick="window.viewer && window.viewer.runPrimitive3DPipeline && window.viewer.runPrimitive3DPipeline('${escapeHtml(prim.id)}')">📐 3D Pipeline</button>
         <button class="header-btn" onclick="window.viewer && window.viewer.forgeScenePrimitive && window.viewer.forgeScenePrimitive('${escapeHtml(prim.id)}')">✨ Dispatch to Asset Forge (Flux 3 Klein)</button>
         <button class="header-btn" style="background: #2a241e; color: #e6dfd5;" onclick="window.viewer && window.viewer.closePrimitiveLightbox && window.viewer.closePrimitiveLightbox()">✕ Close Inspection</button>
       </div>
@@ -4672,6 +4779,7 @@ export function initViewer(config) {
     openPrimitiveLightbox,
     closePrimitiveLightbox,
     forgeScenePrimitive,
+    runPrimitive3DPipeline,
   };
 
   const globalRoot = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this);
@@ -4772,6 +4880,7 @@ export function initViewer(config) {
     globalRoot.openPrimitiveLightbox = openPrimitiveLightbox;
     globalRoot.closePrimitiveLightbox = closePrimitiveLightbox;
     globalRoot.forgeScenePrimitive = forgeScenePrimitive;
+    globalRoot.runPrimitive3DPipeline = runPrimitive3DPipeline;
     globalRoot.onCampaignSelectChange = (val) => selectCampaign(val);
     globalRoot.onActSelectChange = (val) => selectAct(val);
     globalRoot.onSceneSelectChange = (val) => selectScene(val);

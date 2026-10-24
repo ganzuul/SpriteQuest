@@ -378,4 +378,76 @@ describe('Interface Connection with Lattice & Prompt Rewrite Pipeline (TDD)', ()
       assert.ok(metaEl.innerHTML.includes('Solid Skirt'), 'Must verify watertight base grounding skirt');
     }
   });
+
+  test('10. Gemma4-Orion Prompt Refinement Pass & Dedicated 3D Pipeline Button', async () => {
+    // 1. Select outdoor ruin primitive: ancient-bastion
+    const selected = viewer.selectScenePrimitive('ancient-bastion');
+    assert.ok(selected, 'Must select ancient-bastion');
+
+    // 2. Compile button triggers fragment gathering & gemma4-orion prompt refinement
+    assert.equal(typeof viewer.compileSelectedAssetBrief, 'function');
+    assert.equal(typeof viewer.compileAssetBrief, 'function');
+
+    const compileResult = viewer.compileSelectedAssetBrief();
+    assert.ok(compileResult, 'Compile result must not be null');
+    assert.equal(compileResult.success, true);
+    assert.equal(compileResult.status, 'compiled');
+    assert.equal(compileResult.rewriter, 'gemma4-orion');
+
+    // Verify fragment gathering (both visual fragments and doctrine fragments where for: gemma4-orion)
+    assert.ok(Array.isArray(compileResult.fragments_used), 'Fragments used must be an array');
+    assert.ok(compileResult.fragments_used.some((f) => f.includes('grey-wind/named-ruins')), 'Must gather visual fragment grey-wind/named-ruins');
+    assert.ok(compileResult.fragments_used.some((f) => f.includes('single-face-reading')), 'Must gather doctrine fragment shared/single-face-reading');
+    assert.ok(compileResult.fragments_used.some((f) => f.includes('secondary-growth-is-not-a-pair')), 'Must gather doctrine fragment shared/secondary-growth-is-not-a-pair');
+
+    // Verify gemma4-orion prompt synthesis content
+    const prompt = compileResult.prompt;
+    assert.ok(prompt.includes('single front isometric elevation displaying primary visible face'), 'Must enforce single-face reading doctrine');
+    assert.ok(prompt.includes('asymmetric alpine lichen patina'), 'Must enforce asymmetric weathering rule');
+    assert.ok(prompt.includes('45-degree cantilever'), 'Must incorporate 45-degree cantilever overhang rule');
+    assert.ok(prompt.includes('Black Forest Labs Flux 3 Klein render, 1024x1024'), 'Must condition for Flux 3 Klein');
+
+    // Verify DOM was updated with the refined prompt
+    const promptEl = document.getElementById('sidebar-preview-prompt');
+    if (promptEl) {
+      assert.equal(promptEl.textContent, prompt, 'Sidebar preview prompt must reflect gemma4-orion rewrite');
+      assert.ok(promptEl.classList.contains('prompt-updated-flash'), 'Prompt box must trigger flash animation');
+    }
+
+    // 3. Dedicated 3D Pipeline Button Verification
+    assert.equal(typeof viewer.runPrimitive3DPipeline, 'function', 'Must export runPrimitive3DPipeline function');
+    const btn3D = document.getElementById('btn-sidebar-3d-pipeline');
+    if (btn3D) {
+      assert.ok((btn3D.textContent || '').includes('3D Pipeline'), 'Button must display 3D Pipeline label');
+    }
+
+    // Run 3D Pipeline on ancient-bastion
+    const pipeResult = viewer.runPrimitive3DPipeline('ancient-bastion', { remote: false });
+    assert.ok(pipeResult, '3D Pipeline result must exist');
+    assert.equal(pipeResult.success, true);
+    assert.equal(pipeResult.status, 'depth_generated');
+    assert.equal(pipeResult.primitive_id, 'ancient-bastion');
+    assert.equal(pipeResult.depth_url, 'renders/primitives/ancient-bastion-depth.png');
+    assert.equal(pipeResult.facet, 'depth');
+
+    // Verify facet was automatically switched to 3D Depth
+    assert.equal(viewer.getPreviewFacet(), 'depth', '3D Pipeline must switch preview facet to depth');
+
+    // Verify preview image src is the high-detail depth map
+    const previewImg = document.getElementById('sidebar-preview-img');
+    if (previewImg) {
+      assert.equal(previewImg.src, 'renders/primitives/ancient-bastion-depth.png', 'Preview image must show 3D depth map');
+    }
+
+    // 4. Verify depth maps for all 5 outdoor ruin primitives
+    const ruins = ['ancient-bastion', 'relic-cairn', 'wish-stone-slab', 'ruined-watchtower', 'ancient-ruin-terrace'];
+    for (const rid of ruins) {
+      const item = viewer.selectScenePrimitive(rid);
+      assert.ok(item);
+      viewer.setPreviewFacet('depth');
+      if (previewImg) {
+        assert.equal(previewImg.src, `renders/primitives/${rid}-depth.png`, `Ruin ${rid} depth map must resolve to high-detail PNG`);
+      }
+    }
+  });
 });

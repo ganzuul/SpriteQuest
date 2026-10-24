@@ -674,11 +674,16 @@ def rasterize_stl_depth(
     width: int = 1024,
     height: int = 1024,
     invert: bool = False,
+    pad_ratio: float = 0.08,
 ) -> Image.Image:
     """
-    Directly parse a binary STL file and rasterize an orthographic top-down Z-depth map.
-    Extracts surface vertices, resolves the top surface Z for every (x, y) grid point,
-    normalizes elevation to [0, 255], and outputs an image resized to (width, height).
+    Directly parse a binary STL file and rasterize an authentic, solid,
+    orthographic top-down Z-depth map using vectorized triangle scan conversion
+    and barycentric interpolation.
+
+    Extracts triangles, projects to (X, Y) pixel coordinates with border padding,
+    rasterizes every triangle face with depth interpolation into a Z-buffer,
+    and normalizes elevation to [0, 255] (mode 'L').
     """
     stl_path = Path(stl_path)
     if not stl_path.is_file():
@@ -703,48 +708,88 @@ def rasterize_stl_depth(
     if len(triangles) == 0:
         return Image.new("L", (width, height), 0)
 
-    # Surface points from all triangle vertices
-    pts = np.concatenate([triangles["v0"], triangles["v1"], triangles["v2"]], axis=0)
+    v0 = triangles["v0"]
+    v1 = triangles["v1"]
+    v2 = triangles["v2"]
+    all_v = np.concatenate([v0, v1, v2], axis=0)
 
-    # Sort descending by Z so the highest vertex takes priority at each (X, Y)
-    sort_order = np.argsort(-pts[:, 2])
-    pts_sorted = pts[sort_order]
+    x_min, x_max = float(all_v[:, 0].min()), float(all_v[:, 0].max())
+    y_min, y_max = float(all_v[:, 1].min()), float(all_v[:, 1].max())
 
-    # Unique by quantized (X, Y) coordinates (millimetre precision)
-    xy_keys = np.round(pts_sorted[:, :2], 3)
-    _, u_idx = np.unique(xy_keys, axis=0, return_index=True)
-    top_pts = pts_sorted[u_idx]
-
-    xs = top_pts[:, 0]
-    ys = top_pts[:, 1]
-    zs = top_pts[:, 2]
-
-    x_min, x_max = float(xs.min()), float(xs.max())
-    y_min, y_max = float(ys.min()), float(ys.max())
-    z_min, z_max = float(zs.min()), float(zs.max())
-
-    # Bounded raster grid directly at target resolution (or capped at 1024)
-    grid_cols = max(16, min(width, 1024))
-    grid_rows = max(16, min(height, 1024))
     span_x = max(x_max - x_min, 1e-4)
     span_y = max(y_max - y_min, 1e-4)
+    x_min -= span_x * pad_ratio
+    x_max += span_x * pad_ratio
+    y_min -= span_y * pad_ratio
+    y_max += span_y * pad_ratio
+    span_x = x_max - x_min
+    span_y = y_max - y_min
 
-    grid = np.full((grid_rows, grid_cols), z_min, dtype=np.float32)
-    col_idx = np.clip(np.round(((xs - x_min) / span_x) * (grid_cols - 1)).astype(int), 0, grid_cols - 1)
-    row_idx = np.clip(np.round(((ys - y_min) / span_y) * (grid_rows - 1)).astype(int), 0, grid_rows - 1)
+    z_buffer = np.full((height, width), -1e9, dtype=np.float32)
 
-    # Assign reverse of descending-sorted Z so highest elevation overwrites at each cell
-    grid[row_idx[::-1], col_idx[::-1]] = zs[::-1]
+    def to_px(v: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        px = ((v[:, 0] - x_min) / span_x) * (width - 1)
+        py = ((v[:, 1] - y_min) / span_y) * (height - 1)
+        # Flip Y so +Y is world up, row 0 is top
+        py = (height - 1) - py
+        return px, py, v[:, 2]
 
-    denom = max(z_max - z_min, 1e-6)
-    norm = (grid - z_min) / denom
-    if invert:
-        norm = 1.0 - norm
-    u8 = np.clip(norm * 255.0, 0, 255).astype(np.uint8)
+    p0x, p0y, p0z = to_px(v0)
+    p1x, p1y, p1z = to_px(v1)
+    p2x, p2y, p2z = to_px(v2)
+
+    for i in range(num_tri):
+        x0, y0, z0 = p0x[i], p0y[i], p0z[i]
+        x1, y1, z1 = p1x[i], p1y[i], p1z[i]
+        x2, y2, z2 = p2x[i], p2y[i], p2z[i]
+
+        min_x = max(0, int(np.floor(min(x0, x1, x2))))
+        max_x = min(width - 1, int(np.ceil(max(x0, x1, x2))))
+        min_y = max(0, int(np.floor(min(y0, y1, y2))))
+        max_y = min(height - 1, int(np.ceil(max(y0, y1, y2))))
+
+        if min_x > max_x or min_y > max_y:
+            continue
+
+        gx, gy = np.meshgrid(np.arange(min_x, max_x + 1), np.arange(min_y, max_y + 1))
+        # Edge equations for barycentric coordinates
+        w0 = (gx - x1) * (y2 - y1) - (gy - y1) * (x2 - x1)
+        w1 = (gx - x2) * (y0 - y2) - (gy - y2) * (x0 - x2)
+        w2 = (gx - x0) * (y1 - y0) - (gy - y0) * (x1 - x0)
+
+        # Allow both clockwise and counter-clockwise winding
+        inside = ((w0 >= 0) & (w1 >= 0) & (w2 >= 0)) | ((w0 <= 0) & (w1 <= 0) & (w2 <= 0))
+        if not np.any(inside):
+            continue
+
+        total_w = w0 + w1 + w2
+        valid = (inside) & (np.abs(total_w) > 1e-8)
+        if not np.any(valid):
+            continue
+
+        z_interp = (w0 * z0 + w1 * z1 + w2 * z2) / total_w
+        sub_buf = z_buffer[min_y:max_y+1, min_x:max_x+1]
+        update_mask = valid & (z_interp > sub_buf)
+        sub_buf[update_mask] = z_interp[update_mask]
+        z_buffer[min_y:max_y+1, min_x:max_x+1] = sub_buf
+
+    mask = z_buffer > -1e8
+    z_valid = z_buffer[mask]
+    if len(z_valid) > 0:
+        z_lo = float(z_valid.min())
+        z_hi = float(z_valid.max())
+        denom = max(z_hi - z_lo, 1e-6)
+        norm = np.zeros_like(z_buffer)
+        if invert:
+            norm[mask] = 1.0 - (0.15 + 0.85 * ((z_buffer[mask] - z_lo) / denom))
+            norm[~mask] = 1.0
+        else:
+            norm[mask] = 0.15 + 0.85 * ((z_buffer[mask] - z_lo) / denom)
+        u8 = np.clip(norm * 255.0, 0, 255).astype(np.uint8)
+    else:
+        u8 = np.zeros((height, width), dtype=np.uint8)
 
     img = Image.fromarray(u8, mode="L")
-    if (img.width, img.height) != (width, height):
-        img = img.resize((width, height), Image.Resampling.BILINEAR)
     return img
 
 

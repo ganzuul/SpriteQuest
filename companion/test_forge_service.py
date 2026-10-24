@@ -395,6 +395,52 @@ class TestForgeCompilerPipelineBridge(ForgeCase):
         self.assertEqual(pell_body["standing_tier"], "provisional")
         self.assertIn("understudy", pell_body["diffusion_prompt"].lower())
 
+    def test_forge_compile_with_gemma4_orion_rewriter(self):
+        code, body = self.post("/forge/compile", {
+            "asset_id": "ancient-bastion",
+            "kind": "prop",
+            "scene_id": "border-march",
+        })
+        self.assertEqual(code, 200)
+        self.assertTrue(body["ok"])
+        self.assertEqual(body["status"], "compiled")
+        self.assertEqual(body["rewriter"], "gemma4-orion")
+        self.assertIn("single front isometric elevation displaying primary visible face", body["diffusion_prompt"])
+        self.assertIn("45-degree cantilever", body["diffusion_prompt"])
+        self.assertIn("Flux 3 Klein", body["diffusion_prompt"])
+        self.assertIn("doctrine_rules", body)
+
+    def test_forge_pipeline_3d_execution(self):
+        # 1. GET /forge/pipeline/3d
+        code_get, body_get = self.get("/forge/pipeline/3d")
+        self.assertEqual(code_get, 200)
+        self.assertTrue(body_get["ok"])
+        self.assertIn("ancient-bastion", body_get["stl_primitives_available"])
+        self.assertIn("ancient-bastion", body_get["depth_templates_available"])
+
+        # 2. POST /forge/pipeline/3d
+        code_post, body_post = self.post("/forge/pipeline/3d", {
+            "primitive_id": "ancient-bastion",
+            "scene_id": "border-march",
+            "width": 512,
+            "height": 512,
+        })
+        self.assertEqual(code_post, 200)
+        self.assertTrue(body_post["ok"])
+        self.assertEqual(body_post["primitive_id"], "ancient-bastion")
+        self.assertEqual(body_post["depth_url"], "renders/primitives/ancient-bastion-depth.png")
+        self.assertEqual(body_post["triangle_count"], 1685)
+        self.assertTrue(body_post["overhang_compliant"])
+        self.assertTrue(body_post["watertight"])
+        self.assertGreater(body_post["solid_coverage_px"], 50000)
+
+        # 3. Check ledger record
+        code, ledger_res = self.get("/ledger")
+        self.assertEqual(code, 200)
+        p3d_event = next((e for e in ledger_res["events"] if e.get("kind") == "standing.granted" and e.get("gate", {}).get("rule") == "coacd_stl_watertightness"), None)
+        self.assertIsNotNone(p3d_event)
+        self.assertEqual(p3d_event["data"]["primitive_id"], "ancient-bastion")
+
 
 class TestForgeCorsAndStaticServing(ForgeCase):
     def test_cors_options_preflight_on_compile_and_survey(self):

@@ -2061,6 +2061,24 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
       background: #2dd4bf;
       color: #0d0b0a;
     }}
+    .prim-btn-3d {{
+      background: #0f172a;
+      border: 1px solid #0284c7;
+      color: #38bdf8;
+    }}
+    .prim-btn-3d:hover {{
+      background: #0369a1;
+      border-color: #38bdf8;
+      color: #f0f9ff;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+    }}
+    .prompt-updated-flash {{
+      animation: promptFlash 1.2s ease-out;
+    }}
+    @keyframes promptFlash {{
+      0% {{ background-color: rgba(45, 212, 191, 0.35); border-color: #2dd4bf; }}
+      100% {{ background-color: transparent; }}
+    }}
     .header-btn {{
       background: #2a241e;
       color: var(--accent);
@@ -2319,7 +2337,8 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
           </div>
           <div class="sidebar-preview-actions">
             <button class="prim-act-btn prim-btn-blueprint" onclick="window.viewer && window.viewer.focusSceneAssetOnMap && window.viewer.focusSceneAssetOnMap()" title="Pan & move probe to this asset on the map">📍 Focus Map</button>
-            <button class="prim-act-btn prim-btn-blueprint" onclick="window.viewer && window.viewer.compileSelectedAssetBrief && window.viewer.compileSelectedAssetBrief()" title="Compile Lattice prompt from fragments">⚡ Compile</button>
+            <button class="prim-act-btn prim-btn-blueprint" id="btn-sidebar-compile" onclick="window.viewer && window.viewer.compileSelectedAssetBrief && window.viewer.compileSelectedAssetBrief()" title="Gather fragments and call gemma4-orion to rewrite the prompt">⚡ Compile</button>
+            <button class="prim-act-btn prim-btn-3d" id="btn-sidebar-3d-pipeline" onclick="window.viewer && window.viewer.runPrimitive3DPipeline && window.viewer.runPrimitive3DPipeline()" title="Reconstruct dense 3D watertight STL & high-detail depth map">📐 3D Pipeline</button>
             <button class="prim-act-btn prim-btn-forge" onclick="window.viewer && window.viewer.forgeScenePrimitive && window.viewer.forgeScenePrimitive()" title="Render 2D art via Flux 3 Klein">✨ Forge Art</button>
           </div>
         </div>
