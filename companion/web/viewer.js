@@ -34,6 +34,7 @@ export function initViewer(config) {
   const playingAreas = stagecraft.playing_areas || [];
   const cueMarks = stagecraft.cue_marks || [];
   const affordanceTemplates = stagecraft.affordance_templates || [];
+  const npcs = features?.npcs || {};
   let actorWritten = Boolean(config.actorWritten);
 
   const viewport = dom?.viewport || document.getElementById('viewport');
@@ -1733,6 +1734,54 @@ export function initViewer(config) {
         <line x1="280" y1="105" x2="120" y2="195" stroke="#38bdf8" stroke-width="1.5"/>
         <text x="200" y="152" fill="#38bdf8" font-size="11" font-family="monospace" font-weight="700" text-anchor="middle">[WIRE-FRAME]</text>
       `;
+    } else if (id.includes('hollis') || label.includes('Hollis')) {
+      graphicSvg = `
+        <rect x="110" y="50" width="180" height="200" rx="8" fill="#181410" stroke="#ca8a04" stroke-width="2.5"/>
+        <circle cx="200" cy="115" r="55" fill="#78350f" opacity="0.45"/>
+        <circle cx="200" cy="115" r="45" fill="#ca8a04" opacity="0.25"/>
+        <path d="M 140,240 C 140,195 160,175 175,170 C 175,185 225,185 225,170 C 240,175 260,195 260,240 Z" fill="#2d2822" stroke="#453e35" stroke-width="2"/>
+        <path d="M 175,170 C 185,182 215,182 225,170 L 220,195 L 180,195 Z" fill="#71717a" stroke="#a1a1aa" stroke-width="1.5"/>
+        <ellipse cx="200" cy="130" rx="28" ry="34" fill="#d97706" stroke="#92400e" stroke-width="2"/>
+        <path d="M 175,130 C 175,165 225,165 225,130 Z" fill="#451a03"/>
+        <ellipse cx="190" cy="125" rx="3.5" ry="3" fill="#1e1b18"/>
+        <ellipse cx="210" cy="125" rx="3.5" ry="3" fill="#1e1b18"/>
+        <line x1="184" y1="118" x2="195" y2="121" stroke="#261005" stroke-width="2"/>
+        <line x1="216" y1="118" x2="205" y2="121" stroke="#261005" stroke-width="2"/>
+        <polygon points="135,215 200,210 200,248 135,248" fill="#fef3c7" stroke="#b45309" stroke-width="1.5"/>
+        <polygon points="200,210 265,215 265,248 200,248" fill="#fde68a" stroke="#b45309" stroke-width="1.5"/>
+        <line x1="145" y1="220" x2="190" y2="220" stroke="#78350f" stroke-width="1" stroke-dasharray="2 1"/>
+        <line x1="145" y1="228" x2="190" y2="228" stroke="#78350f" stroke-width="1" stroke-dasharray="2 1"/>
+        <line x1="210" y1="220" x2="255" y2="220" stroke="#78350f" stroke-width="1" stroke-dasharray="2 1"/>
+        <line x1="210" y1="228" x2="255" y2="228" stroke="#78350f" stroke-width="1" stroke-dasharray="2 1"/>
+        <circle cx="245" cy="235" r="9" fill="#dc2626" stroke="#991b1b" stroke-width="1.5"/>
+        <text x="245" y="238" fill="#fef2f2" font-size="6" font-weight="900" text-anchor="middle">SEAL</text>
+        <text x="200" y="75" fill="#f5eedf" font-size="9" font-family="monospace" font-weight="700" text-anchor="middle">HOLLIS · QUARTERMASTER</text>
+      `;
+    } else if (id.includes('pell') || label.includes('Pell')) {
+      graphicSvg = `
+        <rect x="110" y="50" width="180" height="200" rx="8" fill="#0c131d" stroke="#38bdf8" stroke-width="2.5"/>
+        <polygon points="140,50 290,50 250,250 110,250" fill="#38bdf8" opacity="0.12"/>
+        <circle cx="200" cy="118" r="50" fill="#0284c7" opacity="0.25"/>
+        <path d="M 150,240 C 150,195 170,180 180,175 C 180,190 220,190 220,175 C 230,180 250,195 250,240 Z" fill="#52525b" stroke="#71717a" stroke-width="2"/>
+        <ellipse cx="200" cy="130" rx="26" ry="32" fill="#fed7aa" stroke="#ea580c" stroke-width="1.5"/>
+        <ellipse cx="191" cy="125" rx="3.5" ry="3" fill="#0284c7"/>
+        <ellipse cx="209" cy="125" rx="3.5" ry="3" fill="#0284c7"/>
+        <path d="M 172,125 C 170,95 230,95 228,125 C 215,108 185,108 172,125 Z" fill="#18181b"/>
+        <polygon points="160,205 240,205 240,248 160,248" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/>
+        <line x1="170" y1="214" x2="230" y2="214" stroke="#0284c7" stroke-width="2"/>
+        <line x1="170" y1="222" x2="230" y2="222" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="2 2"/>
+        <line x1="170" y1="230" x2="230" y2="230" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="2 2"/>
+        <text x="200" y="244" fill="#94a3b8" font-size="6" font-family="monospace" text-anchor="middle">[UNDERWRITTEN SCRIPT]</text>
+        <text x="200" y="75" fill="#38bdf8" font-size="9" font-family="monospace" font-weight="700" text-anchor="middle">PELL · UNDERSTUDY</text>
+      `;
+    } else if (selectedAsset.kind === 'actor') {
+      graphicSvg = `
+        <rect x="110" y="50" width="180" height="200" rx="8" fill="#181410" stroke="#38bdf8" stroke-width="2"/>
+        <circle cx="200" cy="120" r="48" fill="#0284c7" opacity="0.3"/>
+        <ellipse cx="200" cy="130" rx="26" ry="32" fill="#d4d4d8" stroke="#71717a" stroke-width="2"/>
+        <path d="M 150,240 C 150,195 170,180 180,175 C 180,190 220,190 220,175 C 230,180 250,195 250,240 Z" fill="#3f3f46"/>
+        <text x="200" y="75" fill="#38bdf8" font-size="9" font-family="monospace" font-weight="700" text-anchor="middle">${label.toUpperCase()}</text>
+      `;
     } else {
       graphicSvg = `
         <polygon points="150,70 250,70 285,150 250,230 150,230 115,150" fill="#1e1b18" stroke="#ca8a04" stroke-width="3"/>
@@ -1806,25 +1855,58 @@ export function initViewer(config) {
         saturation_locked: Boolean(p.saturation_locked),
       };
     }
-    // 2. Check actors
-    else if (actors.has(assetId)) {
-      const a = actors.get(assetId);
+    // 2. Check actors & declared NPCs
+    else if (actors.has(assetId) || npcs[assetId]) {
+      const npcKey = assetId === 'player' ? 'pell' : assetId;
+      const npc = npcs[assetId] || npcs[npcKey] || null;
+      const portraitBrief = npc?.compiled_portrait || null;
+      const defaultFrag = assetId === 'pell' ? 'scaffolded-kingdom/understudy' : (assetId === 'hollis' ? 'customs-house/hollis-ledger' : 'shared/actor-roster');
+      const frags = portraitBrief?.fragments_used?.length ? [...portraitBrief.fragments_used] : [defaultFrag, 'shared/brief-faces-are-themes'];
+
+      let a = actors.get(assetId);
+      if (!a) {
+        a = {
+          id: assetId,
+          name: npc?.name || assetId,
+          role: npc?.role || 'Actor',
+          x: 63.0,
+          y: 69.0,
+          z: 6.6,
+          tokenEl: null,
+          balloonEl: null,
+          image_url: null,
+          diffusion_prompt: portraitBrief?.rewritten_prompt || '',
+          lore_snippet: npc?.portrait || `${npc?.name || assetId}`,
+          written: npc?.written !== undefined ? npc.written : (assetId === 'hollis'),
+        };
+        actors.set(assetId, a);
+      }
+
       entity = {
         id: a.id,
         kind: 'actor',
-        label: a.name || a.id,
-        fragment_id: a.id === 'pell' ? 'scaffolded-kingdom/understudy' : (a.id === 'hollis' ? 'customs-house/hollis-ledger' : 'shared/actor-roster'),
+        label: a.name || npc?.name || a.id,
+        fragment_id: defaultFrag,
         salience: 'major',
         image_url: assetImages.get(a.id) || a.image_url || null,
-        diffusion_prompt: a.diffusion_prompt || `${a.name}, 2.5D character portrait rendered via Flux 3 Klein`,
-        compiled_brief: a.lore_snippet || `${a.name} (${a.role || 'Actor'})`,
-        fragments_used: [a.id === 'pell' ? 'scaffolded-kingdom/understudy' : 'customs-house/hollis-ledger', 'shared/seam-lines'],
-        world_setting: 'Border March Customs House',
-        lore_snippet: a.lore_snippet || `${a.name} (${a.role || 'Actor'})`,
+        diffusion_prompt: portraitBrief?.rewritten_prompt || a.diffusion_prompt || `${a.name}, 2.5D character portrait rendered via Flux 3 Klein`,
+        compiled_brief: portraitBrief?.compiled_brief || a.lore_snippet || `${a.name} (${a.role || 'Actor'})`,
+        fragments_used: frags,
+        world_setting: portraitBrief?.zone_context?.zone_name || 'Border March Customs House',
+        lore_snippet: npc?.portrait || a.lore_snippet || `${a.name} (${a.role || 'Actor'})`,
         obstacle_type: 'actor',
         mass_kg: 70.0,
         interactive_verbs: ['talk', 'inspect_standing'],
         forged: assetImages.has(a.id),
+        standing_tier: portraitBrief?.standing_tier || (a.written ? 'verified' : 'provisional'),
+        standing_score: typeof portraitBrief?.standing_score === 'number' ? portraitBrief.standing_score : (a.written ? 0.65 : 0.40),
+        warrant_id: portraitBrief?.warrant_id || null,
+        zone_context: portraitBrief?.zone_context || { zone_id: 'inspection-hall', zone_name: 'Weigh & Inspection Hall', substrate_material: 'scarred timber planking' },
+        active_criticisms: portraitBrief?.active_criticisms ? [...portraitBrief.active_criticisms] : [],
+        coherence_conflicts: [],
+        saturation_score: 0.5,
+        saturation_locked: false,
+        npc_sheet: npc,
       };
     }
     // 3. Check cue marks
@@ -2026,6 +2108,14 @@ export function initViewer(config) {
       }
     }
 
+    const btnCompile = document.getElementById('btn-forge-compile');
+    if (btnCompile) {
+      btnCompile.disabled = false;
+      btnCompile.innerText = selectedAsset.compiled_brief
+        ? '⚡ Re-compile (Lattice)'
+        : '⚡ Compile Prompt (Lattice)';
+    }
+
     const btnRender = document.getElementById('btn-forge-render');
     if (btnRender) {
       btnRender.disabled = false;
@@ -2033,6 +2123,85 @@ export function initViewer(config) {
         ? '🔄 Re-render in Asset Forge'
         : '✨ Render in Asset Forge';
     }
+  }
+
+  function compileAssetBrief(assetId, options = {}) {
+    const id = assetId || (selectedAsset ? selectedAsset.id : null);
+    if (!id) {
+      log('LATTICE', 'Compile requested with no active asset.', 'warn');
+      return { success: false, reason: 'no_asset_selected' };
+    }
+
+    if (!selectedAsset || selectedAsset.id !== id) {
+      selectAsset(id);
+    }
+
+    const btnCompile = typeof document !== 'undefined' ? document.getElementById('btn-forge-compile') : null;
+    if (btnCompile) {
+      btnCompile.disabled = true;
+      btnCompile.innerText = '⏳ Compiling (Lattice)...';
+    }
+
+    log('LATTICE', "Activating workflow 'The Asset Forge & Fragment Compiler' (workflows/asset-forge.lattice.json)...");
+    log('LATTICE', `[select-asset] Ingested selection: '${id}' (${selectedAsset.label}).`);
+
+    const zoneName = selectedAsset.zone_context?.zone_name || 'Weigh & Inspection Hall';
+    const substrate = selectedAsset.zone_context?.substrate_material || 'scarred timber planking';
+    log('LATTICE', `[cartographer-coherence-gate] Audited scene coherence against ${zoneName} (${substrate}) · standing: ${selectedAsset.standing_tier || 'verified'}.`);
+
+    // 1. Compile Brief depending on entity kind
+    if (selectedAsset.kind === 'actor') {
+      const npcKey = id === 'player' ? 'pell' : id;
+      const npc = selectedAsset.npc_sheet || npcs[id] || npcs[npcKey] || null;
+      if (npc && npc.compiled_portrait) {
+        selectedAsset.diffusion_prompt = npc.compiled_portrait.rewritten_prompt;
+        selectedAsset.compiled_brief = npc.compiled_portrait.compiled_brief;
+        selectedAsset.fragments_used = [...npc.compiled_portrait.fragments_used];
+        selectedAsset.standing_tier = npc.compiled_portrait.standing_tier;
+        selectedAsset.standing_score = npc.compiled_portrait.standing_score;
+      } else {
+        const defaultFrag = id === 'pell' ? 'scaffolded-kingdom/understudy' : (id === 'hollis' ? 'customs-house/hollis-ledger' : 'shared/actor-roster');
+        selectedAsset.fragments_used = [defaultFrag, 'shared/brief-faces-are-themes'];
+        selectedAsset.compiled_brief = `${selectedAsset.label}. ${selectedAsset.lore_snippet || 'Actor standing in scene'}`;
+        selectedAsset.diffusion_prompt = `Retro JRPG character art, sword and sorcery, 16-bit pixel aesthetic with painterly shading. character portrait bust, front three-quarter angle. ${selectedAsset.compiled_brief}. grounded in ${zoneName}. expressive character visage, fine facial details, atmospheric cinematic rim lighting, 16-bit painterly texture, Black Forest Labs Flux 3 Klein render, 1024x1024.`;
+      }
+    } else if (physicalPropsMap.has(id)) {
+      const p = physicalPropsMap.get(id);
+      selectedAsset.diffusion_prompt = p.diffusion_prompt;
+      selectedAsset.compiled_brief = p.compiled_brief;
+      selectedAsset.fragments_used = p.fragments_used ? [...p.fragments_used] : [p.fragment_id];
+      selectedAsset.standing_tier = p.standing_tier;
+      selectedAsset.standing_score = p.standing_score;
+    }
+
+    const frags = selectedAsset.fragments_used || [selectedAsset.fragment_id || 'customs-house/the-site'];
+    log('LATTICE', `[compile-world-brief] Fragment Compiler assembled brief from ${frags.length} fragments: ${frags.join(', ')}.`);
+    log('LATTICE', `[rewrite-prompt] Lattice prompt rewriter refined prompt (${(selectedAsset.diffusion_prompt || '').length} chars).`);
+    log('LATTICE', `[format-flux3-conditioning] Conditioned for Flux 3 Klein (steps: 16, cfg: 1.0, 1024x1024).`);
+
+    playAudioCue('click');
+
+    renderAssetViewerDOM();
+
+    if (btnCompile) {
+      btnCompile.disabled = false;
+      btnCompile.innerText = '⚡ Re-compile (Lattice)';
+    }
+
+    return {
+      success: true,
+      assetId: id,
+      prompt: selectedAsset.diffusion_prompt,
+      compiled_brief: selectedAsset.compiled_brief,
+      fragments_used: frags,
+      standing_tier: selectedAsset.standing_tier,
+      lattice_workflow: 'asset-forge.lattice.json',
+      status: 'compiled',
+    };
+  }
+
+  function compileSelectedAssetBrief() {
+    return selectedAsset ? compileAssetBrief(selectedAsset.id) : null;
   }
 
   async function renderAssetInForge(assetId, options = {}) {
@@ -2046,7 +2215,12 @@ export function initViewer(config) {
       selectAsset(id);
     }
 
+    if (!selectedAsset.diffusion_prompt || selectedAsset.diffusion_prompt.length < 20) {
+      compileAssetBrief(id);
+    }
+
     const frags = selectedAsset.fragments_used || [selectedAsset.fragment_id];
+    log('LATTICE', `[forge-dispatch] Enqueued workflow '${id}' (${selectedAsset.label}) to Asset Forge dispatch.`);
     log('COMPILER', `Fragment Compiler assembled brief from ${frags.length} fragments: ${frags.join(', ')}.`);
     log('REWRITER', `Lattice prompt rewriter refined prompt (${selectedAsset.diffusion_prompt.length} chars).`);
     log('FORGE', `Initiating render pipeline for '${id}' (${selectedAsset.label}).`);
@@ -3293,6 +3467,8 @@ export function initViewer(config) {
     setPortalState,
     selectAsset,
     getSelectedAsset: () => selectedAsset,
+    compileAssetBrief,
+    compileSelectedAssetBrief,
     renderAssetInForge,
     renderSelectedAssetInForge,
     surveyAssetCoherence,
@@ -3356,6 +3532,8 @@ export function initViewer(config) {
     globalRoot.playBorderClearanceCutscene = playBorderClearanceCutscene;
     globalRoot.selectAsset = selectAsset;
     globalRoot.getSelectedAsset = () => selectedAsset;
+    globalRoot.compileAssetBrief = compileAssetBrief;
+    globalRoot.compileSelectedAssetBrief = compileSelectedAssetBrief;
     globalRoot.renderAssetInForge = renderAssetInForge;
     globalRoot.renderSelectedAssetInForge = renderSelectedAssetInForge;
     globalRoot.surveyAssetCoherence = surveyAssetCoherence;

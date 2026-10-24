@@ -321,6 +321,45 @@ class ScenePlacementEngine:
 
         sc_engine = StagecraftAnchoringEngine(self)
         frag_engine = FragmentPlacementEngine(self)
+
+        # Collect NPC declaration sheets and pre-compile their facets
+        npcs_data = {}
+        npcs_dir = REPO_ROOT / "companion" / "npcs"
+        if npcs_dir.is_dir():
+            from companion.fragment_compiler import compile_npc_facet_brief
+            for np_path in npcs_dir.glob("*.json"):
+                try:
+                    sheet = json.loads(np_path.read_text(encoding="utf-8"))
+                    slug = np_path.stem
+                    keys = [slug]
+                    if slug == "pell-the-underwritten":
+                        keys.append("pell")
+                    if slug == "hollis":
+                        keys.append("hollis")
+
+                    portrait_brief = compile_npc_facet_brief(sheet, "portrait", scene_id="customs-house")
+                    cutout_brief = compile_npc_facet_brief(sheet, "cutout", scene_id="customs-house")
+
+                    npc_entry = {
+                        "slug": slug,
+                        "name": sheet.get("name", slug),
+                        "role": sheet.get("role", ""),
+                        "written": sheet.get("written", False),
+                        "world": sheet.get("world", ""),
+                        "world_id": sheet.get("world_id", ""),
+                        "style": sheet.get("style", ""),
+                        "portrait": sheet.get("portrait", ""),
+                        "home": sheet.get("home", ""),
+                        "favored_items": sheet.get("favored_items", []),
+                        "aspirations": sheet.get("aspirations", ""),
+                        "compiled_portrait": asdict(portrait_brief),
+                        "compiled_cutout": asdict(cutout_brief),
+                    }
+                    for k in keys:
+                        npcs_data[k] = npc_entry
+                except Exception:
+                    pass
+
         return {
             "zones": [asdict(z) for z in self.zones],
             "walls": [asdict(w) for w in self.walls],
@@ -328,6 +367,7 @@ class ScenePlacementEngine:
             "props": [asdict(pr) for pr in self.props],
             "physical_props": frag_engine.export_fragment_assets(),
             "stagecraft": sc_engine.export_stagecraft_manifest(),
+            "npcs": npcs_data,
         }
 
 

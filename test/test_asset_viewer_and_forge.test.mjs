@@ -276,4 +276,78 @@ describe('Sidebar Asset Viewer & Asset Forge Engine (TDD)', () => {
     assert.equal(retryRes.success, false);
     assert.equal(retryRes.reason, 'criticized_by_author');
   });
+
+  test('12. Lattice Compiler Button & Character Portrait Rendering (Hollis & Pell)', async () => {
+    const btnCompile = document.getElementById('btn-forge-compile');
+    assert.ok(btnCompile, '#btn-forge-compile button must exist in DOM');
+    assert.match(btnCompile.innerText, /(Re-)?compile \(Lattice\)/i);
+
+    // 1. Select Hollis and compile via Lattice pipeline
+    const hollis = viewer.selectAsset('hollis');
+    assert.ok(hollis, 'Must select hollis actor');
+    assert.equal(hollis.id, 'hollis');
+    assert.equal(hollis.kind, 'actor');
+
+    const compileHollisRes = viewer.compileSelectedAssetBrief();
+    assert.equal(compileHollisRes.success, true);
+    assert.equal(compileHollisRes.assetId, 'hollis');
+    assert.equal(compileHollisRes.status, 'compiled');
+    assert.equal(compileHollisRes.lattice_workflow, 'asset-forge.lattice.json');
+    assert.ok(compileHollisRes.prompt.length > 50);
+
+    // Verify Hollis's prompt contains his authentic NPC sheet lore and fragments
+    assert.match(compileHollisRes.prompt, /quartermaster/i);
+    assert.match(compileHollisRes.prompt, /ledger/i);
+    assert.ok(
+      compileHollisRes.fragments_used.some(f => f.includes('hollis') || f.includes('customs-house') || f.includes('brief-faces')),
+      'Hollis compilation must use authentic character fragments'
+    );
+    assert.match(btnCompile.innerText, /Re-compile \(Lattice\)/);
+
+    // Render Hollis in forge and verify character-specific SVG vector portrait
+    const hollisRender = await viewer.renderAssetInForge('hollis', { immediate: true });
+    assert.equal(hollisRender.success, true);
+    assert.equal(hollisRender.status, 'rendered');
+    const hollisSvg = decodeURIComponent(hollisRender.imageUrl);
+    assert.match(hollisSvg, /HOLLIS · QUARTERMASTER/, 'Must render character portrait header for Hollis');
+    assert.match(hollisSvg, /SEAL/, 'Must render Hollis official red clearance seal');
+
+    // 2. Select Pell the Underwritten and compile via Lattice pipeline
+    const pell = viewer.selectAsset('pell');
+    assert.ok(pell, 'Must select pell actor');
+    assert.equal(pell.id, 'pell');
+    assert.equal(pell.kind, 'actor');
+
+    // Trigger compilation via button click
+    btnCompile.click();
+    assert.match(btnCompile.innerText, /Re-compile \(Lattice\)/);
+
+    const pellAsset = viewer.getSelectedAsset();
+    assert.equal(pellAsset.id, 'pell');
+    assert.ok(pellAsset.diffusion_prompt.length > 50);
+    assert.match(pellAsset.diffusion_prompt, /understudy/i);
+    assert.ok(
+      pellAsset.fragments_used.some(f => f.includes('understudy') || f.includes('scaffolded-kingdom') || f.includes('brief-faces')),
+      'Pell compilation must use authentic understudy fragments'
+    );
+
+    // Render Pell in forge and verify character-specific SVG vector portrait
+    const pellRender = await viewer.renderAssetInForge('pell', { immediate: true });
+    assert.equal(pellRender.success, true);
+    assert.equal(pellRender.status, 'rendered');
+    const pellSvg = decodeURIComponent(pellRender.imageUrl);
+    assert.match(pellSvg, /PELL · UNDERSTUDY/, 'Must render character portrait header for Pell');
+    assert.match(pellSvg, /UNDERWRITTEN SCRIPT/, 'Must render Pell underwritten prompt script');
+
+    // 3. Verify Lattice logs captured throughout compilation
+    const logs = viewer.getLogs();
+    const latticeLogs = logs.filter(l => l.category === 'LATTICE');
+    assert.ok(latticeLogs.length >= 6, 'Must record comprehensive [LATTICE] telemetry logs');
+    assert.ok(latticeLogs.some(l => l.message.includes('select-asset')), 'Must log [select-asset] stage');
+    assert.ok(latticeLogs.some(l => l.message.includes('cartographer-coherence-gate')), 'Must log [cartographer-coherence-gate] stage');
+    assert.ok(latticeLogs.some(l => l.message.includes('compile-world-brief')), 'Must log [compile-world-brief] stage');
+    assert.ok(latticeLogs.some(l => l.message.includes('rewrite-prompt')), 'Must log [rewrite-prompt] stage');
+    assert.ok(latticeLogs.some(l => l.message.includes('format-flux3-conditioning')), 'Must log [format-flux3-conditioning] stage');
+    assert.ok(latticeLogs.some(l => l.message.includes('forge-dispatch')), 'Must log [forge-dispatch] stage');
+  });
 });

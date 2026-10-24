@@ -1271,6 +1271,19 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
       border-color: #ca8a04;
       color: #fef08a;
     }}
+    .btn-forge-render.btn-compile {{
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      border-color: #38bdf8;
+      color: #38bdf8;
+      box-shadow: 0 2px 8px rgba(56, 189, 248, 0.25);
+    }}
+    .btn-forge-render.btn-compile:hover {{
+      background: linear-gradient(135deg, #0369a1 0%, #0284c7 100%);
+      border-color: #7dd3fc;
+      color: #f0f9ff;
+      box-shadow: 0 3px 12px rgba(56, 189, 248, 0.5);
+      transform: translateY(-1px);
+    }}
     .btn-forge-render:disabled {{
       background: #2b231c;
       border-color: #554433;
@@ -1461,10 +1474,15 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
         </div>
 
         <div class="asset-actions" id="asset-viewer-actions">
-          <button class="btn-forge-render" id="btn-forge-render" onclick="window.viewer && window.viewer.renderSelectedAssetInForge && window.viewer.renderSelectedAssetInForge()">
-            ✨ Render in Asset Forge
-          </button>
-          <div class="cartographer-actions" style="display: flex; gap: 6px; margin-top: 6px;">
+          <div style="display: flex; gap: 6px; margin-bottom: 6px;">
+            <button class="btn-forge-render btn-compile" id="btn-forge-compile" onclick="window.viewer && window.viewer.compileSelectedAssetBrief && window.viewer.compileSelectedAssetBrief()">
+              ⚡ Compile (Lattice)
+            </button>
+            <button class="btn-forge-render" id="btn-forge-render" onclick="window.viewer && window.viewer.renderSelectedAssetInForge && window.viewer.renderSelectedAssetInForge()">
+              ✨ Render in Forge
+            </button>
+          </div>
+          <div class="cartographer-actions" style="display: flex; gap: 6px;">
             <button class="btn-forge-render btn-secondary" id="btn-cartographer-survey" style="font-size: 10px; padding: 5px 8px; flex: 1;" onclick="window.viewer && window.viewer.surveyAssetCoherence && window.viewer.surveyAssetCoherence()">
               🧭 Survey
             </button>
