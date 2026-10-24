@@ -1520,38 +1520,12 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
     .log-status-dot.offline {{ color: #f59e0b; }}
     .log-status-dot.offline::before {{ background: #eab308; }}
 
-    /* Scene Header & Primitives Menu Controls */
-    .scene-header-controls {{
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }}
-    .scene-select-wrap {{
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      background: #191613;
-      padding: 3px 8px;
-      border-radius: 5px;
-      border: 1px solid #3d352d;
-    }}
-    .scene-menu-label {{
-      font-size: 11px;
-      color: #a8947f;
-      font-weight: 600;
-    }}
-    .scene-select {{
-      background: #241f1a;
-      color: #f3ece2;
-      border: 1px solid #4a3e34;
-      font-family: inherit;
-      font-size: 11px;
-      padding: 3px 6px;
     /* Left Sidebar: Asset Navigation Panel (Scene Picker -> Tree View -> Asset Preview) */
     .asset-nav-sidebar {{
-      width: 330px;
-      min-width: 300px;
-      max-width: 350px;
+      width: 300px;
+      min-width: 180px;
+      max-width: 650px;
+      flex-shrink: 0;
       background: var(--panel);
       border-right: 1px solid #2e261f;
       display: flex;
@@ -1560,21 +1534,87 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
       overflow: hidden;
       z-index: 20;
       user-select: none;
+      transition: width 0.16s ease;
+      box-sizing: border-box;
+    }}
+    .asset-nav-sidebar.no-transition {{
+      transition: none !important;
     }}
     .asset-nav-sidebar.collapsed {{
-      display: none;
+      width: 0 !important;
+      min-width: 0 !important;
+      max-width: 0 !important;
+      border-right: none !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      overflow: hidden !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
     }}
+
+    /* Resizer bar between left sidebar and viewport */
+    .sidebar-resizer {{
+      width: 6px;
+      cursor: col-resize;
+      background: #14110e;
+      border-right: 1px solid #332b24;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 25;
+      user-select: none;
+      transition: background 0.15s ease;
+    }}
+    .sidebar-resizer:hover,
+    .sidebar-resizer.dragging {{
+      background: var(--accent);
+    }}
+    .sidebar-resizer.collapsed {{
+      display: none !important;
+    }}
+
+    /* Floating button to reopen sidebar when collapsed */
+    .sidebar-expand-tab {{
+      position: absolute;
+      top: 12px;
+      left: 0;
+      z-index: 80;
+      background: #241e18;
+      border: 1px solid #4a3e34;
+      border-left: none;
+      border-radius: 0 4px 4px 0;
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 6px 10px;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      gap: 5px;
+      box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
+      transition: all 0.12s ease;
+    }}
+    .sidebar-expand-tab:hover {{
+      background: #332b23;
+      color: #fff;
+    }}
+    .asset-nav-sidebar.collapsed ~ .sidebar-expand-tab {{
+      display: flex;
+    }}
+
     .sidebar-scene-picker {{
-      padding: 12px 14px;
+      padding: 10px 12px;
       background: #1d1915;
       border-bottom: 1px solid #332b24;
       flex-shrink: 0;
+      min-width: 0;
+      overflow: hidden;
     }}
     .sidebar-section-header {{
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 8px;
+      min-width: 0;
     }}
     .sidebar-section-title {{
       font-size: 10px;
@@ -1582,6 +1622,30 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
       text-transform: uppercase;
       letter-spacing: 0.08em;
       color: var(--accent);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
+    }}
+    .sidebar-collapse-btn {{
+      background: #14110e;
+      border: 1px solid #3d352d;
+      color: #b5a899;
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      flex-shrink: 0;
+      transition: all 0.12s ease;
+    }}
+    .sidebar-collapse-btn:hover {{
+      background: #2b241d;
+      color: #f3ece2;
+      border-color: var(--accent);
     }}
     .scene-select {{
       width: 100%;
@@ -1589,13 +1653,15 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
       color: #f5eedf;
       border: 1px solid #4a3e34;
       font-family: inherit;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 600;
-      padding: 6px 8px;
+      padding: 5px 7px;
       border-radius: 5px;
       outline: none;
       cursor: pointer;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
+      box-sizing: border-box;
+      max-width: 100%;
     }}
     .scene-select:focus {{
       border-color: var(--accent);
@@ -1605,28 +1671,38 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
       font-weight: 700;
       color: var(--accent-gold);
       margin-bottom: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }}
     .sidebar-scene-desc {{
       font-size: 10px;
-      line-height: 1.38;
+      line-height: 1.35;
       color: #a8947f;
+      max-height: 48px;
+      overflow-y: auto;
+      word-break: break-word;
+      overflow-wrap: break-word;
     }}
 
     /* Middle: Tree View of Scene Assets */
     .sidebar-tree-header {{
-      padding: 7px 14px;
+      padding: 7px 12px;
       background: #171310;
       border-bottom: 1px solid #2a231d;
       display: flex;
       justify-content: space-between;
       align-items: center;
       flex-shrink: 0;
+      min-width: 0;
     }}
     .sidebar-asset-tree {{
       flex: 1;
       overflow-y: auto;
+      overflow-x: hidden;
       padding: 6px 8px;
       background: #14110e;
+      min-width: 0;
     }}
     .tree-folder {{
       margin-bottom: 6px;
@@ -1634,9 +1710,10 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
       border-radius: 5px;
       background: #191512;
       overflow: hidden;
+      min-width: 0;
     }}
     .tree-folder-summary {{
-      padding: 6px 10px;
+      padding: 6px 8px;
       font-size: 11px;
       font-weight: 700;
       color: #e6dfd5;
@@ -1646,9 +1723,17 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
       justify-content: space-between;
       align-items: center;
       list-style: none;
+      min-width: 0;
     }}
     .tree-folder-summary::-webkit-details-marker {{
       display: none;
+    }}
+    .tree-folder-title {{
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-right: 6px;
+      min-width: 0;
     }}
     .tree-folder-count {{
       font-size: 9.5px;
@@ -1658,13 +1743,16 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
       padding: 1px 6px;
       border-radius: 99px;
       border: 1px solid #332b24;
+      flex-shrink: 0;
     }}
     .tree-folder-children {{
-      padding: 4px 4px 4px 10px;
+      padding: 4px 4px 4px 8px;
       border-top: 1px solid #29221c;
       display: flex;
       flex-direction: column;
       gap: 2px;
+      min-width: 0;
+      overflow: hidden;
     }}
     .tree-node-item {{
       display: flex;
@@ -1675,6 +1763,8 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
       cursor: pointer;
       border-left: 2px solid transparent;
       transition: all 0.12s ease;
+      min-width: 0;
+      overflow: hidden;
     }}
     .tree-node-item:hover {{
       background: #26201a;
@@ -1693,6 +1783,7 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
     .tree-node-text {{
       flex: 1;
       min-width: 0;
+      overflow: hidden;
     }}
     .tree-node-label {{
       font-size: 11px;
@@ -1718,16 +1809,18 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
     .sidebar-asset-preview {{
       border-top: 2px solid #383028;
       background: #181411;
-      padding: 10px 12px 12px 12px;
+      padding: 8px 10px 10px 10px;
       flex-shrink: 0;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 5px;
+      min-width: 0;
+      overflow: hidden;
     }}
     .sidebar-preview-img-wrap {{
       position: relative;
       width: 100%;
-      height: 175px;
+      height: 155px;
       background: #0d0b0a;
       border: 1px solid #383028;
       border-radius: 5px;
@@ -1736,6 +1829,7 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
       display: flex;
       align-items: center;
       justify-content: center;
+      box-sizing: border-box;
     }}
     .sidebar-preview-img-wrap:hover {{
       border-color: var(--accent);
@@ -1759,33 +1853,52 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
       pointer-events: none;
     }}
     .sidebar-preview-title {{
-      font-size: 12.5px;
+      font-size: 12px;
       font-weight: 700;
       color: #f5eedf;
       line-height: 1.25;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }}
     .sidebar-preview-role {{
       font-size: 10px;
       font-weight: 600;
       color: var(--accent-gold);
       line-height: 1.25;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }}
     .sidebar-preview-meta {{
       display: flex;
       flex-wrap: wrap;
       gap: 4px;
+      min-width: 0;
     }}
     .sidebar-preview-desc {{
       font-size: 10px;
       line-height: 1.35;
       color: #b5a899;
-      max-height: 42px;
+      max-height: 40px;
       overflow-y: auto;
+      word-break: break-word;
+      overflow-wrap: break-word;
     }}
     .sidebar-preview-actions {{
       display: flex;
-      gap: 5px;
+      gap: 4px;
       margin-top: 2px;
+      min-width: 0;
+    }}
+    .sidebar-preview-actions .prim-act-btn {{
+      flex: 1;
+      padding: 5px 4px;
+      font-size: 10px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-align: center;
     }}
     .prim-badge {{
       display: inline-block;
@@ -1989,8 +2102,11 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
       <!-- 1. Top: Scene Picker -->
       <div class="sidebar-scene-picker" id="sidebar-scene-picker">
         <div class="sidebar-section-header">
-          <span class="sidebar-section-title">🗺️ Adventure Scene Staging</span>
-          <span class="section-summary-badge"><span id="primitives-badge-count">6</span> Assets</span>
+          <span class="sidebar-section-title">🗺️ Scene Staging</span>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span class="section-summary-badge"><span id="primitives-badge-count">6</span> Assets</span>
+            <button class="sidebar-collapse-btn" id="btn-sidebar-collapse" onclick="window.viewer && window.viewer.toggleSidebar && window.viewer.toggleSidebar(true)" title="Collapse asset navigation panel">◀</button>
+          </div>
         </div>
         <select id="scene-selector" class="scene-select" onchange="onSceneSelectChange(this.value)">
           <option value="customs-house">Act I: The Border Customs House</option>
@@ -2034,6 +2150,14 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
         </div>
       </div>
     </aside>
+
+    <!-- Resizer handle between sidebar and viewport -->
+    <div class="sidebar-resizer" id="sidebar-resizer" title="Drag to resize asset panel"></div>
+
+    <!-- Floating button to reopen sidebar when collapsed -->
+    <button class="sidebar-expand-tab" id="sidebar-expand-tab" onclick="window.viewer && window.viewer.toggleSidebar && window.viewer.toggleSidebar(false)" title="Open asset navigation panel">
+      ▶ <span>Assets</span>
+    </button>
 
     <!-- 2D Image Lightbox Modal for deep inspection -->
     <div id="primitive-lightbox" class="primitive-lightbox hidden" onclick="closePrimitiveLightbox()">

@@ -2898,12 +2898,124 @@ export function initViewer(config) {
   function togglePrimitivesMenu(forceOpen) {
     if (typeof document === 'undefined') return;
     const sidebar = document.getElementById('asset-nav-sidebar');
+    const resizer = document.getElementById('sidebar-resizer');
     if (sidebar) {
       const shouldCollapse = forceOpen !== undefined ? !forceOpen : !sidebar.classList.contains('collapsed');
-      if (shouldCollapse) sidebar.classList.add('collapsed');
-      else sidebar.classList.remove('collapsed');
+      if (shouldCollapse) {
+        sidebar.classList.add('collapsed');
+        if (resizer && resizer.classList) resizer.classList.add('collapsed');
+      } else {
+        sidebar.classList.remove('collapsed');
+        if (resizer && resizer.classList) resizer.classList.remove('collapsed');
+      }
+      try {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('sq_sidebar_collapsed', shouldCollapse ? 'true' : 'false');
+        }
+      } catch (e) {}
+      if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+        window.dispatchEvent(new Event('resize'));
+      }
     }
     renderPrimitivesMenuDOM();
+  }
+
+  function toggleSidebar(forceCollapse) {
+    if (forceCollapse === true) {
+      togglePrimitivesMenu(false);
+    } else if (forceCollapse === false) {
+      togglePrimitivesMenu(true);
+    } else {
+      togglePrimitivesMenu();
+    }
+  }
+
+  function isSidebarCollapsed() {
+    if (typeof document === 'undefined') return false;
+    const sidebar = document.getElementById('asset-nav-sidebar');
+    return sidebar ? sidebar.classList.contains('collapsed') : false;
+  }
+
+  function setupSidebarResizer() {
+    if (typeof document === 'undefined') return;
+    const sidebar = document.getElementById('asset-nav-sidebar');
+    const resizer = document.getElementById('sidebar-resizer');
+    if (!sidebar || !resizer) return;
+
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const savedW = localStorage.getItem('sq_sidebar_width');
+        if (savedW && sidebar.style) {
+          const wNum = parseInt(savedW, 10);
+          if (wNum >= 180 && wNum <= 650) {
+            sidebar.style.width = `${wNum}px`;
+          }
+        }
+        const wasCollapsed = localStorage.getItem('sq_sidebar_collapsed') === 'true';
+        if (wasCollapsed) {
+          sidebar.classList.add('collapsed');
+          if (resizer.classList) resizer.classList.add('collapsed');
+        }
+      }
+    } catch (e) {}
+
+    let isDragging = false;
+    let startX = 0;
+    let startWidth = 0;
+
+    if (resizer.addEventListener) {
+      resizer.addEventListener('mousedown', (e) => {
+        if (e.button !== 0) return;
+        isDragging = true;
+        startX = e.clientX;
+        startWidth = (sidebar.getBoundingClientRect && sidebar.getBoundingClientRect().width) || sidebar.clientWidth || 300;
+        if (sidebar.classList) sidebar.classList.add('no-transition');
+        if (resizer.classList) resizer.classList.add('dragging');
+        if (document.body && document.body.style) {
+          document.body.style.cursor = 'col-resize';
+          document.body.style.userSelect = 'none';
+        }
+
+        const onMouseMove = (moveEvent) => {
+          if (!isDragging) return;
+          const delta = moveEvent.clientX - startX;
+          const winWidth = typeof window !== 'undefined' ? (window.innerWidth || 1200) : 1200;
+          const maxW = Math.min(Math.round(winWidth * 0.6), 650);
+          const clampedW = Math.max(180, Math.min(maxW, Math.round(startWidth + delta)));
+          if (sidebar.style) sidebar.style.width = `${clampedW}px`;
+        };
+
+        const onMouseUp = () => {
+          if (!isDragging) return;
+          isDragging = false;
+          if (sidebar.classList) sidebar.classList.remove('no-transition');
+          if (resizer.classList) resizer.classList.remove('dragging');
+          if (document.body && document.body.style) {
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+          }
+          if (typeof window !== 'undefined') {
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('mouseup', onMouseUp);
+          }
+
+          const currentW = Math.round((sidebar.getBoundingClientRect && sidebar.getBoundingClientRect().width) || sidebar.clientWidth || 300);
+          try {
+            if (typeof localStorage !== 'undefined') {
+              localStorage.setItem('sq_sidebar_width', currentW.toString());
+            }
+          } catch (err) {}
+          if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+            window.dispatchEvent(new Event('resize'));
+          }
+        };
+
+        if (typeof window !== 'undefined') {
+          window.addEventListener('mousemove', onMouseMove);
+          window.addEventListener('mouseup', onMouseUp);
+        }
+      });
+    }
   }
 
   function openPrimitivesMenu(filter = 'all') {
@@ -3963,6 +4075,7 @@ export function initViewer(config) {
   updatePlayerPosition(playerX, playerY);
   selectAsset('r6_ship_crate_standard');
   renderPrimitivesMenuDOM();
+  setupSidebarResizer();
   log('STAGE', 'SpriteQuest 2.5D Viewport Engine initialized.');
   log('STAGE', `Loaded scene with ${physicalPropsMap.size} physical props and ${cueMarks.length} cue marks.`);
   if (typeof fetch !== 'undefined') {
@@ -4051,6 +4164,8 @@ export function initViewer(config) {
     focusSceneAssetOnMap,
     renderSidebarPreviewDOM,
     togglePrimitivesMenu,
+    toggleSidebar,
+    isSidebarCollapsed,
     openPrimitivesMenu,
     closePrimitivesMenu,
     filterPrimitives,
@@ -4136,6 +4251,8 @@ export function initViewer(config) {
     globalRoot.focusSceneAssetOnMap = focusSceneAssetOnMap;
     globalRoot.renderSidebarPreviewDOM = renderSidebarPreviewDOM;
     globalRoot.togglePrimitivesMenu = togglePrimitivesMenu;
+    globalRoot.toggleSidebar = toggleSidebar;
+    globalRoot.isSidebarCollapsed = isSidebarCollapsed;
     globalRoot.openPrimitivesMenu = openPrimitivesMenu;
     globalRoot.closePrimitivesMenu = closePrimitivesMenu;
     globalRoot.filterPrimitives = filterPrimitives;

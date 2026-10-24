@@ -85,6 +85,9 @@ class TestSceneDefinitionsAndLeftSidebar(unittest.TestCase):
             for req_id in [
                 'id="asset-nav-sidebar"',
                 'id="sidebar-scene-picker"',
+                'id="btn-sidebar-collapse"',
+                'id="sidebar-resizer"',
+                'id="sidebar-expand-tab"',
                 'id="scene-selector"',
                 'id="sidebar-asset-tree"',
                 'id="sidebar-asset-preview"',
@@ -198,6 +201,33 @@ class TestSceneDefinitionsAndLeftSidebar(unittest.TestCase):
             const lens = window.viewer.selectScenePrimitive('solar-focus-lens');
             if (!lens || !elements['sidebar-preview-title'].textContent.includes('Solar Focus Lens')) {
               throw new Error('Failed to preview solar-focus-lens in Act IV');
+            }
+
+            // 6. Resizable & Collapsible Sidebar state checks
+            window.viewer.toggleSidebar(true);
+            if (!elements['asset-nav-sidebar'].classList.contains('collapsed')) {
+              throw new Error('toggleSidebar(true) failed to collapse asset-nav-sidebar');
+            }
+            if (!window.viewer.isSidebarCollapsed()) {
+              throw new Error('isSidebarCollapsed() returned false when sidebar was collapsed');
+            }
+
+            window.viewer.toggleSidebar(false);
+            if (elements['asset-nav-sidebar'].classList.contains('collapsed')) {
+              throw new Error('toggleSidebar(false) failed to expand asset-nav-sidebar');
+            }
+            if (window.viewer.isSidebarCollapsed()) {
+              throw new Error('isSidebarCollapsed() returned true when sidebar was expanded');
+            }
+
+            // Toggle without args flips state
+            window.viewer.toggleSidebar();
+            if (!window.viewer.isSidebarCollapsed()) {
+              throw new Error('toggleSidebar() failed to flip state to collapsed');
+            }
+            window.viewer.toggleSidebar();
+            if (window.viewer.isSidebarCollapsed()) {
+              throw new Error('toggleSidebar() failed to flip state back to expanded');
             }
 
             console.log('All Left Sidebar Asset Navigation Panel tests passed');
