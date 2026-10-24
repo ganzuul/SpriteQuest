@@ -257,6 +257,7 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
         cartographers_ledger = CartographersLedger(ledger_path=cart_path, fragments_dir=frags_path)
 
     known_routes = [
+        "/", "/viewer", "/preview",
         "/health", "/roster", "/guidance", "/ledger", "/events",
         "/cartographers/status", "/cartographers/ledger",
         "/cartographers/survey", "/cartographers/curate", "/cartographers/criticize",
@@ -269,23 +270,75 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
         def log_message(self, fmt, *args):      # quiet: the caller shows receipts
             pass
 
+        def _cors_headers(self) -> None:
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS, HEAD")
+            self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Accept, Origin")
+            self.send_header("Access-Control-Max-Age", "86400")
+
         def _send(self, code: int, payload: dict) -> None:
             body = json.dumps(payload, indent=2).encode()
             self.send_response(code)
             self.send_header("Content-Type", "application/json")
             self.send_header("Content-Length", str(len(body)))
-            self.send_header("Access-Control-Allow-Origin", "*")
-            self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-            self.send_header("Access-Control-Allow-Headers", "Content-Type")
+            self._cors_headers()
+            self.end_headers()
+            self.wfile.write(body)
+
+        def _serve_file(self, file_path: Path, content_type: str | None = None) -> None:
+            if not file_path.is_file():
+                self._send(404, {"error": "file not found", "path": str(file_path)})
+                return
+            body = file_path.read_bytes()
+            if content_type is None:
+                suffix = file_path.suffix.lower()
+                types = {
+                    ".html": "text/html; charset=utf-8",
+                    ".js": "application/javascript; charset=utf-8",
+                    ".mjs": "application/javascript; charset=utf-8",
+                    ".css": "text/css; charset=utf-8",
+                    ".json": "application/json",
+                    ".png": "image/png",
+                    ".jpg": "image/jpeg",
+                    ".jpeg": "image/jpeg",
+                    ".webp": "image/webp",
+                    ".svg": "image/svg+xml",
+                    ".wasm": "application/wasm",
+                }
+                content_type = types.get(suffix, "application/octet-stream")
+            self.send_response(200)
+            self.send_header("Content-Type", content_type)
+            self.send_header("Content-Length", str(len(body)))
+            self._cors_headers()
             self.end_headers()
             self.wfile.write(body)
 
         def do_OPTIONS(self):
-            self._send(204, {})
+            # Preflight requests require RFC 9110 compliant 204 with NO body and Content-Length: 0
+            self.send_response(204)
+            self._cors_headers()
+            self.send_header("Content-Length", "0")
+            self.end_headers()
 
         def do_GET(self):
             route = self.path.split("?", 1)[0].rstrip("/") or "/"
-            if route == "/health":
+            if route in ("/", "/viewer", "/preview"):
+                preview_html = REPO_ROOT / "renders" / "maps" / "border-march" / "index.html"
+                if preview_html.is_file():
+                    return self._serve_file(preview_html, "text/html; charset=utf-8")
+                return self._send(200, {
+                    "service": "forge",
+                    "status": "ready",
+                    "preview_available": False,
+                    "routes": known_routes,
+                })
+            elif route.startswith(("/renders/", "/companion/web/", "/library/")):
+                rel_path = route.lstrip("/")
+                target = (REPO_ROOT / rel_path).resolve()
+                if target != REPO_ROOT and REPO_ROOT in target.parents and target.is_file():
+                    return self._serve_file(target)
+                return self._send(404, {"error": "not found", "path": route})
+            elif route == "/health":
                 self._send(200, {"ok": True, "service": "forge",
                                  "state": str(ledger.path),
                                  "lines": len(ledger.events)})

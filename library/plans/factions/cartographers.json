@@ -12,7 +12,8 @@
     {"id": "cartographers/epistemic-survey", "version": 1},
     {"id": "cartographers/the-living-atlas", "version": 1},
     {"id": "cartographers/unwritten-borders", "version": 1},
-    {"id": "cartographers/glyph-surveyor-rose", "version": 1}
+    {"id": "cartographers/glyph-surveyor-rose", "version": 1},
+    {"id": "cartographers/cross-origin-clearance", "version": 1}
   ],
   "epistemic_governance": {
     "maturity_ladder": {

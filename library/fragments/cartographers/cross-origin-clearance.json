@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "cartographers/cross-origin-clearance",
+  "version": 1,
+  "world_id": "cartographers",
+  "for": "diffusion",
+  "facets": ["prop", "home", "evidence"],
+  "detail": "a stamped vellum transit warrant encased in a brass-hinged surveyor's reliquary, bearing the counter-embossed seal of the Bureau of the Unwritten Atlas, certifying bilateral clearance across origin domains without preflight refusal or status-null boundary collapse",
+  "evidence": {
+    "kind": "directed",
+    "source": "openrig-port",
+    "quote": "The Same-Origin frontier: crossing from sandboxed viewport to sovereign forge requires bilateral preflight clearance. A 204 silent handshake with empty payload carries the warrant; without it the border refuses passage and standing registers null."
+  },
+  "facts": {
+    "extent": "12 cm folding brass case holding an iron-gall vellum clearance scroll",
+    "scale_ref": "held in hand at the border-march checkpoint to permit cross-origin ledger sync",
+    "material": "cold-rolled brass frame, calfskin vellum, cobalt wax audit seal",
+    "state": "officially ratified for unhindered transit between origin ports"
+  },
+  "note": "The Bureau's diegetic canonization of CORS preflights: a bilateral transit warrant permitting remote compilation and ledger synchronization across the Same-Origin boundary between the web viewport and the local forge daemon."
+}

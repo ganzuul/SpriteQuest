@@ -396,5 +396,39 @@ class TestForgeCompilerPipelineBridge(ForgeCase):
         self.assertIn("understudy", pell_body["diffusion_prompt"].lower())
 
 
+class TestForgeCorsAndStaticServing(ForgeCase):
+    def test_cors_options_preflight_on_compile_and_survey(self):
+        for route in ("/forge/compile", "/cartographers/survey", "/events"):
+            url = f"{self.base}{route}"
+            req = urllib.request.Request(url, method="OPTIONS")
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                self.assertEqual(resp.status, 204)
+                headers = dict(resp.headers)
+                self.assertEqual(headers.get("Access-Control-Allow-Origin"), "*")
+                self.assertIn("OPTIONS", headers.get("Access-Control-Allow-Methods", ""))
+                self.assertIn("POST", headers.get("Access-Control-Allow-Methods", ""))
+                self.assertIn("Content-Type", headers.get("Access-Control-Allow-Headers", ""))
+                self.assertEqual(headers.get("Content-Length"), "0")
+                body = resp.read()
+                self.assertEqual(len(body), 0, "RFC 9110: 204 No Content MUST have 0 body bytes")
+
+    def test_cors_headers_on_post_and_get(self):
+        url = f"{self.base}/health"
+        req = urllib.request.Request(url, method="GET")
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            self.assertEqual(resp.status, 200)
+            self.assertEqual(resp.headers.get("Access-Control-Allow-Origin"), "*")
+            self.assertIn("Content-Type", resp.headers.get("Access-Control-Allow-Headers", ""))
+
+    def test_static_viewer_serving(self):
+        url = f"{self.base}/viewer"
+        req = urllib.request.Request(url, method="GET")
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            self.assertEqual(resp.status, 200)
+            self.assertIn("text/html", resp.headers.get("Content-Type", ""))
+            body = resp.read()
+            self.assertIn(b"SpriteQuest 2.5D", body)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

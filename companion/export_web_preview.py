@@ -1640,9 +1640,12 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
           </summary>
           <div class="section-body">
             <div class="log-toolbar">
-              <span class="log-status-dot online" id="log-server-status">ComfyUI: Online</span>
+              <div style="display: flex; gap: 6px; align-items: center;">
+                <span class="log-status-dot online" id="log-server-status">ComfyUI: Online</span>
+                <span class="log-status-dot online" id="log-forge-status">Forge: 8788</span>
+              </div>
               <div style="display: flex; gap: 4px;">
-                <button class="log-btn" id="btn-ping-server" onclick="window.viewer && window.viewer.checkComfyServer && window.viewer.checkComfyServer()">Ping</button>
+                <button class="log-btn" id="btn-ping-server" onclick="window.viewer && ((window.viewer.checkComfyServer && window.viewer.checkComfyServer()), (window.viewer.checkForgeServer && window.viewer.checkForgeServer()))">Ping</button>
                 <button class="log-btn" id="btn-clear-logs" onclick="window.viewer && window.viewer.clearLogs && window.viewer.clearLogs()">Clear</button>
               </div>
             </div>

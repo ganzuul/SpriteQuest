@@ -238,4 +238,29 @@ describe('Interface Connection with Lattice & Prompt Rewrite Pipeline (TDD)', ()
     assert.ok(latticeLogs.some((l) => l.message.includes('format-flux3-conditioning')), 'Must log [format-flux3-conditioning] stage');
     assert.ok(latticeLogs.some((l) => l.message.includes('Activating workflow')), 'Must log workflow activation');
   });
+
+  test('6. CORS & Forge Service Endpoint Resolution & Graceful Offline Handling', async () => {
+    // 1. Endpoint resolution
+    assert.equal(typeof viewer.getForgeServiceUrl, 'function');
+    assert.equal(viewer.getForgeServiceUrl(), 'http://127.0.0.1:8788');
+
+    // 2. Custom override via window.FORGE_SERVICE_URL
+    window.FORGE_SERVICE_URL = 'http://127.0.0.1:9999';
+    assert.equal(viewer.getForgeServiceUrl(), 'http://127.0.0.1:9999');
+    delete window.FORGE_SERVICE_URL;
+
+    // 3. Graceful offline probe handling
+    assert.equal(typeof viewer.checkForgeServer, 'function');
+    const isOnline = await viewer.checkForgeServer('http://127.0.0.1:18788');
+    assert.equal(isOnline, false, 'Unreachable port returns false without throwing');
+    const statusEl = document.getElementById('log-forge-status');
+    if (statusEl) {
+      assert.match(statusEl.textContent, /Local/i, 'Status reflects local fallback when forge service is offline');
+    }
+
+    // 4. Remote compile sync handles offline/CORS gracefully
+    const compRes = viewer.compileAssetBrief('r6_ship_crate_standard', { remote: true });
+    assert.equal(compRes.success, true, 'Compilation succeeds locally even when remote daemon is offline');
+    assert.ok(compRes.prompt.length > 50, 'Generates valid diffusion prompt locally');
+  });
 });

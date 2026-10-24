@@ -75,6 +75,82 @@ export function initViewer(config) {
   const MAX_LOGS = 300;
   let comfyServerUrl = 'http://127.0.0.1:8080/upstream/comfyui';
 
+  function getForgeServiceUrl() {
+    if (typeof window !== 'undefined' && window.FORGE_SERVICE_URL) {
+      return window.FORGE_SERVICE_URL;
+    }
+    if (typeof window !== 'undefined' && window.location && window.location.origin) {
+      if (window.location.origin.includes(':8788')) {
+        return window.location.origin;
+      }
+    }
+    return 'http://127.0.0.1:8788';
+  }
+
+  async function postForgeJson(route, payload, timeoutMs = 2000) {
+    if (typeof fetch !== 'function') return null;
+    const base = getForgeServiceUrl();
+    const url = `${base}${route}`;
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        mode: 'cors',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(payload),
+        signal: typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(timeoutMs) : undefined,
+      });
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (_) {
+      // SillyTavern reverse proxy fallback if running under SillyTavern (port 8000)
+      if (typeof window !== 'undefined' && window.location && window.location.port === '8000') {
+        try {
+          const proxyUrl = `/proxy/${url}`;
+          const pRes = await fetch(proxyUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify(payload),
+            signal: typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(timeoutMs) : undefined,
+          });
+          if (pRes.ok) return await pRes.json();
+        } catch (__) {}
+      }
+    }
+    return null;
+  }
+
+  async function checkForgeServer(targetUrl = getForgeServiceUrl()) {
+    let online = false;
+    try {
+      if (typeof fetch !== 'undefined') {
+        const res = await fetch(`${targetUrl}/health`, {
+          mode: 'cors',
+          signal: typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(2000) : undefined,
+        });
+        if (res.ok) {
+          const health = await res.json();
+          online = true;
+          log('FORGE', `Connected to Companion Forge Service on port 8788. Ledger lines: ${health.lines || 0}.`);
+        }
+      }
+    } catch (_) {
+      // Silent probe: offline companion daemon falls back to local in-browser compilation
+    }
+
+    if (typeof document !== 'undefined') {
+      const forgeStatusEl = document.getElementById('log-forge-status');
+      if (forgeStatusEl) {
+        forgeStatusEl.className = online ? 'log-status-dot online' : 'log-status-dot offline';
+        forgeStatusEl.textContent = online ? 'Forge: 8788' : 'Forge: Local';
+      }
+    }
+    return online;
+  }
+
   function escapeHtml(str) {
     if (!str) return '';
     return String(str)
@@ -2202,30 +2278,23 @@ export function initViewer(config) {
 
     // Remote sync with Companion Forge Service (port 8788) when online
     if (typeof fetch === 'function' && options.remote !== false) {
-      try {
-        fetch('http://127.0.0.1:8788/forge/compile', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            asset_id: id,
-            kind: selectedAsset.kind,
-            scene_id: selectedAsset.zone_context?.scene_id || 'customs-house',
-            facet: options.facet || 'portrait',
-            asset: selectedAsset,
-          }),
-          signal: typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(1500) : undefined,
-        }).then(r => r.json()).then(remote => {
-          if (remote && remote.ok) {
-            selectedAsset.diffusion_prompt = remote.diffusion_prompt;
-            selectedAsset.compiled_brief = remote.compiled_brief;
-            selectedAsset.fragments_used = remote.fragments_used;
-            selectedAsset.standing_tier = remote.standing_tier;
-            selectedAsset.standing_score = remote.standing_score;
-            log('LATTICE', `[remote-sync] Synced compiled prompt from companion forge service on port 8788.`);
-            renderAssetViewerDOM();
-          }
-        }).catch(() => {});
-      } catch (e) {}
+      postForgeJson('/forge/compile', {
+        asset_id: id,
+        kind: selectedAsset.kind,
+        scene_id: selectedAsset.zone_context?.scene_id || 'customs-house',
+        facet: options.facet || 'portrait',
+        asset: selectedAsset,
+      }, 1500).then(remote => {
+        if (remote && remote.ok) {
+          selectedAsset.diffusion_prompt = remote.diffusion_prompt;
+          selectedAsset.compiled_brief = remote.compiled_brief;
+          selectedAsset.fragments_used = remote.fragments_used;
+          selectedAsset.standing_tier = remote.standing_tier;
+          selectedAsset.standing_score = remote.standing_score;
+          log('LATTICE', `[remote-sync] Synced compiled prompt from companion forge service on port 8788.`);
+          renderAssetViewerDOM();
+        }
+      }).catch(() => {});
     }
 
     const frags = selectedAsset.fragments_used || [selectedAsset.fragment_id || 'customs-house/the-site'];
@@ -2521,16 +2590,13 @@ export function initViewer(config) {
     }
 
     if (typeof fetch === 'function') {
-      try {
-        fetch('http://127.0.0.1:8788/cartographers/survey', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prop_id: id, scene_id: p.zone_context?.scene_id || 'customs-house', asset: p }),
-          signal: typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(1500) : undefined,
-        }).then((r) => r.json()).then((data) => {
-          if (data && data.ok) log('CARTOGRAPHER', `Synced survey for '${id}' with Companion Forge Service.`);
-        }).catch(() => {});
-      } catch (_) {}
+      postForgeJson('/cartographers/survey', {
+        prop_id: id,
+        scene_id: p.zone_context?.scene_id || 'customs-house',
+        asset: p,
+      }, 1500).then((data) => {
+        if (data && data.ok) log('CARTOGRAPHER', `Synced survey for '${id}' with Companion Forge Service.`);
+      }).catch(() => {});
     }
 
     return {
@@ -2578,16 +2644,12 @@ export function initViewer(config) {
     }
 
     if (typeof fetch === 'function') {
-      try {
-        fetch('http://127.0.0.1:8788/cartographers/curate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fragment_id: fid, detail: refinedDetail }),
-          signal: typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(1500) : undefined,
-        }).then((r) => r.json()).then((data) => {
-          if (data && data.ok) log('CARTOGRAPHER', `Synced curation for '${fid}' with Companion Forge Service.`);
-        }).catch(() => {});
-      } catch (_) {}
+      postForgeJson('/cartographers/curate', {
+        fragment_id: fid,
+        detail: refinedDetail,
+      }, 1500).then((data) => {
+        if (data && data.ok) log('CARTOGRAPHER', `Synced curation for '${fid}' with Companion Forge Service.`);
+      }).catch(() => {});
     }
 
     return {
@@ -2634,16 +2696,12 @@ export function initViewer(config) {
     }
 
     if (typeof fetch === 'function') {
-      try {
-        fetch('http://127.0.0.1:8788/cartographers/criticize', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fragment_id: fid, constraint: critMsg }),
-          signal: typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(1500) : undefined,
-        }).then((r) => r.json()).then((data) => {
-          if (data && data.ok) log('CARTOGRAPHER', `Synced criticism for '${fid}' with Companion Forge Service.`);
-        }).catch(() => {});
-      } catch (_) {}
+      postForgeJson('/cartographers/criticize', {
+        fragment_id: fid,
+        constraint: critMsg,
+      }, 1500).then((data) => {
+        if (data && data.ok) log('CARTOGRAPHER', `Synced criticism for '${fid}' with Companion Forge Service.`);
+      }).catch(() => {});
     }
 
     return {
@@ -3461,6 +3519,7 @@ export function initViewer(config) {
   log('STAGE', `Loaded scene with ${physicalPropsMap.size} physical props and ${cueMarks.length} cue marks.`);
   if (typeof fetch !== 'undefined') {
     checkComfyServer().catch(() => {});
+    checkForgeServer().catch(() => {});
   }
 
   const instance = {
@@ -3532,10 +3591,15 @@ export function initViewer(config) {
     clearLogs,
     log,
     checkComfyServer,
+    checkForgeServer,
+    getForgeServiceUrl,
   };
 
   const globalRoot = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this);
   if (globalRoot) {
+    globalRoot.checkComfyServer = checkComfyServer;
+    globalRoot.checkForgeServer = checkForgeServer;
+    globalRoot.getForgeServiceUrl = getForgeServiceUrl;
     globalRoot.getPlayerPos = () => ({ x: playerX, y: playerY });
     globalRoot.getPlayerPosition = () => ({ x: playerX, y: playerY });
     globalRoot.screenToWorld = screenToWorld;
