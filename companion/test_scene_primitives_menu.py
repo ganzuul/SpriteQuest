@@ -26,10 +26,41 @@ if str(REPO_ROOT) not in sys.path:
 
 from companion.export_web_preview import generate_interactive_html
 from companion.render_primitive_2d import PRIMITIVE_STYLES, get_primitive_2d_data_url, render_primitive_svg
-from companion.scene_definitions import load_all_scenes
+from companion.scene_definitions import load_all_campaigns, load_all_scenes
 
 
 class TestSceneDefinitionsAndLeftSidebar(unittest.TestCase):
+    def test_campaign_hierarchy_and_unwritten_consignment_minting(self):
+        """Verify Campaigns -> Acts -> Scenes hierarchy with Tests and Unwritten Consignment."""
+        campaigns = load_all_campaigns()
+        self.assertIn("tests", campaigns, "Campaign 'tests' must exist")
+        self.assertIn("unwritten-consignment", campaigns, "Campaign 'unwritten-consignment' must exist")
+
+        tests_camp = campaigns["tests"]
+        self.assertEqual(len(tests_camp.acts), 4, "Tests campaign must have 4 acts")
+        all_test_scenes = [s for a in tests_camp.acts for s in a.scenes]
+        for sid in ["customs-house", "border-march", "unwritten-ascent", "glass-cathedral"]:
+            self.assertIn(sid, all_test_scenes, f"Test scene '{sid}' must be assigned under Tests campaign")
+
+        consignment_camp = campaigns["unwritten-consignment"]
+        self.assertEqual(len(consignment_camp.acts), 4, "Unwritten Consignment must have 4 acts")
+        self.assertTrue(consignment_camp.document_ref and (REPO_ROOT / consignment_camp.document_ref).is_file(),
+                        "Unwritten Consignment must link to valid markdown design document")
+        all_consignment_scenes = [s for a in consignment_camp.acts for s in a.scenes]
+        self.assertEqual(len(all_consignment_scenes), 9, "Unwritten Consignment must mint 9 acts/scenes")
+        for sid in [
+            "consignment-intake-foyer",
+            "consignment-weigh-hall",
+            "consignment-border-pass",
+            "consignment-overhang-bastion",
+            "consignment-orom-shrine",
+            "consignment-unwritten-seam",
+            "consignment-entropy-beacons",
+            "consignment-cathedral-nave",
+            "consignment-solar-focus-chancel",
+        ]:
+            self.assertIn(sid, all_consignment_scenes, f"Minted scene '{sid}' must belong to Unwritten Consignment")
+
     def test_all_campaign_scenes_exist_and_load(self):
         scenes = load_all_scenes()
         expected_scenes = ["customs-house", "border-march", "unwritten-ascent", "glass-cathedral"]
@@ -85,10 +116,13 @@ class TestSceneDefinitionsAndLeftSidebar(unittest.TestCase):
             for req_id in [
                 'id="asset-nav-sidebar"',
                 'id="sidebar-scene-picker"',
+                'id="campaign-selector"',
+                'id="act-selector"',
+                'id="scene-selector"',
+                'id="sidebar-hierarchy-crumb"',
                 'id="btn-sidebar-collapse"',
                 'id="sidebar-resizer"',
                 'id="sidebar-expand-tab"',
-                'id="scene-selector"',
                 'id="sidebar-asset-tree"',
                 'id="sidebar-asset-preview"',
                 'id="sidebar-preview-img"',
@@ -228,6 +262,42 @@ class TestSceneDefinitionsAndLeftSidebar(unittest.TestCase):
             window.viewer.toggleSidebar();
             if (window.viewer.isSidebarCollapsed()) {
               throw new Error('toggleSidebar() failed to flip state back to expanded');
+            }
+
+            // 7. Campaign -> Act -> Scene Cascade Verification
+            const campaigns = window.viewer.getCampaigns();
+            if (!Array.isArray(campaigns) || campaigns.length < 2) {
+              throw new Error(`Expected at least 2 campaigns, got ${campaigns ? campaigns.length : 'none'}`);
+            }
+
+            // Switch to The Unwritten Consignment
+            const ucScene = window.viewer.selectCampaign('unwritten-consignment');
+            if (!ucScene || window.viewer.getCurrentCampaign().id !== 'unwritten-consignment') {
+              throw new Error('Failed to select unwritten-consignment campaign');
+            }
+
+            // Switch to Act II in Unwritten Consignment
+            window.viewer.selectAct('act-2');
+            if (window.viewer.getCurrentAct().id !== 'act-2') {
+              throw new Error('Failed to switch to act-2');
+            }
+
+            // Select Scene consignment-orom-shrine
+            const oromScene = window.viewer.selectScene('consignment-orom-shrine');
+            if (!oromScene || oromScene.id !== 'consignment-orom-shrine') {
+              throw new Error('Failed to switch to consignment-orom-shrine');
+            }
+            if (!elements['sidebar-hierarchy-crumb'].textContent.includes('Unwritten Consignment')) {
+              throw new Error(`Breadcrumb missing campaign name: ${elements['sidebar-hierarchy-crumb'].textContent}`);
+            }
+            if (!elements['sidebar-preview-title'].textContent.includes('Wish-Stone')) {
+              throw new Error(`Preview title should show Wish-Stone, got: ${elements['sidebar-preview-title'].textContent}`);
+            }
+
+            // Selecting a test scene automatically resynchronizes campaign back to Tests
+            window.viewer.selectScene('border-march');
+            if (window.viewer.getCurrentCampaign().id !== 'tests') {
+              throw new Error(`Expected campaign to sync back to 'tests', got '${window.viewer.getCurrentCampaign().id}'`);
             }
 
             console.log('All Left Sidebar Asset Navigation Panel tests passed');

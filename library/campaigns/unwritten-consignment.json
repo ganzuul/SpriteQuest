@@ -1,0 +1,33 @@
+{
+  "id": "unwritten-consignment",
+  "name": "The Unwritten Consignment",
+  "short_name": "The Unwritten Consignment",
+  "document_ref": "docs/mini_campaign_the_unwritten_consignment.md",
+  "description": "A four-act frontier mini-campaign for SpriteQuest. Cold crates, cryogenic coffins, epistemic warrants, and literal wishes.",
+  "acts": [
+    {
+      "id": "act-1",
+      "name": "Act I: The Cold Crate at the Customs House",
+      "description": "Rain needles the zinc roof. Inside the Intake Foyer, hoarfrost creeps from under the iron wicket of the Forfeit Corridor. Hollis furiously taps his 1588 bell-weight while Factor Vane watches an hourglass.",
+      "scenes": ["consignment-intake-foyer", "consignment-weigh-hall"]
+    },
+    {
+      "id": "act-2",
+      "name": "Act II: The Watch on the Overhang & The Grey Wind's Bargain",
+      "description": "Outside the Customs House, the frontier rises in steep stepped strata of slate. Factor Vane hauls the stasis coffin while Orom steps forth from solid granite.",
+      "scenes": ["consignment-border-pass", "consignment-overhang-bastion", "consignment-orom-shrine"]
+    },
+    {
+      "id": "act-3",
+      "name": "Act III: The Climb That Is Not On Any Plan",
+      "description": "Past the northern milestone, cobblestones stop. Faint brass plumb-lines hang over unrendered void. Epistemic warfare between Canon Warrants and Entropy Beacons.",
+      "scenes": ["consignment-unwritten-seam", "consignment-entropy-beacons"]
+    },
+    {
+      "id": "act-4",
+      "name": "Act IV: The Glass Cathedral in the Sky",
+      "description": "A cathedral 240m long blown from a single asteroid. Factor Vane aims the Astronomical Lens while the Frost Monarch awakens from superfluid.",
+      "scenes": ["consignment-cathedral-nave", "consignment-solar-focus-chancel"]
+    }
+  ]
+}

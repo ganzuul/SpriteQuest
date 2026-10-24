@@ -1,6 +1,8 @@
 {
   "schema_version": 1,
   "id": "border-march",
+  "campaign_id": "tests",
+  "act_id": "test-act-border",
   "name": "The Border March & Forfeit Gap",
   "act": "Act II: The Mountain Pass & Ancient Overhang",
   "world_id": "grey-wind",

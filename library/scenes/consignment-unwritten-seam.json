@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "id": "consignment-unwritten-seam",
+  "campaign_id": "unwritten-consignment",
+  "act_id": "act-3",
+  "name": "The Void Seam & Wireframe Stair",
+  "act": "Act III: The Climb That Is Not On Any Plan",
+  "world_id": "scaffolded-kingdom",
+  "category": "frontier_road",
+  "map_ref": "library/maps/border-march.json",
+  "description": "Past the northern milestone, cobblestones abruptly terminate. Faint brass plumb-lines hang in mid-air over pale untextured fog. Stone stairs oscillate between vector wireframe and solid granite under the signpost: ROAD UNLOADABLE — PRESENT CANON WARRANT.",
+  "cast": [
+    {
+      "id": "surveyor-vellum",
+      "name": "Surveyor-Senior Vellum",
+      "role": "Epistemic Engineer",
+      "fragment_id": "cartographers/canon-warrant",
+      "world_pos": [48.0, 20.0],
+      "standing": "provisional",
+      "description": "Driving brass warrant stakes into unanchored coordinates to solidify the road against context rot."
+    },
+    {
+      "id": "pell",
+      "name": "Pell the Written",
+      "role": "Bearer of the Unwritten Mark",
+      "fragment_id": "shared/glyph-unwritten-mark",
+      "world_pos": [52.0, 22.0],
+      "standing": "helps",
+      "description": "Boldly treading the flickering wireframe stairs with his authored standing protecting him from void fall."
+    }
+  ],
+  "primitives": [
+    {
+      "id": "border-signpost",
+      "name": "Unloadable Road Warning Signpost",
+      "asset_id": "border-signpost",
+      "fragment_id": "scaffolded-kingdom/destination-unloadable",
+      "category": "markers",
+      "tree_group": "Instruments & Monuments",
+      "stage_role": "Epistemic Boundary Warning",
+      "dimensions": [0.4, 0.4, 1.8],
+      "triangle_count": 12,
+      "stl_path": "library/stl_primitives/border-signpost.stl",
+      "world_pos": [48.0, 22.0],
+      "description": "Signpost standing on the final flagstone reading: ROAD UNLOADABLE — PRESENT CANON WARRANT OR TURN BACK."
+    },
+    {
+      "id": "ancient-bastion",
+      "name": "Chasm Anchor Pier",
+      "asset_id": "ancient-bastion",
+      "fragment_id": "grey-wind/mountain-passage",
+      "category": "architecture",
+      "tree_group": "Architecture & Terrain",
+      "stage_role": "Bedrock Foundation Pier",
+      "dimensions": [4.0, 4.0, 6.0],
+      "triangle_count": 28,
+      "stl_path": "library/stl_primitives/ancient-bastion.stl",
+      "world_pos": [56.0, 14.0],
+      "description": "Massive masonry pylon anchoring the wireframe stairs to the mountain face."
+    }
+  ]
+}

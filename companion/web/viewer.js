@@ -2717,16 +2717,48 @@ export function initViewer(config) {
     };
   }
 
-  // --- Left Sidebar Asset Navigation Panel: Scene Picker -> Tree View -> Asset Preview ---
-  const scenesManifest = features?.scenes || { scenes: [], scenes_by_id: {} };
+  // --- Left Sidebar Asset Navigation Panel: Campaigns -> Acts -> Scenes ---
+  const scenesManifest = features?.scenes || { campaigns: [], scenes: [], scenes_by_id: {}, campaigns_by_id: {} };
+  let currentCampaignId = scenesManifest.default_campaign_id || (scenesManifest.campaigns?.[0]?.id) || 'tests';
   let currentSceneId = (features?.scenes?.scenes_by_id && features.scenes.scenes_by_id['border-march'])
     ? 'border-march'
     : (features?.scenes?.scenes?.[0]?.id || 'border-march');
+
+  if (scenesManifest.scenes_by_id?.[currentSceneId]?.campaign_id) {
+    currentCampaignId = scenesManifest.scenes_by_id[currentSceneId].campaign_id;
+  }
+  let currentActId = scenesManifest.scenes_by_id?.[currentSceneId]?.act_id || '';
+
   let currentPrimitiveFilter = 'all';
   let selectedPrimitiveId = null;
 
-  function getScenes() {
-    return scenesManifest.scenes || [];
+  function getCampaigns() {
+    return scenesManifest.campaigns || [];
+  }
+
+  function getCampaign(campaignId = currentCampaignId) {
+    return scenesManifest.campaigns_by_id?.[campaignId] || null;
+  }
+
+  function getCurrentCampaign() {
+    return getCampaign(currentCampaignId) || scenesManifest.campaigns?.[0] || null;
+  }
+
+  function getActs(campaignId = currentCampaignId) {
+    const c = getCampaign(campaignId);
+    return c?.acts || [];
+  }
+
+  function getCurrentAct() {
+    const acts = getActs(currentCampaignId);
+    return acts.find((a) => a.id === currentActId) || acts[0] || null;
+  }
+
+  function getScenes(actId = null) {
+    if (!actId) return scenesManifest.scenes || [];
+    const act = getActs(currentCampaignId).find((a) => a.id === actId);
+    if (!act) return [];
+    return (act.scenes || []).map((sId) => getScene(sId)).filter(Boolean);
   }
 
   function getScene(sceneId) {
@@ -2764,6 +2796,30 @@ export function initViewer(config) {
     return null;
   }
 
+  function selectCampaign(campaignId, actId, sceneId) {
+    if (!scenesManifest.campaigns_by_id?.[campaignId]) {
+      log('CAMPAIGN', `Campaign '${campaignId}' not found in manifest.`, 'warn');
+      return null;
+    }
+    currentCampaignId = campaignId;
+    const camp = getCurrentCampaign();
+    const acts = camp?.acts || [];
+    const targetAct = (actId && acts.find((a) => a.id === actId)) ? actId : (acts[0]?.id || '');
+    return selectAct(targetAct, sceneId);
+  }
+
+  function selectAct(actId, sceneId) {
+    const camp = getCurrentCampaign();
+    const acts = camp?.acts || [];
+    const act = acts.find((a) => a.id === actId) || acts[0];
+    if (!act) return null;
+    currentActId = act.id;
+
+    const actScenes = act.scenes || [];
+    const targetSceneId = (sceneId && actScenes.includes(sceneId)) ? sceneId : (actScenes[0] || currentSceneId);
+    return selectScene(targetSceneId);
+  }
+
   function selectScene(sceneId) {
     if (!scenesManifest.scenes_by_id?.[sceneId]) {
       log('SCENE', `Scene '${sceneId}' not found in manifest.`, 'warn');
@@ -2771,18 +2827,37 @@ export function initViewer(config) {
     }
     currentSceneId = sceneId;
     const sc = getCurrentScene();
-    selectedPrimitiveId = sc.primitives?.[0]?.id || null;
-    log('SCENE', `Active scene switched to: '${sc.name}' (${sc.id}) · ${sc.primitives.length} primitives.`);
 
-    if (typeof document !== 'undefined') {
-      const selectEl = document.getElementById('scene-selector');
-      if (selectEl && selectEl.value !== sceneId) {
-        selectEl.value = sceneId;
+    // Auto-sync campaign and act
+    if (sc.campaign_id && scenesManifest.campaigns_by_id?.[sc.campaign_id]) {
+      currentCampaignId = sc.campaign_id;
+    } else {
+      for (const c of getCampaigns()) {
+        for (const a of c.acts || []) {
+          if ((a.scenes || []).includes(sceneId)) {
+            currentCampaignId = c.id;
+            currentActId = a.id;
+            break;
+          }
+        }
       }
-      const badgeCount = document.getElementById('primitives-badge-count');
-      if (badgeCount) badgeCount.textContent = sc.primitives.length;
+    }
+    if (sc.act_id) {
+      currentActId = sc.act_id;
+    } else {
+      const c = getCurrentCampaign();
+      for (const a of c?.acts || []) {
+        if ((a.scenes || []).includes(sceneId)) {
+          currentActId = a.id;
+          break;
+        }
+      }
     }
 
+    selectedPrimitiveId = sc.primitives?.[0]?.id || null;
+    log('SCENE', `Active scene switched to: '${sc.name}' (${sc.id}) [${currentCampaignId} > ${currentActId || sc.act}].`);
+
+    renderSelectorsDOM();
     renderPrimitivesMenuDOM();
     if (selectedPrimitiveId) {
       selectScenePrimitive(selectedPrimitiveId, { syncViewer: true });
@@ -3093,8 +3168,93 @@ export function initViewer(config) {
     }
   }
 
+  function renderSelectorsDOM() {
+    if (typeof document === 'undefined') return;
+    const camp = getCurrentCampaign();
+    const acts = getActs(currentCampaignId);
+    const act = getCurrentAct();
+    const sc = getCurrentScene();
+
+    // 1. Campaign Selector
+    const campEl = document.getElementById('campaign-selector');
+    if (campEl) {
+      const camps = getCampaigns();
+      if (camps.length > 0) {
+        const currentOptions = Array.from(campEl.options || []).map((o) => o.value);
+        const campKeys = camps.map((c) => c.id);
+        const needsRebuild = currentOptions.length !== campKeys.length || !campKeys.every((k, i) => currentOptions[i] === k);
+        if (needsRebuild) {
+          campEl.innerHTML = camps
+            .map((c) => `<option value="${escapeHtml(c.id)}" ${c.id === currentCampaignId ? 'selected' : ''}>${escapeHtml(c.name || c.id)}</option>`)
+            .join('');
+        }
+        if (campEl.value !== currentCampaignId) {
+          campEl.value = currentCampaignId;
+        }
+      }
+    }
+
+    // 2. Act Selector
+    const actEl = document.getElementById('act-selector');
+    if (actEl) {
+      const currentActOptions = Array.from(actEl.options || []).map((o) => o.value);
+      const actKeys = acts.map((a) => a.id);
+      const needsActRebuild = currentActOptions.length !== actKeys.length || !actKeys.every((k, i) => currentActOptions[i] === k);
+      if (needsActRebuild) {
+        const actHtml = acts
+          .map((a) => `<option value="${escapeHtml(a.id)}" ${a.id === currentActId ? 'selected' : ''}>${escapeHtml(a.name || a.id)}</option>`)
+          .join('');
+        actEl.innerHTML = actHtml || `<option value="">No Acts</option>`;
+      }
+      if (act && actEl.value !== act.id) {
+        actEl.value = act.id;
+      }
+    }
+
+    // 3. Scene Selector
+    const sceneEl = document.getElementById('scene-selector');
+    if (sceneEl) {
+      const actScenes = (act?.scenes || []).map((sId) => getScene(sId)).filter(Boolean);
+      const targetScenes = actScenes.length > 0 ? actScenes : getScenes();
+      const currentSceneOptions = Array.from(sceneEl.options || []).map((o) => o.value);
+      const sceneKeys = targetScenes.map((s) => s.id);
+      const needsSceneRebuild = currentSceneOptions.length !== sceneKeys.length || !sceneKeys.every((k, i) => currentSceneOptions[i] === k);
+      if (needsSceneRebuild) {
+        const sceneHtml = targetScenes
+          .map((s) => `<option value="${escapeHtml(s.id)}" ${s.id === currentSceneId ? 'selected' : ''}>${escapeHtml(s.name || s.id)}</option>`)
+          .join('');
+        sceneEl.innerHTML = sceneHtml || `<option value="">No Scenes</option>`;
+      }
+      if (sc && sceneEl.value !== sc.id) {
+        sceneEl.value = sc.id;
+      }
+    }
+
+    // 4. Breadcrumb
+    const crumbEl = document.getElementById('sidebar-hierarchy-crumb');
+    if (crumbEl && sc) {
+      const cTitle = camp?.short_name || camp?.name || 'Campaign';
+      const aTitle = act?.name?.split(':')[0]?.trim() || act?.name || 'Act';
+      const sTitle = sc?.name || 'Scene';
+      crumbEl.textContent = `${cTitle} › ${aTitle} › ${sTitle}`;
+      crumbEl.title = `${camp?.name} — ${act?.name} — ${sc?.name}`;
+    }
+
+    // 5. Scene Description & Count
+    const descEl = document.getElementById('sidebar-scene-desc');
+    if (descEl && sc) {
+      descEl.textContent = sc.description || '';
+    }
+
+    const badgeCount = document.getElementById('primitives-badge-count');
+    if (badgeCount && sc) {
+      badgeCount.textContent = (sc.primitives || []).length;
+    }
+  }
+
   function renderPrimitivesMenuDOM() {
     if (typeof document === 'undefined') return;
+    renderSelectorsDOM();
     const sc = getCurrentScene();
     if (!sc) return;
 
@@ -4154,6 +4314,13 @@ export function initViewer(config) {
     checkComfyServer,
     checkForgeServer,
     getForgeServiceUrl,
+    getCampaigns,
+    getCampaign,
+    getCurrentCampaign,
+    selectCampaign,
+    getActs,
+    getCurrentAct,
+    selectAct,
     getScenes,
     getScene,
     getCurrentScene,
@@ -4163,6 +4330,7 @@ export function initViewer(config) {
     getSelectedScenePrimitive,
     focusSceneAssetOnMap,
     renderSidebarPreviewDOM,
+    renderSelectorsDOM,
     togglePrimitivesMenu,
     toggleSidebar,
     isSidebarCollapsed,
@@ -4241,6 +4409,13 @@ export function initViewer(config) {
     globalRoot.clearLogs = clearLogs;
     globalRoot.log = log;
     globalRoot.checkComfyServer = checkComfyServer;
+    globalRoot.getCampaigns = getCampaigns;
+    globalRoot.getCampaign = getCampaign;
+    globalRoot.getCurrentCampaign = getCurrentCampaign;
+    globalRoot.selectCampaign = selectCampaign;
+    globalRoot.getActs = getActs;
+    globalRoot.getCurrentAct = getCurrentAct;
+    globalRoot.selectAct = selectAct;
     globalRoot.getScenes = getScenes;
     globalRoot.getScene = getScene;
     globalRoot.getCurrentScene = getCurrentScene;
@@ -4250,6 +4425,7 @@ export function initViewer(config) {
     globalRoot.getSelectedScenePrimitive = getSelectedScenePrimitive;
     globalRoot.focusSceneAssetOnMap = focusSceneAssetOnMap;
     globalRoot.renderSidebarPreviewDOM = renderSidebarPreviewDOM;
+    globalRoot.renderSelectorsDOM = renderSelectorsDOM;
     globalRoot.togglePrimitivesMenu = togglePrimitivesMenu;
     globalRoot.toggleSidebar = toggleSidebar;
     globalRoot.isSidebarCollapsed = isSidebarCollapsed;
@@ -4260,6 +4436,8 @@ export function initViewer(config) {
     globalRoot.openPrimitiveLightbox = openPrimitiveLightbox;
     globalRoot.closePrimitiveLightbox = closePrimitiveLightbox;
     globalRoot.forgeScenePrimitive = forgeScenePrimitive;
+    globalRoot.onCampaignSelectChange = (val) => selectCampaign(val);
+    globalRoot.onActSelectChange = (val) => selectAct(val);
     globalRoot.onSceneSelectChange = (val) => selectScene(val);
     globalRoot.viewer = instance;
   }

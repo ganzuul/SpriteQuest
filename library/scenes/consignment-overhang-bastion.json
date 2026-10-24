@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "id": "consignment-overhang-bastion",
+  "campaign_id": "unwritten-consignment",
+  "act_id": "act-2",
+  "name": "The 45° Bastion & Relic Cairn",
+  "act": "Act II: The Watch on the Overhang & The Grey Wind's Bargain",
+  "world_id": "grey-wind",
+  "category": "outdoor_map",
+  "map_ref": "library/maps/border-march.json",
+  "description": "A monolithic stone bastion leaning at an impossible 45-degree overhang, defying gravity because the world's ancient overhang rule permits exactly 45 degrees. Climbing to z=24m uncovers Surveyor Vellum's calibrated theodolite and the True Name of the Seventh Ruin.",
+  "cast": [
+    {
+      "id": "surveyor-vellum",
+      "name": "Surveyor-Senior Vellum",
+      "role": "Auditor Recovering Geodetic Instruments",
+      "fragment_id": "cartographers/epistemic-survey",
+      "world_pos": [24.0, 24.0],
+      "standing": "provisional",
+      "description": "Seeking to reclaim his stolen theodolite from the summit cairn to certify the road north in Act III."
+    },
+    {
+      "id": "pell",
+      "name": "Pell the Underwritten",
+      "role": "Lookout & Bastion Climber",
+      "fragment_id": "neighboring-kingdom/roles-rehearsed-not-written",
+      "world_pos": [28.0, 32.0],
+      "standing": "understudy",
+      "description": "Scrambling across the 45-degree stone overhang using structural handholds to avoid ground-level crossfire."
+    }
+  ],
+  "primitives": [
+    {
+      "id": "ancient-bastion",
+      "name": "North 45° Overhang Ancient Bastion",
+      "asset_id": "ancient-bastion",
+      "fragment_id": "grey-wind/named-ruins",
+      "category": "architecture",
+      "tree_group": "Architecture & Terrain",
+      "stage_role": "45-Degree Overhang Climbing Anchor & High Vantage",
+      "dimensions": [4.0, 4.0, 6.0],
+      "triangle_count": 28,
+      "stl_path": "library/stl_primitives/ancient-bastion.stl",
+      "world_pos": [24.0, 24.0],
+      "description": "Cyclopean masonry fortress projecting outward at 45 degrees over the northwest abyss. Survives unpatched from the First Epoch."
+    },
+    {
+      "id": "relic-cairn",
+      "name": "Theodolite Station & Relic Cairn",
+      "asset_id": "prop-relic-cairn",
+      "fragment_id": "cartographers/the-living-atlas",
+      "category": "monuments",
+      "tree_group": "Instruments & Monuments",
+      "stage_role": "High Geodetic Marker & Ruin Name Cache",
+      "dimensions": [1.4, 1.4, 2.1],
+      "triangle_count": 20,
+      "stl_path": "library/stl_primitives/relic-cairn.stl",
+      "world_pos": [24.0, 24.0],
+      "description": "Summit monument housing Vellum's calibrated theodolite and the weathered slate tally of Aethel-Vorn (the city that wished for no winters)."
+    }
+  ]
+}

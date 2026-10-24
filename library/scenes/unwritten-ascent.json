@@ -1,6 +1,8 @@
 {
   "schema_version": 1,
   "id": "unwritten-ascent",
+  "campaign_id": "tests",
+  "act_id": "test-act-ascent",
   "name": "The Unwritten Ascent",
   "act": "Act III: The Unwritten Road & The Grey Chasm",
   "world_id": "scaffolded-kingdom",

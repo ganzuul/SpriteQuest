@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "id": "consignment-solar-focus-chancel",
+  "campaign_id": "unwritten-consignment",
+  "act_id": "act-4",
+  "name": "High Chancel & The Solar Focus",
+  "act": "Act IV: The Glass Cathedral in the Sky",
+  "world_id": "wizard-tower",
+  "category": "interior_floorplan",
+  "floorplan_ref": "library/floorplans/glass-cathedral.json",
+  "description": "Three meters above the nave on the Chancel dais, Factor Vane has cracked open the Stasis Coffin. The frost-crowned Monarch rises from the superfluid, aiming the great Astronomical Lens down into the valley to extinguish all biological heat.",
+  "cast": [
+    {
+      "id": "factor-vane",
+      "name": "Factor Vane of House Kestrel",
+      "role": "Master of the Zero-Entropy Rite",
+      "fragment_id": "space-vampires/anti-life-entropy",
+      "world_pos": [50.0, 24.0],
+      "standing": "enemy",
+      "description": "Calibrating the lens gimbal to begin Beat 1 of the catastrophic extinction Cast."
+    },
+    {
+      "id": "hollis",
+      "name": "Hollis the Twice-Written",
+      "role": "Clerk of Triplicate Forfeiture",
+      "fragment_id": "customs-house/hollis-ledger",
+      "world_pos": [44.0, 32.0],
+      "standing": "helps",
+      "description": "Arrived with the 1588 customs ledger to stamp a Writ of Forfeiture and teleport the contraband back to the yard vault under Beat 6 rules."
+    },
+    {
+      "id": "pell",
+      "name": "Pell the Written",
+      "role": "The Proscenium Lead",
+      "fragment_id": "shared/glyph-unwritten-mark",
+      "world_pos": [50.0, 28.0],
+      "standing": "helps",
+      "description": "Taking the focal cue mark to speak the final lines authored in his book and cast the permanent summer road."
+    }
+  ],
+  "primitives": [
+    {
+      "id": "solar-focus-lens",
+      "name": "High Chancel Solar Focus Lens",
+      "asset_id": "solar-focus-lens",
+      "fragment_id": "wizard-tower/first-cast-beats",
+      "category": "instruments",
+      "tree_group": "Instruments & Monuments",
+      "stage_role": "Focal Plane Cast Generator & Astronomical Lens",
+      "dimensions": [4.8, 3.2, 5.6],
+      "triangle_count": 32,
+      "stl_path": "library/stl_primitives/solar-focus-lens.stl",
+      "world_pos": [50.0, 22.0],
+      "description": "The civic instrument of the Mount: where intent is declared at the focal plane, and the room does not change, and the world is."
+    },
+    {
+      "id": "glass-stasis-coffin",
+      "name": "Cracked Stasis Coffin (Draining Superfluid)",
+      "asset_id": "glass_stasis_coffin",
+      "fragment_id": "space-vampires/glass-stasis-coffin",
+      "category": "vessels",
+      "tree_group": "Quest Relics & Cargo",
+      "stage_role": "Draining Cryogenic Vessel on Chancel Dais",
+      "dimensions": [0.95, 2.3, 0.75],
+      "triangle_count": 28,
+      "stl_path": "library/stl_primitives/glass-stasis-coffin.stl",
+      "world_pos": [52.0, 26.0],
+      "description": "Borosilicate coffin hull cracked open on the chancel flagstones, superfluid pooling beneath the focal gimbal."
+    },
+    {
+      "id": "solarium-mirror",
+      "name": "East Solarium Alignment Heliostat",
+      "asset_id": "solarium-mirror",
+      "fragment_id": "wizard-tower/glass-cathedral",
+      "category": "instruments",
+      "tree_group": "Instruments & Monuments",
+      "stage_role": "Solar Concentrator Heliostat",
+      "dimensions": [2.6, 1.2, 3.4],
+      "triangle_count": 24,
+      "stl_path": "library/stl_primitives/solarium-mirror.stl",
+      "world_pos": [74.0, 26.0],
+      "description": "High-altitude quartz mirror feeding concentrated solar flux into the primary chancel lens."
+    }
+  ]
+}

@@ -1,6 +1,8 @@
 {
   "schema_version": 1,
   "id": "glass-cathedral",
+  "campaign_id": "tests",
+  "act_id": "test-act-cathedral",
   "name": "The Glass Cathedral in the Sky",
   "act": "Act IV: The High Solarium & Solar Focus",
   "world_id": "wizard-tower",

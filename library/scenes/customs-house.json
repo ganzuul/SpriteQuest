@@ -1,6 +1,8 @@
 {
   "schema_version": 1,
   "id": "customs-house",
+  "campaign_id": "tests",
+  "act_id": "test-act-customs",
   "name": "The Border Customs House",
   "act": "Act I: The Forfeit Corridor & Foyer",
   "world_id": "customs-house",

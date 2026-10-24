@@ -20,8 +20,40 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 SCENES_DIR = REPO_ROOT / "library" / "scenes"
+CAMPAIGNS_DIR = REPO_ROOT / "library" / "campaigns"
 
 from companion.render_primitive_2d import get_primitive_2d_data_url
+
+
+@dataclass
+class ActDefinition:
+    id: str
+    name: str
+    description: str
+    scenes: list[str] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass
+class CampaignDefinition:
+    id: str
+    name: str
+    short_name: str
+    description: str
+    document_ref: str | None = None
+    acts: list[ActDefinition] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "id": self.id,
+            "name": self.name,
+            "short_name": self.short_name,
+            "description": self.description,
+            "document_ref": self.document_ref,
+            "acts": [a.to_dict() for a in self.acts],
+        }
 
 
 @dataclass
@@ -57,6 +89,8 @@ class SceneDefinition:
     world_id: str
     category: str
     description: str
+    campaign_id: str = "tests"
+    act_id: str = ""
     primitives: list[ScenePrimitive] = field(default_factory=list)
     cast: list[dict[str, Any]] = field(default_factory=list)
     map_ref: str | None = None
@@ -67,6 +101,8 @@ class SceneDefinition:
             "id": self.id,
             "name": self.name,
             "act": self.act,
+            "act_id": self.act_id,
+            "campaign_id": self.campaign_id,
             "world_id": self.world_id,
             "category": self.category,
             "description": self.description,
@@ -75,6 +111,42 @@ class SceneDefinition:
             "cast": self.cast,
             "primitives": [p.to_dict() for p in self.primitives],
         }
+
+
+def load_all_campaigns(campaigns_dir: Path = CAMPAIGNS_DIR) -> dict[str, CampaignDefinition]:
+    """Load all campaign definitions from library/campaigns/."""
+    campaigns: dict[str, CampaignDefinition] = {}
+    if not campaigns_dir.is_dir():
+        return campaigns
+
+    order = ["tests", "unwritten-consignment"]
+    stems = [f.stem for f in sorted(campaigns_dir.glob("*.json"))]
+    ordered_stems = [s for s in order if s in stems] + [s for s in stems if s not in order]
+
+    for stem in ordered_stems:
+        c_path = campaigns_dir / f"{stem}.json"
+        if not c_path.is_file():
+            continue
+        data = json.loads(c_path.read_text(encoding="utf-8"))
+        acts = []
+        for a in data.get("acts", []):
+            acts.append(
+                ActDefinition(
+                    id=a.get("id", ""),
+                    name=a.get("name", ""),
+                    description=a.get("description", ""),
+                    scenes=list(a.get("scenes", [])),
+                )
+            )
+        campaigns[stem] = CampaignDefinition(
+            id=data.get("id", stem),
+            name=data.get("name", stem),
+            short_name=data.get("short_name", stem),
+            description=data.get("description", ""),
+            document_ref=data.get("document_ref"),
+            acts=acts,
+        )
+    return campaigns
 
 
 def load_scene_definition(scene_id: str, scenes_dir: Path = SCENES_DIR) -> SceneDefinition | None:
@@ -110,6 +182,8 @@ def load_scene_definition(scene_id: str, scenes_dir: Path = SCENES_DIR) -> Scene
         id=data.get("id", scene_id),
         name=data.get("name", scene_id),
         act=data.get("act", ""),
+        campaign_id=data.get("campaign_id", "tests"),
+        act_id=data.get("act_id", ""),
         world_id=data.get("world_id", ""),
         category=data.get("category", "scene"),
         description=data.get("description", ""),
@@ -121,13 +195,26 @@ def load_scene_definition(scene_id: str, scenes_dir: Path = SCENES_DIR) -> Scene
 
 
 def load_all_scenes(scenes_dir: Path = SCENES_DIR) -> dict[str, SceneDefinition]:
-    """Load all scene definitions available in library/scenes/ ordered by Act."""
+    """Load all scene definitions available in library/scenes/."""
     scenes: dict[str, SceneDefinition] = {}
     if not scenes_dir.is_dir():
         return scenes
 
-    # Order chronologically by Act I -> Act II -> Act III -> Act IV
-    preferred_order = ["customs-house", "border-march", "unwritten-ascent", "glass-cathedral"]
+    preferred_order = [
+        "customs-house",
+        "border-march",
+        "unwritten-ascent",
+        "glass-cathedral",
+        "consignment-intake-foyer",
+        "consignment-weigh-hall",
+        "consignment-border-pass",
+        "consignment-overhang-bastion",
+        "consignment-orom-shrine",
+        "consignment-unwritten-seam",
+        "consignment-entropy-beacons",
+        "consignment-cathedral-nave",
+        "consignment-solar-focus-chancel",
+    ]
     found_stems = [f.stem for f in sorted(scenes_dir.glob("*.json"))]
     ordered_stems = [s for s in preferred_order if s in found_stems] + [
         s for s in found_stems if s not in preferred_order
@@ -141,12 +228,28 @@ def load_all_scenes(scenes_dir: Path = SCENES_DIR) -> dict[str, SceneDefinition]
     return scenes
 
 
-def export_scenes_manifest(scenes_dir: Path = SCENES_DIR) -> dict[str, Any]:
-    """Export complete scenes bundle for client-side embedding in the web viewer."""
+def export_scenes_manifest(
+    scenes_dir: Path = SCENES_DIR,
+    campaigns_dir: Path = CAMPAIGNS_DIR,
+) -> dict[str, Any]:
+    """Export complete campaigns and scenes bundle for client-side embedding in the web viewer."""
+    all_campaigns = load_all_campaigns(campaigns_dir)
     all_scenes = load_all_scenes(scenes_dir)
+
+    for cid, camp in all_campaigns.items():
+        for act in camp.acts:
+            for sid in act.scenes:
+                if sid in all_scenes:
+                    all_scenes[sid].campaign_id = cid
+                    all_scenes[sid].act_id = act.id
+
     return {
+        "campaigns": [c.to_dict() for c in all_campaigns.values()],
+        "campaigns_by_id": {c_id: c.to_dict() for c_id, c in all_campaigns.items()},
         "scenes": [s.to_dict() for s in all_scenes.values()],
         "scenes_by_id": {s_id: s.to_dict() for s_id, s in all_scenes.items()},
+        "default_campaign_id": "tests",
+        "default_scene_id": "border-march",
         "total_primitives_catalog": sum(len(s.primitives) for s in all_scenes.values()),
     }
 

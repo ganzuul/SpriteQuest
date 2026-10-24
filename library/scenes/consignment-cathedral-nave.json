@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "id": "consignment-cathedral-nave",
+  "campaign_id": "unwritten-consignment",
+  "act_id": "act-4",
+  "name": "Grand Nave & Spun Glass Colonnade",
+  "act": "Act IV: The Glass Cathedral in the Sky",
+  "world_id": "wizard-tower",
+  "category": "interior_floorplan",
+  "floorplan_ref": "library/floorplans/glass-cathedral.json",
+  "description": "Two hundred and forty meters of blown asteroid glass. Sixteen fluted columns forty-five meters tall catch the high-altitude sun, throwing blinding prismatic spears. Taking cover behind the fluted columns shields the party from the solar focus beam.",
+  "cast": [
+    {
+      "id": "pell",
+      "name": "Pell the Written",
+      "role": "Leading Performer",
+      "fragment_id": "shared/glyph-unwritten-mark",
+      "world_pos": [48.0, 72.0],
+      "standing": "helps",
+      "description": "Moving through acoustic cathedral reverberations, timing steps between column shadows."
+    },
+    {
+      "id": "obsidian-wyrm",
+      "name": "The Obsidian Wyrm",
+      "role": "Primordial Voice in the Glass",
+      "fragment_id": "obsidian-wyrm/abyssal-gate",
+      "world_pos": [22.0, 48.0],
+      "standing": "neutral",
+      "description": "Trapped halfway through a fractured solarium mirror, offering to vent the coffin's stolen heat into the Abyssal Gate."
+    }
+  ],
+  "primitives": [
+    {
+      "id": "glass-column-fluted",
+      "name": "Spun Asteroid-Glass Nave Column",
+      "asset_id": "glass-column-fluted",
+      "fragment_id": "wizard-tower/glass-cathedral",
+      "category": "architecture",
+      "tree_group": "Architecture & Terrain",
+      "stage_role": "High Nave Structural Colonnade & Beam Cover",
+      "dimensions": [2.2, 2.2, 45.0],
+      "triangle_count": 36,
+      "stl_path": "library/stl_primitives/glass-column-fluted.stl",
+      "world_pos": [42.0, 60.0],
+      "description": "Monolithic fluted column spun from solar-melted asteroid glass. Provides prismatic ray refraction and total physical cover."
+    },
+    {
+      "id": "solarium-mirror",
+      "name": "West Solarium Articulated Alignment Mirror",
+      "asset_id": "solarium-mirror",
+      "fragment_id": "wizard-tower/first-cast-beats",
+      "category": "instruments",
+      "tree_group": "Instruments & Monuments",
+      "stage_role": "Beam Redirection & Solarium Optic",
+      "dimensions": [2.6, 1.2, 3.4],
+      "triangle_count": 24,
+      "stl_path": "library/stl_primitives/solarium-mirror.stl",
+      "world_pos": [24.0, 48.0],
+      "description": "Gimbal-mounted heliostatic mirror capable of redirecting the high chancel focus toward the Abyssal Gate or back at Vane's dais."
+    }
+  ]
+}

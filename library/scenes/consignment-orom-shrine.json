@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "id": "consignment-orom-shrine",
+  "campaign_id": "unwritten-consignment",
+  "act_id": "act-2",
+  "name": "East Pass Cliff & Orom's Station",
+  "act": "Act II: The Watch on the Overhang & The Grey Wind's Bargain",
+  "world_id": "grey-wind",
+  "category": "outdoor_map",
+  "map_ref": "library/maps/border-march.json",
+  "description": "A sheer slate-grey granite cliff face halfway through the Eastern Pass. Orom of the Grey Wind steps out from solid rock like fog, offering to forge one spoken wish into a literal stone slab in exchange for the True Name of the Seventh Ruin.",
+  "cast": [
+    {
+      "id": "orom",
+      "name": "Orom of the Grey Wind",
+      "role": "Master of the Literal Wish",
+      "fragment_id": "grey-wind/wish-granting",
+      "world_pos": [86.0, 68.0],
+      "standing": "neutral",
+      "description": "Nine-foot entity of matte slate-grey skin who steps through solid cliffs. Ignores game-theoretic bribes; translates spoken intent with coarse literal precision."
+    },
+    {
+      "id": "pell",
+      "name": "Pell the Underwritten",
+      "role": "Supplicant & Speaker of Intent",
+      "fragment_id": "neighboring-kingdom/roles-rehearsed-not-written",
+      "world_pos": [82.0, 68.0],
+      "standing": "understudy",
+      "description": "Standing before Orom to deliver the ruin tally and formulate the exact wording of the party's single wish."
+    }
+  ],
+  "primitives": [
+    {
+      "id": "wish-stone-slab",
+      "name": "Orom's Literal Wish-Stone Slab",
+      "asset_id": "wish-stone-slab",
+      "fragment_id": "grey-wind/wish-granting",
+      "category": "monuments",
+      "tree_group": "Instruments & Monuments",
+      "stage_role": "Materialized Wish Manifestation",
+      "dimensions": [1.6, 0.45, 1.9],
+      "triangle_count": 12,
+      "stl_path": "library/stl_primitives/wish-stone-slab.stl",
+      "world_pos": [86.0, 68.0],
+      "description": "Heavy heart-granite slab hammered with coarse runes. Answers spoken wishes literally: wish for a road, and a massive granite arch bridges the chasm ahead."
+    },
+    {
+      "id": "frontier-brazier",
+      "name": "Grey Wind Hearth Brazier",
+      "asset_id": "frontier-brazier",
+      "fragment_id": "grey-wind/infinite-patience",
+      "category": "hearth",
+      "tree_group": "Stations & Furnishings",
+      "stage_role": "Quench Hearth & Forge Marker",
+      "dimensions": [0.8, 0.8, 1.05],
+      "triangle_count": 12,
+      "stl_path": "library/stl_primitives/frontier-brazier.stl",
+      "world_pos": [84.0, 64.0],
+      "description": "Cold-forged brazier glowing with smoldering bistre embers where Orom tempers stone."
+    }
+  ]
+}

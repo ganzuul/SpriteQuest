@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "id": "consignment-entropy-beacons",
+  "campaign_id": "unwritten-consignment",
+  "act_id": "act-3",
+  "name": "The Frozen Ascent & Beacon Ridge",
+  "act": "Act III: The Climb That Is Not On Any Plan",
+  "world_id": "scaffolded-kingdom",
+  "category": "frontier_road",
+  "map_ref": "library/maps/border-march.json",
+  "description": "High crystalline steps leading into the cloud layer. Factor Vane has seeded provisional Entropy Beacons that turn ambient air into zero-entropy vacuum and coat the stairs in frictionless black ice. Smashing beacons allows Criticizing and Tombstoning them in the Cartographers' Ledger.",
+  "cast": [
+    {
+      "id": "factor-vane",
+      "name": "Factor Vane of House Kestrel",
+      "role": "Rearguard Strategist",
+      "fragment_id": "space-vampires/anti-life-entropy",
+      "world_pos": [72.0, 12.0],
+      "standing": "enemy",
+      "description": "Triggering entropy beacons to freeze the path solid while his bearers ascend into the sky cathedral."
+    },
+    {
+      "id": "surveyor-vellum",
+      "name": "Surveyor-Senior Vellum",
+      "role": "Auditor of Criticism & Tombstones",
+      "fragment_id": "cartographers/canon-warrant",
+      "world_pos": [60.0, 16.0],
+      "standing": "provisional",
+      "description": "Striking permanent tombstones into the ledger to ensure shattered beacons cannot re-synthesize."
+    }
+  ],
+  "primitives": [
+    {
+      "id": "cryo-entropy-beacon",
+      "name": "House Kestrel Cryo-Entropy Beacon",
+      "asset_id": "cryo-entropy-beacon",
+      "fragment_id": "space-vampires/anti-life-entropy",
+      "category": "hazards",
+      "tree_group": "Instruments & Monuments",
+      "stage_role": "Zero-Entropy Vacuum Projector",
+      "dimensions": [1.1, 1.1, 2.7],
+      "triangle_count": 28,
+      "stl_path": "library/stl_primitives/cryo-entropy-beacon.stl",
+      "world_pos": [66.0, 14.0],
+      "description": "Monolithic obsidian resonator projecting absolute zero entropy. Must be physically smashed and criticized in the ledger to collapse the vacuum zone."
+    },
+    {
+      "id": "wish-stone-slab",
+      "name": "Wished Granite Chasm Bridge",
+      "asset_id": "wish-stone-slab",
+      "fragment_id": "grey-wind/wish-granting",
+      "category": "monuments",
+      "tree_group": "Architecture & Terrain",
+      "stage_role": "Permanent Chasm Span",
+      "dimensions": [1.6, 0.45, 1.9],
+      "triangle_count": 12,
+      "stl_path": "library/stl_primitives/wish-stone-slab.stl",
+      "world_pos": [54.0, 18.0],
+      "description": "Heart-granite span summoned by Orom's literal forge, spanning the gap where stairs unloaded."
+    }
+  ]
+}

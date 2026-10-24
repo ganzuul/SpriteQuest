@@ -1647,6 +1647,26 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
       color: #f3ece2;
       border-color: var(--accent);
     }}
+    .sidebar-picker-cascade {{
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      margin-bottom: 6px;
+      min-width: 0;
+    }}
+    .sidebar-cascade-row {{
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }}
+    .sidebar-cascade-label {{
+      font-size: 8.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #a8947f;
+    }}
     .scene-select {{
       width: 100%;
       background: #120f0d;
@@ -1655,25 +1675,25 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
       font-family: inherit;
       font-size: 11px;
       font-weight: 600;
-      padding: 5px 7px;
-      border-radius: 5px;
+      padding: 4px 6px;
+      border-radius: 4px;
       outline: none;
       cursor: pointer;
-      margin-bottom: 6px;
       box-sizing: border-box;
       max-width: 100%;
     }}
     .scene-select:focus {{
       border-color: var(--accent);
     }}
-    .sidebar-scene-act {{
-      font-size: 10.5px;
+    .sidebar-hierarchy-crumb {{
+      font-size: 9.5px;
       font-weight: 700;
       color: var(--accent-gold);
-      margin-bottom: 3px;
+      margin: 2px 0 4px 0;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      min-width: 0;
     }}
     .sidebar-scene-desc {{
       font-size: 10px;
@@ -2097,26 +2117,51 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
   </header>
 
   <div id="main-container">
-    <!-- Left Sidebar: Asset Navigation Panel (1. Scene Picker -> 2. Tree View -> 3. Asset Preview) -->
+    <!-- Left Sidebar: Asset Navigation Panel (1. Campaign/Act/Scene Picker -> 2. Tree View -> 3. Asset Preview) -->
     <aside class="asset-nav-sidebar" id="asset-nav-sidebar">
-      <!-- 1. Top: Scene Picker -->
+      <!-- 1. Top: Campaign -> Act -> Scene Cascade Picker -->
       <div class="sidebar-scene-picker" id="sidebar-scene-picker">
         <div class="sidebar-section-header">
-          <span class="sidebar-section-title">🗺️ Scene Staging</span>
+          <span class="sidebar-section-title">🗺️ Campaign & Staging</span>
           <div style="display: flex; align-items: center; gap: 6px;">
             <span class="section-summary-badge"><span id="primitives-badge-count">6</span> Assets</span>
             <button class="sidebar-collapse-btn" id="btn-sidebar-collapse" onclick="window.viewer && window.viewer.toggleSidebar && window.viewer.toggleSidebar(true)" title="Collapse asset navigation panel">◀</button>
           </div>
         </div>
-        <select id="scene-selector" class="scene-select" onchange="onSceneSelectChange(this.value)">
-          <option value="customs-house">Act I: The Border Customs House</option>
-          <option value="border-march" selected>Act II: The Border March & Pass</option>
-          <option value="unwritten-ascent">Act III: The Unwritten Ascent</option>
-          <option value="glass-cathedral">Act IV: The Glass Cathedral</option>
-        </select>
-        <div class="sidebar-scene-act" id="sidebar-scene-act">Act II: The Mountain Pass & Ancient Overhang</div>
+
+        <!-- 3-level Hierarchy: Campaigns -> Acts -> Scenes -->
+        <div class="sidebar-picker-cascade">
+          <div class="sidebar-cascade-row">
+            <span class="sidebar-cascade-label">Campaign</span>
+            <select id="campaign-selector" class="scene-select" onchange="onCampaignSelectChange(this.value)">
+              <option value="tests">Tests & Verification</option>
+              <option value="unwritten-consignment" selected>The Unwritten Consignment</option>
+            </select>
+          </div>
+
+          <div class="sidebar-cascade-row">
+            <span class="sidebar-cascade-label">Act</span>
+            <select id="act-selector" class="scene-select" onchange="onActSelectChange(this.value)">
+              <option value="act-1">Act I: The Cold Crate at the Customs House</option>
+              <option value="act-2" selected>Act II: The Watch on the Overhang & The Grey Wind's Bargain</option>
+              <option value="act-3">Act III: The Climb That Is Not On Any Plan</option>
+              <option value="act-4">Act IV: The Glass Cathedral in the Sky</option>
+            </select>
+          </div>
+
+          <div class="sidebar-cascade-row">
+            <span class="sidebar-cascade-label">Scene</span>
+            <select id="scene-selector" class="scene-select" onchange="onSceneSelectChange(this.value)">
+              <option value="consignment-border-pass" selected>The Mountain Pass & Eastern Ridge</option>
+              <option value="consignment-overhang-bastion">The 45° Bastion & Relic Cairn</option>
+              <option value="consignment-orom-shrine">East Pass Cliff & Orom's Station</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="sidebar-hierarchy-crumb" id="sidebar-hierarchy-crumb">The Unwritten Consignment › Act II › Mountain Pass</div>
         <div class="sidebar-scene-desc" id="sidebar-scene-desc">
-          An uneven frontier landscape stretching between two level chunks.
+          Steep stepped strata of slate and alpine scree between 22-meter granite peaks.
         </div>
       </div>
 
@@ -2446,6 +2491,16 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
     if (window.viewer && window.viewer.filterPrimitives) window.viewer.filterPrimitives(cat);
   }}
   window.filterPrimitives = filterPrimitives;
+
+  function onCampaignSelectChange(campaignId) {{
+    if (window.viewer && window.viewer.selectCampaign) window.viewer.selectCampaign(campaignId);
+  }}
+  window.onCampaignSelectChange = onCampaignSelectChange;
+
+  function onActSelectChange(actId) {{
+    if (window.viewer && window.viewer.selectAct) window.viewer.selectAct(actId);
+  }}
+  window.onActSelectChange = onActSelectChange;
 
   function onSceneSelectChange(sceneId) {{
     if (window.viewer && window.viewer.selectScene) window.viewer.selectScene(sceneId);

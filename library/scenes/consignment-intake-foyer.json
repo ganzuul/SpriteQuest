@@ -1,0 +1,108 @@
+{
+  "schema_version": 1,
+  "id": "consignment-intake-foyer",
+  "campaign_id": "unwritten-consignment",
+  "act_id": "act-1",
+  "name": "Intake Foyer & Forfeit Corridor",
+  "act": "Act I: The Cold Crate at the Customs House",
+  "world_id": "customs-house",
+  "category": "interior_floorplan",
+  "floorplan_ref": "library/floorplans/customs-house.json",
+  "description": "Rain needles the zinc roof of the Border Customs House. A trail of blue hoarfrost creeps out from under the iron wicket of the Forfeit Corridor. Hollis the Twice-Written furiously balances his two-column ledger while Factor Vane watches a silicon hourglass.",
+  "cast": [
+    {
+      "id": "hollis",
+      "name": "Hollis the Twice-Written",
+      "role": "Quartermaster of the Scaffolded Kingdom",
+      "fragment_id": "customs-house/hollis-ledger",
+      "world_pos": [63.0, 69.0],
+      "standing": "written",
+      "description": "Unshaven quartermaster in chainmail under a clerk's coat; left polygon shoulder unmodelled. Obsessed with 1588 bell weights and balancing the ledger."
+    },
+    {
+      "id": "factor-vane",
+      "name": "Factor Vane of House Kestrel",
+      "role": "Diplomatic Consignment Factor",
+      "fragment_id": "space-vampires/mercantile-house",
+      "world_pos": [56.0, 68.0],
+      "standing": "enemy",
+      "description": "Porcelain-skinned factor in vacuum-tight obsidian robes with frost clinging to his collar, computing Nash equilibria on a silicon tablet."
+    },
+    {
+      "id": "pell",
+      "name": "Pell the Underwritten",
+      "role": "Carrier & Anxious Understudy",
+      "fragment_id": "neighboring-kingdom/roles-rehearsed-not-written",
+      "world_pos": [48.0, 56.0],
+      "standing": "understudy",
+      "description": "Earnest young performer clutching a script blank below line one. Taking a grudge bolts the stage door; authoring a named role turns him into your boldest companion."
+    },
+    {
+      "id": "surveyor-vellum",
+      "name": "Surveyor-Senior Vellum",
+      "role": "Bureau of the Unwritten Atlas",
+      "fragment_id": "cartographers/epistemic-survey",
+      "world_pos": [42.0, 64.0],
+      "standing": "provisional",
+      "description": "Ink-stained field auditor in a waxed greatcoat with a brass astrolabe that spins wildly near unrendered ground."
+    }
+  ],
+  "primitives": [
+    {
+      "id": "common-table",
+      "name": "Hollis's Quartermaster Ledger Desk",
+      "asset_id": "quartermaster_desk",
+      "fragment_id": "customs-house/hollis-ledger",
+      "category": "furniture",
+      "tree_group": "Stations & Furnishings",
+      "stage_role": "Arbitration Counter & Two-Column Balance",
+      "dimensions": [2.4, 1.2, 0.85],
+      "triangle_count": 12,
+      "stl_path": "library/stl_primitives/common-table.stl",
+      "world_pos": [63.0, 69.0],
+      "description": "Scaffolded oak counter grooved from thousands of brass tallies. Holds the master customs manifest, red sealing wax, and ink horn."
+    },
+    {
+      "id": "glass-stasis-coffin",
+      "name": "Crate #00-NULL / Glass Stasis Coffin",
+      "asset_id": "glass_stasis_coffin",
+      "fragment_id": "space-vampires/glass-stasis-coffin",
+      "category": "vessels",
+      "tree_group": "Quest Relics & Cargo",
+      "stage_role": "Smuggled Zero-Entropy Cryogenic Vessel",
+      "dimensions": [0.95, 2.3, 0.75],
+      "triangle_count": 28,
+      "stl_path": "library/stl_primitives/glass-stasis-coffin.stl",
+      "world_pos": [36.0, 78.0],
+      "description": "Smuggled inside coarse Baltic pine slats, chilling the flagstones to absolute zero. Triggers a live Cross-Domain Coherence conflict until curated."
+    },
+    {
+      "id": "r6-ship-crate",
+      "name": "Declared R6-SHIP Salted Turnip Bounding Box",
+      "asset_id": "r6_ship_crate_standard",
+      "fragment_id": "customs-house/r6-ship",
+      "category": "containers",
+      "tree_group": "Quest Relics & Cargo",
+      "stage_role": "Standard Baltic Pine Bounding Crate",
+      "dimensions": [1.2, 1.2, 1.2],
+      "triangle_count": 12,
+      "stl_path": "library/stl_primitives/r6-ship-crate.stl",
+      "world_pos": [52.0, 60.0],
+      "description": "Standardised container used as fraudulent diplomatic cover. Everything downstream (rate, seal, clearance) is arithmetic on the box."
+    },
+    {
+      "id": "common-cabinet",
+      "name": "Sealed Customs Forfeit Locker",
+      "asset_id": "common-cabinet",
+      "fragment_id": "customs-house/statutes",
+      "category": "furniture",
+      "tree_group": "Stations & Furnishings",
+      "stage_role": "Impounded Consignment Storage",
+      "dimensions": [1.1, 0.6, 1.9],
+      "triangle_count": 12,
+      "stl_path": "library/stl_primitives/common-cabinet.stl",
+      "world_pos": [30.0, 82.0],
+      "description": "Reinforced iron-banded locker where Hollis impounds unregistered cargo under statute 1588."
+    }
+  ]
+}

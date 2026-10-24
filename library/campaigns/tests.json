@@ -1,0 +1,32 @@
+{
+  "id": "tests",
+  "name": "Tests & Verification",
+  "short_name": "Tests",
+  "description": "Baseline regression tests, prototypes, and sandbox scenes for SpriteQuest engine verification.",
+  "acts": [
+    {
+      "id": "test-act-customs",
+      "name": "Act I: Customs Floorplan Tests",
+      "description": "Indoor floorplan verification with R6-SHIP crates, beam scales, and desk props.",
+      "scenes": ["customs-house"]
+    },
+    {
+      "id": "test-act-border",
+      "name": "Act II: Border March Terrain Tests",
+      "description": "2.5D outdoor mountain terrain with elevation sampling, 45-degree overhangs, and line-of-sight.",
+      "scenes": ["border-march"]
+    },
+    {
+      "id": "test-act-ascent",
+      "name": "Act III: Unwritten Ascent Void Tests",
+      "description": "Epistemic hazards, wireframe stone steps, and unrendered void testing.",
+      "scenes": ["unwritten-ascent"]
+    },
+    {
+      "id": "test-act-cathedral",
+      "name": "Act IV: Glass Cathedral Nave Tests",
+      "description": "Spun-glass architectural columns, solarium reflectors, and acoustic reverb.",
+      "scenes": ["glass-cathedral"]
+    }
+  ]
+}
