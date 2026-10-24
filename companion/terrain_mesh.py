@@ -532,20 +532,47 @@ class TerrainMesh:
         rgb = np.stack([r, g, b], axis=-1).astype(np.uint8)
         return Image.fromarray(rgb, mode="RGB")
 
+    def render_z_depth_map(
+        self,
+        width: int = 1024,
+        height: int = 1024,
+        invert: bool = False,
+    ) -> Image.Image:
+        """
+        Render a normalized 8-bit Z-depth map from the elevation heightfield.
+        Elevations are mapped linearly:
+          - invert=False: z_min -> 0 (black/distant), z_max -> 255 (white/highest peaks)
+          - invert=True:  z_min -> 255, z_max -> 0 (optical distance from camera)
+        Returns a PIL Image in mode 'L' resized to (width, height).
+        """
+        z_min = float(self.heights.min())
+        z_max = float(self.heights.max())
+        denom = max(z_max - z_min, 1e-6)
+        norm = (self.heights - z_min) / denom
+        if invert:
+            norm = 1.0 - norm
+        u8 = np.clip(norm * 255.0, 0, 255).astype(np.uint8)
+        img = Image.fromarray(u8, mode="L")
+        if (img.width, img.height) != (width, height):
+            img = img.resize((width, height), Image.Resampling.BILINEAR)
+        return img
+
     def render_stratum_layer(
         self,
         stratum_index: int,
         num_strata: int = 4,
         contour_step_m: float = 2.0,
+        base_art: Image.Image | None = None,
     ) -> Image.Image:
         """
         Render an RGBA image containing ONLY the terrain geometry belonging to
         the given stratum elevation band [z_min, z_max]. Outside pixels have alpha=0.
         Essential for true CSS 3D parallax where upper strata reveal lower terrain.
-        """
-        relief = self.render_topdown_relief(contour_step_m=contour_step_m)
-        relief_arr = np.asarray(relief, dtype=np.uint8)
 
+        If base_art is provided (e.g. diffusion-rendered map art), it is used as the
+        color plate with the stratum alpha mask applied. Otherwise, falls back to
+        render_topdown_relief.
+        """
         strata = self.slice_strata(num_strata=num_strata)
         if stratum_index < 0 or stratum_index >= len(strata):
             raise IndexError(f"Stratum index {stratum_index} out of range (0..{len(strata)-1})")
@@ -564,9 +591,103 @@ class TerrainMesh:
         else:
             mask = (self.heights >= z_lo) & (self.heights <= z_hi)
 
-        alpha = np.where(mask, 255, 0).astype(np.uint8)
-        rgba = np.dstack([relief_arr, alpha])
-        return Image.fromarray(rgba, mode="RGBA")
+        alpha_arr = np.where(mask, 255, 0).astype(np.uint8)
+
+        if base_art is not None:
+            rgba = base_art.convert("RGBA").copy()
+            alpha_img = Image.fromarray(alpha_arr, mode="L")
+            if alpha_img.size != rgba.size:
+                alpha_img = alpha_img.resize(rgba.size, Image.Resampling.BILINEAR)
+            rgba.putalpha(alpha_img)
+            return rgba
+
+        relief = self.render_topdown_relief(contour_step_m=contour_step_m)
+        relief_arr = np.asarray(relief, dtype=np.uint8)
+        rgba_arr = np.dstack([relief_arr, alpha_arr])
+        return Image.fromarray(rgba_arr, mode="RGBA")
+
+
+def rasterize_stl_depth(
+    stl_path: Path | str,
+    width: int = 1024,
+    height: int = 1024,
+    invert: bool = False,
+) -> Image.Image:
+    """
+    Directly parse a binary STL file and rasterize an orthographic top-down Z-depth map.
+    Extracts surface vertices, resolves the top surface Z for every (x, y) grid point,
+    normalizes elevation to [0, 255], and outputs an image resized to (width, height).
+    """
+    stl_path = Path(stl_path)
+    if not stl_path.is_file():
+        raise FileNotFoundError(f"STL file not found: {stl_path}")
+
+    with open(stl_path, "rb") as f:
+        _hdr = f.read(80)
+        num_tri_raw = f.read(4)
+        if len(num_tri_raw) < 4:
+            raise ValueError(f"Corrupt STL header in {stl_path}")
+        num_tri = struct.unpack("<I", num_tri_raw)[0]
+        data = f.read(num_tri * 50)
+
+    record_dtype = np.dtype([
+        ("normal", "<f4", (3,)),
+        ("v0", "<f4", (3,)),
+        ("v1", "<f4", (3,)),
+        ("v2", "<f4", (3,)),
+        ("attr", "<u2")
+    ])
+    triangles = np.frombuffer(data, dtype=record_dtype)
+    if len(triangles) == 0:
+        return Image.new("L", (width, height), 0)
+
+    # Surface points from all triangle vertices
+    pts = np.concatenate([triangles["v0"], triangles["v1"], triangles["v2"]], axis=0)
+
+    # Sort descending by Z so the highest vertex takes priority at each (X, Y)
+    sort_order = np.argsort(-pts[:, 2])
+    pts_sorted = pts[sort_order]
+
+    # Unique by quantized (X, Y) coordinates (millimetre precision)
+    xy_keys = np.round(pts_sorted[:, :2], 3)
+    _, u_idx = np.unique(xy_keys, axis=0, return_index=True)
+    top_pts = pts_sorted[u_idx]
+
+    xs = top_pts[:, 0]
+    ys = top_pts[:, 1]
+    zs = top_pts[:, 2]
+
+    x_min, x_max = float(xs.min()), float(xs.max())
+    y_min, y_max = float(ys.min()), float(ys.max())
+    z_min, z_max = float(zs.min()), float(zs.max())
+
+    # Detect grid resolution
+    u_xs = np.unique(np.round(xs, 3))
+    dxs = np.diff(u_xs)
+    step_x = float(dxs[dxs > 1e-4].min()) if len(dxs[dxs > 1e-4]) > 0 else 1.0
+
+    u_ys = np.unique(np.round(ys, 3))
+    dys = np.diff(u_ys)
+    step_y = float(dys[dys > 1e-4].min()) if len(dys[dys > 1e-4]) > 0 else 1.0
+
+    grid_cols = int(round((x_max - x_min) / step_x)) + 1
+    grid_rows = int(round((y_max - y_min) / step_y)) + 1
+
+    grid = np.full((grid_rows, grid_cols), z_min, dtype=np.float32)
+    col_idx = np.clip(np.round((xs - x_min) / step_x).astype(int), 0, grid_cols - 1)
+    row_idx = np.clip(np.round((ys - y_min) / step_y).astype(int), 0, grid_rows - 1)
+    grid[row_idx, col_idx] = zs
+
+    denom = max(z_max - z_min, 1e-6)
+    norm = (grid - z_min) / denom
+    if invert:
+        norm = 1.0 - norm
+    u8 = np.clip(norm * 255.0, 0, 255).astype(np.uint8)
+
+    img = Image.fromarray(u8, mode="L")
+    if (img.width, img.height) != (width, height):
+        img = img.resize((width, height), Image.Resampling.BILINEAR)
+    return img
 
 
 def load_outdoor_map_scene(map_path: Path) -> tuple[TerrainMesh, dict]:

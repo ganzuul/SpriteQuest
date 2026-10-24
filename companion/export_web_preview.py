@@ -25,9 +25,11 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+from PIL import Image
+
 from companion.scene_placement import ScenePlacementEngine
 from companion.terrain_lighting import TerrainLighting
-from companion.terrain_mesh import load_outdoor_map_scene
+from companion.terrain_mesh import load_outdoor_map_scene, rasterize_stl_depth
 
 
 def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
@@ -40,13 +42,56 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
         for r in range(tm.rows)
     ]
 
+    map_dir = out_html_path.parent
+    stl_path = map_dir / f"{map_data.get('id', map_path.stem)}.stl"
+    depth_path = map_dir / "depth_map.png"
+    art_path = map_dir / "map_art.png"
+    relief_path = map_dir / "topdown_relief.png"
+
+    # 1. Z-depth map from binary STL if present, else TerrainMesh heightfield
+    if not depth_path.is_file():
+        if stl_path.is_file():
+            depth_img = rasterize_stl_depth(stl_path, width=1024, height=1024)
+        else:
+            depth_img = tm.render_z_depth_map(width=1024, height=1024)
+        depth_img.save(depth_path, format="PNG")
+    else:
+        depth_img = Image.open(depth_path)
+
+    # 2. Base map art: use pre-rendered diffusion art if present, else stylized cartography
+    if art_path.is_file():
+        base_art = Image.open(art_path)
+    else:
+        from companion.render_map_art import render_stylized_cartography
+        base_art = render_stylized_cartography(tm, width=1024, height=1024)
+        base_art.save(art_path, format="PNG")
+
+    # 3. Topdown relief for inspection/toggle
+    if not relief_path.is_file():
+        relief_img = tm.render_topdown_relief(contour_step_m=2.0)
+        relief_img.save(relief_path, format="PNG")
+    else:
+        relief_img = Image.open(relief_path)
+
     import io
     strata_b64: list[str] = []
     for s_idx in range(4):
-        s_img = tm.render_stratum_layer(s_idx, num_strata=4, contour_step_m=2.0)
+        s_img = tm.render_stratum_layer(s_idx, num_strata=4, contour_step_m=2.0, base_art=base_art)
+        if s_img.size != (600, 700):
+            s_img = s_img.resize((600, 700), Image.Resampling.BILINEAR)
         s_buf = io.BytesIO()
-        s_img.save(s_buf, format="PNG")
+        s_img.save(s_buf, format="PNG", optimize=True)
         strata_b64.append(base64.b64encode(s_buf.getvalue()).decode("ascii"))
+
+    depth_preview = depth_img.resize((600, 700), Image.Resampling.BILINEAR) if depth_img.size != (600, 700) else depth_img
+    depth_buf = io.BytesIO()
+    depth_preview.save(depth_buf, format="PNG", optimize=True)
+    depth_b64 = base64.b64encode(depth_buf.getvalue()).decode("ascii")
+
+    relief_preview = relief_img.resize((600, 700), Image.Resampling.BILINEAR) if relief_img.size != (600, 700) else relief_img
+    relief_buf = io.BytesIO()
+    relief_preview.save(relief_buf, format="PNG", optimize=True)
+    relief_b64 = base64.b64encode(relief_buf.getvalue()).decode("ascii")
 
     strata_json = json.dumps([
         {"id": s.id, "name": s.name, "z_min": s.z_min, "z_max": s.z_max, "css_z": s.css_z_px}
@@ -112,6 +157,35 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
     }}
     .controls-hint {{ font-size: 11px; color: #9c8e80; }}
 
+    .view-mode-tabs {{
+      display: flex;
+      gap: 5px;
+      background: #151311;
+      padding: 3px;
+      border-radius: 6px;
+      border: 1px solid #332d27;
+    }}
+    .view-tab {{
+      background: transparent;
+      border: none;
+      color: #9c8e80;
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s ease;
+    }}
+    .view-tab:hover {{
+      color: #f3ece2;
+      background: #2a241e;
+    }}
+    .view-tab.active {{
+      background: #2dd4bf;
+      color: #0d0b0a;
+      font-weight: 600;
+    }}
+
     #main-container {{
       flex: 1;
       display: flex;
@@ -171,6 +245,31 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
       background-image: url('data:image/png;base64,{strata_b64[3]}');
       transform: translateZ(140px);
       filter: drop-shadow(0 14px 28px rgba(0,0,0,0.7));
+    }}
+
+    /* Inspection Overlay (Z-Depth Map or Topo Relief) */
+    .inspection-layer {{
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background-size: cover;
+      pointer-events: none;
+      transform: translateZ(1px);
+      opacity: 0;
+      transition: opacity 0.22s ease;
+      z-index: 5;
+    }}
+    .world-plane.mode-depth .inspection-layer {{
+      opacity: 1;
+      background-image: url('data:image/png;base64,{depth_b64}');
+    }}
+    .world-plane.mode-relief .inspection-layer {{
+      opacity: 1;
+      background-image: url('data:image/png;base64,{relief_b64}');
+    }}
+    .world-plane.mode-depth .stratum-layer,
+    .world-plane.mode-relief .stratum-layer {{
+      opacity: 0.12;
     }}
 
     /* Canvas Overlays (Lighting, Probe & Sightlines) */
@@ -1408,6 +1507,11 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
     <div>
       <h1>SpriteQuest 2.5D Topological Parallax Engine <span class="badge">{map_data.get('id')}</span></h1>
     </div>
+    <div class="view-mode-tabs">
+      <button class="view-tab active" id="tab-art" onclick="setLayerMode('art')" title="Full 3D Parallax Map Art">🗺️ Map Art</button>
+      <button class="view-tab" id="tab-depth" onclick="setLayerMode('depth')" title="Topographic Z-Depth Map">⛰️ Z-Depth Map</button>
+      <button class="view-tab" id="tab-relief" onclick="setLayerMode('relief')" title="Hillshade & Contour Relief">📐 Topo Relief</button>
+    </div>
     <div class="controls-hint">
       WASD / Arrows / Click to Move • Mouse Hover probes elevation & dynamic shadows
     </div>
@@ -1421,6 +1525,9 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
         <div class="stratum-layer layer-1"></div>
         <div class="stratum-layer layer-2"></div>
         <div class="stratum-layer layer-3"></div>
+
+        <!-- Inspection layer (Z-Depth Map or Topo Relief overlay) -->
+        <div class="inspection-layer" id="inspection-layer"></div>
 
         <!-- Features plane (zones, walls, portals, props) -->
         <div class="features-plane" id="features"></div>
@@ -1660,6 +1767,22 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
 
   <script>
 {viewer_js_code}
+
+  function setLayerMode(mode) {{
+    const world = document.getElementById('world');
+    if (!world) return;
+    world.classList.remove('mode-art', 'mode-depth', 'mode-relief');
+    if (mode !== 'art') {{
+      world.classList.add('mode-' + mode);
+    }}
+    document.querySelectorAll('.view-tab').forEach(b => b.classList.remove('active'));
+    const activeBtn = document.getElementById('tab-' + mode);
+    if (activeBtn) activeBtn.classList.add('active');
+    if (window.viewer && window.viewer.log) {{
+      window.viewer.log('VIEWPORT', 'Switched terrain view mode to ' + mode.toUpperCase());
+    }}
+  }}
+  window.setLayerMode = setLayerMode;
 
   window.viewer = initViewer({{
     mapWidthM: {tm.width_m},

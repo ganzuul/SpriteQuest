@@ -17,6 +17,7 @@ import unittest
 from pathlib import Path
 
 import numpy as np
+from PIL import Image
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(REPO_ROOT) not in sys.path:
@@ -28,6 +29,7 @@ from companion.terrain_mesh import (
     SLOPE_SCRAMBLE_MAX_DEG,
     SLOPE_WALKABLE_MAX_DEG,
     TerrainMesh,
+    rasterize_stl_depth,
 )
 
 
@@ -119,6 +121,57 @@ class TestTerrainMesh(unittest.TestCase):
                 count_bytes = f.read(4)
                 stored_count = struct.unpack("<I", count_bytes)[0]
                 self.assertEqual(stored_count, tri_count)
+
+    def test_render_z_depth_map(self):
+        self.tm.add_hill(20.0, 20.0, height=16.0, radius=12.0)
+        depth_img = self.tm.render_z_depth_map(width=256, height=256, invert=False)
+        self.assertEqual(depth_img.size, (256, 256))
+        self.assertEqual(depth_img.mode, "L")
+
+        arr = np.asarray(depth_img)
+        # Peak at center (20m, 20m) should be bright white (close to 255)
+        # Valley at corners should be dark (0)
+        center_val = int(arr[128, 128])
+        corner_val = int(arr[0, 0])
+        self.assertGreater(center_val, 200)
+        self.assertEqual(corner_val, 0)
+
+        # Inverted depth map
+        inv_depth = self.tm.render_z_depth_map(width=256, height=256, invert=True)
+        inv_arr = np.asarray(inv_depth)
+        self.assertLess(int(inv_arr[128, 128]), 50)
+        self.assertEqual(int(inv_arr[0, 0]), 255)
+
+    def test_rasterize_stl_depth(self):
+        self.tm.add_hill(20.0, 20.0, height=14.0, radius=10.0)
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            stl_path = Path(tmp_dir) / "hill.stl"
+            self.tm.export_stl(stl_path, solid_base=True)
+
+            depth_img = rasterize_stl_depth(stl_path, width=256, height=256)
+            self.assertEqual(depth_img.size, (256, 256))
+            self.assertEqual(depth_img.mode, "L")
+            arr = np.asarray(depth_img)
+            # Center hill should be bright, corners dark
+            self.assertGreater(int(arr[128, 128]), 200)
+            self.assertEqual(int(arr[0, 0]), 0)
+
+    def test_render_stratum_layer_with_base_art(self):
+        self.tm.add_hill(20.0, 20.0, height=16.0, radius=12.0)
+        # Create solid red base art
+        base_art = Image.new("RGB", (256, 256), (255, 0, 0))
+
+        # Stratum 3 (peak)
+        stratum_3 = self.tm.render_stratum_layer(3, num_strata=4, base_art=base_art)
+        self.assertEqual(stratum_3.size, (256, 256))
+        self.assertEqual(stratum_3.mode, "RGBA")
+        arr = np.asarray(stratum_3)
+        # Red channel should be 255
+        self.assertEqual(arr[128, 128, 0], 255)
+        # Alpha at peak should be opaque
+        self.assertGreater(arr[128, 128, 3], 200)
+        # Alpha at corner should be 0
+        self.assertEqual(arr[0, 0, 3], 0)
 
 
 class TestTerrainLighting(unittest.TestCase):
