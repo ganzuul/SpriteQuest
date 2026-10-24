@@ -13,4 +13,4 @@ if [ ! -d "$COMFY" ]; then
   exit 1
 fi
 cd "$COMFY"
-exec .venv/bin/python main.py --port "$PORT"
+exec .venv/bin/python main.py --port "$PORT" --enable-cors-header "*"

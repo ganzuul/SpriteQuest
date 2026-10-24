@@ -69,6 +69,104 @@ export function initViewer(config) {
   let selectedAsset = null;
   const assetImages = new Map();
 
+  // Telemetry & Activity Logging System
+  const logEntries = [];
+  const MAX_LOGS = 300;
+  let comfyServerUrl = 'http://127.0.0.1:8080/upstream/comfyui';
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function log(category, message, level = 'info') {
+    const d = new Date();
+    const timeStr = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}.${String(d.getMilliseconds()).padStart(3, '0')}`;
+    const cat = (category || 'SYS').toUpperCase();
+    const entry = { time: timeStr, category: cat, message, level, timestamp: Date.now() };
+    logEntries.push(entry);
+    if (logEntries.length > MAX_LOGS) {
+      logEntries.shift();
+    }
+
+    if (level === 'error') {
+      console.error(`[${timeStr}] [${cat}]`, message);
+    } else if (level === 'warn') {
+      console.warn(`[${timeStr}] [${cat}]`, message);
+    } else {
+      console.log(`[${timeStr}] [${cat}]`, message);
+    }
+
+    if (typeof document !== 'undefined') {
+      const term = document.getElementById('log-terminal');
+      if (term) {
+        const line = document.createElement('div');
+        line.className = `log-line log-level-${level} log-cat-${cat.toLowerCase()}`;
+        line.innerHTML = `<span class="log-time">${timeStr}</span> <span class="log-badge log-badge-${cat.toLowerCase()}">[${cat}]</span> <span class="log-msg">${escapeHtml(message)}</span>`;
+        if (typeof term.appendChild === 'function') {
+          term.appendChild(line);
+          term.scrollTop = term.scrollHeight;
+        }
+      }
+      const badge = document.getElementById('badge-log-count');
+      if (badge) {
+        badge.innerText = `${logEntries.length} events`;
+      }
+    }
+    return entry;
+  }
+
+  function clearLogs() {
+    logEntries.length = 0;
+    if (typeof document !== 'undefined') {
+      const term = document.getElementById('log-terminal');
+      if (term) term.innerHTML = '';
+      const badge = document.getElementById('badge-log-count');
+      if (badge) badge.innerText = '0 events';
+    }
+    log('SYS', 'Log terminal cleared.');
+  }
+
+  async function checkComfyServer(targetUrl = comfyServerUrl) {
+    comfyServerUrl = targetUrl;
+    log('COMFYUI', `Probing ComfyUI endpoint at ${comfyServerUrl}...`);
+    let online = false;
+    let deviceInfo = 'Offline';
+    try {
+      if (typeof fetch !== 'undefined') {
+        const res = await fetch(`${comfyServerUrl}/system_stats`, { signal: AbortSignal.timeout(3000) });
+        if (res.ok) {
+          const stats = await res.json();
+          online = true;
+          const dev = stats?.devices?.[0]?.name || 'GPU';
+          const vram = stats?.devices?.[0]?.vram_free ? (stats.devices[0].vram_free / 1024 / 1024 / 1024).toFixed(2) + ' GB' : 'active';
+          deviceInfo = `${dev} · ${vram} free`;
+          log('COMFYUI', `Connected to ComfyUI. Device: ${dev}. VRAM free: ${vram}.`);
+        }
+      }
+    } catch (err) {
+      log('COMFYUI', `Server probe unreachable: ${err.message}. ComfyUI offline.`, 'warn');
+    }
+
+    if (typeof document !== 'undefined') {
+      const statusEl = document.getElementById('log-server-status');
+      if (statusEl) {
+        statusEl.className = online ? 'log-status-dot online' : 'log-status-dot offline';
+        statusEl.textContent = online ? 'ComfyUI: Online' : 'ComfyUI: Offline';
+      }
+      const vStatus = document.getElementById('asset-viewer-server-status');
+      if (vStatus) {
+        vStatus.textContent = online ? `ComfyUI · ${deviceInfo}` : 'ComfyUI Offline (Vector Fallback)';
+        vStatus.style.color = online ? '#4ade80' : '#f59e0b';
+      }
+    }
+    return { online, deviceInfo };
+  }
+
   // Initialize physical props from fragments
   physicalPropsList.forEach((fp) => {
     physicalPropsMap.set(fp.id, {
@@ -1777,6 +1875,7 @@ export function initViewer(config) {
     if (!entity) return null;
 
     selectedAsset = entity;
+    log('STAGE', `Selected ${entity.kind}: ${entity.label} [${entity.id}]`);
     renderAssetViewerDOM();
     return selectedAsset;
   }
@@ -1796,9 +1895,15 @@ export function initViewer(config) {
     const badgeEl = document.getElementById('asset-viewer-badge');
     if (badgeEl) {
       if (selectedAsset.forged) {
-        badgeEl.textContent = '[FORGED · FLUX 3 KLEIN]';
-        badgeEl.style.color = '#38bdf8';
-        badgeEl.style.borderColor = '#0284c7';
+        if (selectedAsset.pipelineSource === 'comfyui_diffusion') {
+          badgeEl.textContent = '[FORGED · FLUX 3 LIVE]';
+          badgeEl.style.color = '#34d399';
+          badgeEl.style.borderColor = '#059669';
+        } else {
+          badgeEl.textContent = '[FORGED · FLUX 3 KLEIN]';
+          badgeEl.style.color = '#38bdf8';
+          badgeEl.style.borderColor = '#0284c7';
+        }
       } else {
         const badgeText = selectedAsset.kind === 'prop'
           ? (selectedAsset.salience ? `PROP · ${selectedAsset.salience.toUpperCase()}` : 'PROP')
@@ -1840,9 +1945,13 @@ export function initViewer(config) {
 
         const cap = document.createElement('div');
         cap.className = 'asset-img-caption';
-        cap.textContent = selectedAsset.forged
-          ? '✨ Forged in Asset Forge · Black Forest Labs Flux 3 Klein'
-          : 'Black Forest Labs Flux 3 Klein · Orthographic Matte';
+        if (selectedAsset.forged) {
+          cap.textContent = selectedAsset.pipelineSource === 'comfyui_diffusion'
+            ? '✨ Forged via ComfyUI (Live GPU) · Black Forest Labs Flux 3 Klein'
+            : '✨ Vector Blueprint Draft · Black Forest Labs Flux 3 Klein';
+        } else {
+          cap.textContent = 'Black Forest Labs Flux 3 Klein · Orthographic Matte';
+        }
 
         wrapper.appendChild(img);
         wrapper.appendChild(cap);
@@ -1883,11 +1992,17 @@ export function initViewer(config) {
 
   async function renderAssetInForge(assetId, options = {}) {
     const id = assetId || (selectedAsset ? selectedAsset.id : null);
-    if (!id) return { success: false, reason: 'no_asset_selected' };
+    if (!id) {
+      log('FORGE', 'Render requested with no active asset.', 'warn');
+      return { success: false, reason: 'no_asset_selected' };
+    }
 
     if (!selectedAsset || selectedAsset.id !== id) {
       selectAsset(id);
     }
+
+    log('FORGE', `Initiating render pipeline for '${id}' (${selectedAsset.label}).`);
+    log('FORGE', `Diffusion prompt: "${selectedAsset.diffusion_prompt || 'No prompt specified'}"`);
 
     const btnRender = typeof document !== 'undefined' ? document.getElementById('btn-forge-render') : null;
     if (btnRender) {
@@ -1900,40 +2015,186 @@ export function initViewer(config) {
       imgContainer.innerHTML = `
         <div class="asset-no-img-box" style="padding: 16px;">
           <div style="font-size: 20px;">⚙️</div>
-          <div class="asset-no-img-text" style="color: #38bdf8;">Asset Forge Generating...</div>
-          <div style="font-size: 9px; color: #a8947f; margin-top: 4px;">Target: Black Forest Labs Flux 3 Klein</div>
-          <div class="forge-progress-bar"><div class="forge-progress-fill" style="width: 100%;"></div></div>
+          <div id="forge-status-label" class="asset-no-img-text" style="color: #38bdf8;">Connecting to Render Pipeline...</div>
+          <div id="forge-status-sub" style="font-size: 9px; color: #a8947f; margin-top: 4px;">Target: Black Forest Labs Flux 3 Klein</div>
+          <div class="forge-progress-bar"><div id="forge-progress-fill" class="forge-progress-fill" style="width: 20%;"></div></div>
         </div>
       `;
     }
 
-    const delay = options.immediate ? 0 : 50;
-    if (delay > 0) {
-      await new Promise((r) => setTimeout(r, delay));
+    const setProgress = (pct, label, sub) => {
+      if (typeof document === 'undefined') return;
+      const fill = document.getElementById('forge-progress-fill');
+      if (fill) fill.style.width = `${pct}%`;
+      const lbl = document.getElementById('forge-status-label');
+      if (lbl && label) lbl.textContent = label;
+      const subEl = document.getElementById('forge-status-sub');
+      if (subEl && sub) subEl.textContent = sub;
+    };
+
+    let renderedUrl = null;
+    let pipelineSource = 'vector_blueprint';
+
+    // If options.immediate is true (e.g. headless unit tests), synthesize immediately
+    if (options.immediate) {
+      log('FORGE', 'Fast/test immediate synthesis requested. Generating vector blueprint draft.');
+      renderedUrl = synthesizeForgeRender(selectedAsset);
+    } else {
+      const server = options.server || comfyServerUrl;
+      log('COMFYUI', `Probing ComfyUI endpoint at ${server}...`);
+      setProgress(25, 'Probing ComfyUI Server...', server);
+
+      let comfyOnline = false;
+      try {
+        if (typeof fetch !== 'undefined') {
+          const statsRes = await fetch(`${server}/system_stats`, { signal: AbortSignal.timeout(3000) });
+          if (statsRes.ok) {
+            const stats = await statsRes.json();
+            comfyOnline = true;
+            const device = stats?.devices?.[0]?.name || 'GPU';
+            const vramFree = stats?.devices?.[0]?.vram_free ? (stats.devices[0].vram_free / 1024 / 1024 / 1024).toFixed(2) + ' GB' : 'active';
+            log('COMFYUI', `Connected to ComfyUI. Device: ${device} · VRAM free: ${vramFree}.`);
+          }
+        }
+      } catch (err) {
+        log('COMFYUI', `Server probe failed: ${err.message}. ComfyUI offline.`, 'warn');
+      }
+
+      if (comfyOnline) {
+        try {
+          setProgress(40, 'Assembling Flux 3 Klein Graph...', 'Loading unet + clip + vae');
+          const seed = options.seed || Math.floor(Math.random() * 2147483647);
+          const steps = options.steps || 8;
+          const promptText = selectedAsset.diffusion_prompt || `Orthographic asset for ${selectedAsset.label}`;
+          const negPrompt = options.negativePrompt || 'ugly, blurry, low quality, artifacts, watermark, distorted';
+
+          log('COMFYUI', `Assembled workflow. Seed: ${seed}, Steps: ${steps}, Prompt: "${promptText.slice(0, 50)}..."`);
+          setProgress(55, 'Submitting Prompt to Queue...', `Seed: ${seed}`);
+
+          const workflow = {
+            '1': { 'class_type': 'UnetLoaderGGUF', 'inputs': { 'unet_name': 'flux3_image_klein_sd_Q4_K_M.gguf' } },
+            '2': { 'class_type': 'CLIPLoader', 'inputs': { 'clip_name': 'qwen3vl_4b_int8_convrot.safetensors', 'type': 'flux3', 'device': 'default' } },
+            '3': { 'class_type': 'VAELoader', 'inputs': { 'vae_name': 'flux2-vae.safetensors' } },
+            '4': { 'class_type': 'CLIPTextEncode', 'inputs': { 'clip': ['2', 0], 'text': promptText } },
+            '5': { 'class_type': 'CLIPTextEncode', 'inputs': { 'clip': ['2', 0], 'text': negPrompt } },
+            '6': { 'class_type': 'EmptyFlux2LatentImage', 'inputs': { 'width': 512, 'height': 512, 'batch_size': 1 } },
+            '7': { 'class_type': 'KSampler', 'inputs': { 'model': ['1', 0], 'positive': ['4', 0], 'negative': ['5', 0], 'latent_image': ['6', 0], 'seed': seed, 'steps': steps, 'cfg': 1.0, 'sampler_name': 'euler', 'scheduler': 'simple', 'denoise': 1.0 } },
+            '8': { 'class_type': 'VAEDecode', 'inputs': { 'samples': ['7', 0], 'vae': ['3', 0] } },
+            '9': { 'class_type': 'SaveImage', 'inputs': { 'images': ['8', 0], 'filename_prefix': 'spritequest_forge' } }
+          };
+
+          const clientId = 'sq-' + Math.random().toString(36).substring(2, 9);
+          const queueRes = await fetch(`${server}/prompt`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: workflow, client_id: clientId })
+          });
+
+          if (!queueRes.ok) {
+            throw new Error(`Queue rejected with HTTP ${queueRes.status}`);
+          }
+          const queueData = await queueRes.json();
+          const promptId = queueData.prompt_id;
+          log('COMFYUI', `Prompt queued with ID: ${promptId}. Executing sampler on GPU...`);
+          setProgress(70, 'Sampling (Flux 3 Klein on GPU)...', `Prompt ID: ${promptId.slice(0, 8)}...`);
+
+          // Poll history (up to 45s)
+          const deadline = Date.now() + 45000;
+          let executedImage = null;
+          let pollCount = 0;
+          while (Date.now() < deadline) {
+            await new Promise(r => setTimeout(r, 1000));
+            pollCount++;
+            try {
+              const histRes = await fetch(`${server}/history/${promptId}`);
+              if (histRes.ok) {
+                const hist = await histRes.json();
+                if (hist && hist[promptId]) {
+                  const entry = hist[promptId];
+                  if (entry.status?.status_str === 'error') {
+                    throw new Error('ComfyUI workflow execution error: ' + JSON.stringify(entry.status));
+                  }
+                  const outputs = entry.outputs || {};
+                  for (const nodeOut of Object.values(outputs)) {
+                    if (nodeOut.images && nodeOut.images.length > 0) {
+                      executedImage = nodeOut.images[0];
+                      break;
+                    }
+                  }
+                  if (executedImage) break;
+                }
+              }
+              if (pollCount % 3 === 0) {
+                log('COMFYUI', `Sampler executing on GPU... (${pollCount}s elapsed)`);
+              }
+            } catch (pollErr) {
+              log('COMFYUI', `Polling status: ${pollErr.message}`, 'warn');
+            }
+          }
+
+          if (executedImage) {
+            setProgress(95, 'Decoding & Downloading Output...', executedImage.filename);
+            const imgUrl = `${server}/view?filename=${encodeURIComponent(executedImage.filename)}&type=${encodeURIComponent(executedImage.type || 'output')}&subfolder=${encodeURIComponent(executedImage.subfolder || '')}`;
+            try {
+              if (typeof FileReader !== 'undefined') {
+                const fetchBlob = await fetch(imgUrl);
+                const blob = await fetchBlob.blob();
+                renderedUrl = await new Promise((resolve, reject) => {
+                  const reader = new FileReader();
+                  reader.onloadend = () => resolve(reader.result);
+                  reader.onerror = reject;
+                  reader.readAsDataURL(blob);
+                });
+              } else {
+                renderedUrl = imgUrl;
+              }
+            } catch {
+              renderedUrl = imgUrl;
+            }
+            pipelineSource = 'comfyui_diffusion';
+            log('COMFYUI', `Successfully rendered via ComfyUI: ${executedImage.filename} (512x512).`);
+          } else {
+            throw new Error('Timed out waiting for ComfyUI sampler output.');
+          }
+        } catch (comfyErr) {
+          log('COMFYUI', `ComfyUI execution error: ${comfyErr.message}. Falling back to vector blueprint draft.`, 'warn');
+        }
+      }
     }
 
-    const forgedDataUrl = synthesizeForgeRender(selectedAsset);
-    assetImages.set(id, forgedDataUrl);
+    if (!renderedUrl) {
+      if (!options.immediate) {
+        log('FORGE', 'Generating vector blueprint draft (Flux 3 Klein specification).');
+      }
+      renderedUrl = synthesizeForgeRender(selectedAsset);
+      pipelineSource = 'vector_blueprint';
+    }
 
+    assetImages.set(id, renderedUrl);
     if (physicalPropsMap.has(id)) {
       const p = physicalPropsMap.get(id);
-      p.image_url = forgedDataUrl;
+      p.image_url = renderedUrl;
     } else if (actors.has(id)) {
       const a = actors.get(id);
-      a.image_url = forgedDataUrl;
+      a.image_url = renderedUrl;
     }
 
-    selectedAsset.image_url = forgedDataUrl;
+    selectedAsset.image_url = renderedUrl;
     selectedAsset.forged = true;
+    selectedAsset.pipelineSource = pipelineSource;
 
     playAudioCue('seal_stamp');
+    log('AUDIO', 'Dispatched audio cue: seal_stamp.');
+    log('FORGE', `Asset '${id}' successfully cached and rendered. Source: ${pipelineSource}.`);
+
     renderAssetViewerDOM();
 
     return {
       success: true,
       assetId: id,
-      imageUrl: forgedDataUrl,
+      imageUrl: renderedUrl,
       prompt: selectedAsset.diffusion_prompt,
+      pipelineSource,
       status: 'rendered',
     };
   }
@@ -2686,6 +2947,11 @@ export function initViewer(config) {
   renderFeaturesDOM();
   updatePlayerPosition(playerX, playerY);
   selectAsset('r6_ship_crate_standard');
+  log('STAGE', 'SpriteQuest 2.5D Viewport Engine initialized.');
+  log('STAGE', `Loaded scene with ${physicalPropsMap.size} physical props and ${cueMarks.length} cue marks.`);
+  if (typeof fetch !== 'undefined') {
+    checkComfyServer().catch(() => {});
+  }
 
   const instance = {
     sampleElevation,
@@ -2747,6 +3013,10 @@ export function initViewer(config) {
     getSelectedAsset: () => selectedAsset,
     renderAssetInForge,
     renderSelectedAssetInForge,
+    getLogs: () => [...logEntries],
+    clearLogs,
+    log,
+    checkComfyServer,
   };
 
   const globalRoot = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this);
@@ -2803,6 +3073,10 @@ export function initViewer(config) {
     globalRoot.getSelectedAsset = () => selectedAsset;
     globalRoot.renderAssetInForge = renderAssetInForge;
     globalRoot.renderSelectedAssetInForge = renderSelectedAssetInForge;
+    globalRoot.getLogs = () => [...logEntries];
+    globalRoot.clearLogs = clearLogs;
+    globalRoot.log = log;
+    globalRoot.checkComfyServer = checkComfyServer;
     globalRoot.viewer = instance;
   }
 

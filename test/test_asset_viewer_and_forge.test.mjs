@@ -194,4 +194,44 @@ describe('Sidebar Asset Viewer & Asset Forge Engine (TDD)', () => {
     const badgeXY = document.getElementById('badge-player-xy');
     assert.equal(badgeXY.innerText, '15.2m, 28.7m');
   });
+
+  test('9. Telemetry & Terminal Logs Capture Initialization, Selection, and Forge Events', async () => {
+    const logs = viewer.getLogs();
+    assert.ok(Array.isArray(logs), 'viewer.getLogs() must return an array');
+    assert.ok(logs.length >= 3, 'Must capture initialization and selection logs');
+
+    // Verify presence of stage category
+    const stageLog = logs.find(l => l.category === 'STAGE');
+    assert.ok(stageLog, 'Must have at least one [STAGE] log entry');
+
+    // Trigger manual log entry
+    viewer.log('COMFYUI', 'Test connection verified');
+    const updatedLogs = viewer.getLogs();
+    const lastLog = updatedLogs[updatedLogs.length - 1];
+    assert.equal(lastLog.category, 'COMFYUI');
+    assert.equal(lastLog.message, 'Test connection verified');
+
+    // Check DOM terminal
+    const term = document.getElementById('log-terminal');
+    assert.ok(term, '#log-terminal must exist in DOM');
+    assert.ok(term.children.length >= updatedLogs.length, 'Terminal DOM should have child elements for logs');
+
+    const badgeCount = document.getElementById('badge-log-count');
+    assert.match(badgeCount.innerText, /events/);
+
+    // Test clear
+    viewer.clearLogs();
+    assert.equal(viewer.getLogs().length, 1, 'ClearLogs should leave only the "cleared" notice');
+    assert.equal(badgeCount.innerText, '1 events');
+  });
+
+  test('10. ComfyUI Server Probe and Live Pipeline Server Status', async () => {
+    assert.ok(typeof viewer.checkComfyServer === 'function', 'viewer.checkComfyServer must be exported');
+    const status = await viewer.checkComfyServer();
+    assert.ok(typeof status.online === 'boolean', 'status.online must be a boolean');
+
+    const serverStatusEl = document.getElementById('asset-viewer-server-status');
+    assert.ok(serverStatusEl, '#asset-viewer-server-status element must exist');
+    assert.ok(serverStatusEl.textContent.length > 0);
+  });
 });

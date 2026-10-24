@@ -1297,6 +1297,95 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
       from {{ width: 20%; }}
       to {{ width: 95%; }}
     }}
+
+    /* Terminal & Activity Log Stream */
+    .log-terminal {{
+      background: #090807;
+      border: 1px solid #2a231c;
+      border-radius: 4px;
+      padding: 6px 8px;
+      font-family: monospace;
+      font-size: 9.5px;
+      line-height: 1.4;
+      max-height: 140px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      scrollbar-width: thin;
+      scrollbar-color: #554433 #151311;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }}
+    .log-line {{
+      display: flex;
+      align-items: baseline;
+      gap: 5px;
+      word-break: break-word;
+    }}
+    .log-time {{
+      color: #6e6254;
+      font-size: 8.5px;
+      flex-shrink: 0;
+    }}
+    .log-badge {{
+      font-size: 8px;
+      font-weight: 700;
+      padding: 0.5px 3.5px;
+      border-radius: 2px;
+      flex-shrink: 0;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }}
+    .log-badge-forge {{ color: #f59e0b; background: #291d0e; border: 1px solid #78350f; }}
+    .log-badge-comfyui {{ color: #38bdf8; background: #082f49; border: 1px solid #0369a1; }}
+    .log-badge-stage {{ color: #34d399; background: #064e3b; border: 1px solid #047857; }}
+    .log-badge-audio {{ color: #c084fc; background: #3b0764; border: 1px solid #7e22ce; }}
+    .log-badge-phys {{ color: #eab308; background: #422006; border: 1px solid #854d0e; }}
+    .log-badge-sys {{ color: #94a3b8; background: #1e293b; border: 1px solid #475569; }}
+    .log-badge-error {{ color: #f43f5e; background: #4c0519; border: 1px solid #be123c; }}
+
+    .log-msg {{ color: #c4b5a5; }}
+    .log-level-warn .log-msg {{ color: #fef08a; }}
+    .log-level-error .log-msg {{ color: #fda4af; }}
+
+    .log-toolbar {{
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 5px;
+    }}
+    .log-btn {{
+      background: #221c17;
+      border: 1px solid #3d332a;
+      border-radius: 3px;
+      color: #a8947f;
+      font-size: 8.5px;
+      padding: 1px 6px;
+      cursor: pointer;
+    }}
+    .log-btn:hover {{
+      background: #2f271f;
+      color: #f5eedf;
+      border-color: #554433;
+    }}
+    .log-status-dot {{
+      font-size: 8.5px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }}
+    .log-status-dot::before {{
+      content: '';
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }}
+    .log-status-dot.online {{ color: #4ade80; }}
+    .log-status-dot.online::before {{ background: #22c55e; box-shadow: 0 0 6px #22c55e; }}
+    .log-status-dot.offline {{ color: #f59e0b; }}
+    .log-status-dot.offline::before {{ background: #eab308; }}
   </style>
 </head>
 <body>
@@ -1358,6 +1447,7 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
           <div class="stat-row"><span>Provenance:</span><span class="stat-val stat-accent" id="asset-viewer-provenance">customs-house/r6-ship</span></div>
           <div class="stat-row"><span>Physicality:</span><span class="stat-val" id="asset-viewer-physicality">42.5kg · physics object</span></div>
           <div class="stat-row"><span>Diffusion Model:</span><span class="stat-val stat-gold" id="asset-viewer-model">Black Forest Labs Flux 3 Klein</span></div>
+          <div class="stat-row"><span>Pipeline Server:</span><span class="stat-val" id="asset-viewer-server-status" style="color: #4ade80;">Checking...</span></div>
         </div>
 
         <div class="asset-lore-box" id="asset-viewer-lore">
@@ -1502,6 +1592,28 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
             <p style="font-size: 10px; line-height: 1.35; color: #9c8e80;">
               Slopes &ge; 45° represent ancient non-navigable relics. Habitable structures sit on level build plates.
             </p>
+          </div>
+        </details>
+      </div>
+
+      <!-- 10. Pipeline & Activity Logs (Open by Default) -->
+      <div class="panel-section">
+        <details class="panel-section-collapsible" id="section-logs" open>
+          <summary class="section-summary">
+            <span class="section-title">Terminal & Ledger Logs</span>
+            <span class="section-summary-badge" id="badge-log-count">0 events</span>
+          </summary>
+          <div class="section-body">
+            <div class="log-toolbar">
+              <span class="log-status-dot online" id="log-server-status">ComfyUI: Online</span>
+              <div style="display: flex; gap: 4px;">
+                <button class="log-btn" id="btn-ping-server" onclick="window.viewer && window.viewer.checkComfyServer && window.viewer.checkComfyServer()">Ping</button>
+                <button class="log-btn" id="btn-clear-logs" onclick="window.viewer && window.viewer.clearLogs && window.viewer.clearLogs()">Clear</button>
+              </div>
+            </div>
+            <div class="log-terminal" id="log-terminal">
+              <!-- Dynamically populated by viewer.log -->
+            </div>
           </div>
         </details>
       </div>
