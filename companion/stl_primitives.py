@@ -545,6 +545,524 @@ def generate_brazier_primitive(
     return prim
 
 
+def generate_stasis_coffin_primitive(
+    width: float = 0.85,
+    length: float = 2.20,
+    height: float = 0.70,
+    primitive_id: str = "glass-stasis-coffin",
+    fragment_id: str = "space-vampires/glass-stasis-coffin",
+    output_path: Path | str | None = None,
+) -> STLPrimitive:
+    """Generate a hexagonal borosilicate stasis coffin STL primitive."""
+    rx = width / 2.0
+    rz = height / 2.0
+    y_half = length / 2.0
+
+    # Angles with top apex at 90 deg and bottom apex at 270 deg (touches z=0)
+    angles = [math.pi / 6.0 + i * (math.pi / 3.0) for i in range(6)]
+    zc = rz  # so z ranges from 0.0 to height
+    front_ring = [[rx * math.cos(a), -y_half, zc + rz * math.sin(a)] for a in angles]
+    back_ring = [[rx * math.cos(a), y_half, zc + rz * math.sin(a)] for a in angles]
+
+    triangles: list[list[list[float]]] = []
+
+    # Front cap (at y = -y_half)
+    center_f = [0.0, -y_half, zc]
+    for i in range(6):
+        i_next = (i + 1) % 6
+        triangles.append([center_f, front_ring[i], front_ring[i_next]])
+
+    # Back cap (at y = +y_half)
+    center_b = [0.0, y_half, zc]
+    for i in range(6):
+        i_next = (i + 1) % 6
+        triangles.append([center_b, back_ring[i_next], back_ring[i]])
+
+    # 6 Longitudinal side facets
+    for i in range(6):
+        i_next = (i + 1) % 6
+        f0, f1 = front_ring[i], front_ring[i_next]
+        b0, b1 = back_ring[i], back_ring[i_next]
+        triangles.append([f0, b0, b1])
+        triangles.append([f0, b1, f1])
+
+    # Borosilicate chamfered lid crest along the top vertex (at i=1, 90 deg)
+    z_crest = height + 0.06
+    c0 = [0.0, -y_half * 0.85, z_crest]
+    c1 = [0.0, y_half * 0.85, z_crest]
+    f_t0, f_t1, f_t2 = front_ring[0], front_ring[1], front_ring[2]
+    b_t0, b_t1, b_t2 = back_ring[0], back_ring[1], back_ring[2]
+    triangles.append([f_t1, c0, b_t1])
+    triangles.append([b_t1, c0, c1])
+    triangles.append([f_t0, f_t1, c0])
+    triangles.append([f_t1, f_t2, c0])
+    triangles.append([b_t1, b_t0, c1])
+    triangles.append([b_t2, b_t1, c1])
+
+    all_tris = np.array(triangles, dtype=np.float32)
+    prim = STLPrimitive(
+        id=primitive_id,
+        name="Hexagonal Borosilicate Stasis Coffin",
+        fragment_id=fragment_id,
+        stl_path=Path(output_path) if output_path else None,
+        dimensions=(round(width, 3), round(length, 3), round(height + 0.06, 3)),
+        triangles=all_tris,
+    )
+    if output_path:
+        prim.save(output_path)
+    return prim
+
+
+def generate_relic_cairn_primitive(
+    base_radius: float = 0.90,
+    height: float = 1.60,
+    primitive_id: str = "relic-cairn",
+    fragment_id: str = "cartographers/epistemic-survey",
+    output_path: Path | str | None = None,
+) -> STLPrimitive:
+    """Generate a stepped dry-stone conical cairn with central theodolite mount."""
+    n_segs = 8
+    angles = [i * (2.0 * math.pi / n_segs) for i in range(n_segs)]
+    triangles: list[list[list[float]]] = []
+
+    tiers = [
+        (0.00, 0.35, base_radius, base_radius * 0.85),
+        (0.35, 0.70, base_radius * 0.82, base_radius * 0.68),
+        (0.70, 1.00, base_radius * 0.65, base_radius * 0.50),
+        (1.00, 1.25, base_radius * 0.48, base_radius * 0.35),
+    ]
+
+    for z0, z1, r0, r1 in tiers:
+        for i in range(n_segs):
+            i_next = (i + 1) % n_segs
+            a0, a1 = angles[i], angles[i_next]
+            b0 = [r0 * math.cos(a0), r0 * math.sin(a0), z0]
+            b1 = [r0 * math.cos(a1), r0 * math.sin(a1), z0]
+            t0 = [r1 * math.cos(a0), r1 * math.sin(a0), z1]
+            t1 = [r1 * math.cos(a1), r1 * math.sin(a1), z1]
+            triangles.append([b0, b1, t1])
+            triangles.append([b0, t1, t0])
+
+    r_top = base_radius * 0.35
+    center_top = [0.0, 0.0, 1.25]
+    for i in range(n_segs):
+        i_next = (i + 1) % n_segs
+        p0 = [r_top * math.cos(angles[i]), r_top * math.sin(angles[i]), 1.25]
+        p1 = [r_top * math.cos(angles[i_next]), r_top * math.sin(angles[i_next]), 1.25]
+        triangles.append([center_top, p0, p1])
+
+    center_bot = [0.0, 0.0, 0.0]
+    for i in range(n_segs):
+        i_next = (i + 1) % n_segs
+        p0 = [base_radius * math.cos(angles[i]), base_radius * math.sin(angles[i]), 0.0]
+        p1 = [base_radius * math.cos(angles[i_next]), base_radius * math.sin(angles[i_next]), 0.0]
+        triangles.append([center_bot, p1, p0])
+
+    r_post = 0.08
+    z_post_top = height
+    center_post = [0.0, 0.0, z_post_top]
+    for i in range(n_segs):
+        i_next = (i + 1) % n_segs
+        a0, a1 = angles[i], angles[i_next]
+        pb0 = [r_post * math.cos(a0), r_post * math.sin(a0), 1.25]
+        pb1 = [r_post * math.cos(a1), r_post * math.sin(a1), 1.25]
+        pt0 = [r_post * math.cos(a0), r_post * math.sin(a0), z_post_top]
+        pt1 = [r_post * math.cos(a1), r_post * math.sin(a1), z_post_top]
+        triangles.append([pb0, pb1, pt1])
+        triangles.append([pb0, pt1, pt0])
+        triangles.append([center_post, pt0, pt1])
+
+    all_tris = np.array(triangles, dtype=np.float32)
+    prim = STLPrimitive(
+        id=primitive_id,
+        name="Cartographer Relic Cairn & Theodolite Station",
+        fragment_id=fragment_id,
+        stl_path=Path(output_path) if output_path else None,
+        dimensions=(round(base_radius * 2.0, 3), round(base_radius * 2.0, 3), round(height, 3)),
+        triangles=all_tris,
+    )
+    if output_path:
+        prim.save(output_path)
+    return prim
+
+
+def generate_wish_stone_primitive(
+    width: float = 3.0,
+    length: float = 8.0,
+    thickness: float = 0.60,
+    primitive_id: str = "wish-stone-slab",
+    fragment_id: str = "grey-wind/wish-granting",
+    output_path: Path | str | None = None,
+) -> STLPrimitive:
+    """Generate a monolithic quarried granite/slate bridge slab with chiseled edges."""
+    hw = width / 2.0
+    hl = length / 2.0
+    chamfer = min(0.15, thickness * 0.25)
+
+    top_hw = hw - chamfer
+    top_hl = hl - chamfer
+    c_top = [
+        [-top_hw, -top_hl, thickness], [top_hw, -top_hl, thickness],
+        [top_hw, top_hl, thickness], [-top_hw, top_hl, thickness],
+    ]
+    c_mid_t = [
+        [-hw, -hl, thickness - chamfer], [hw, -hl, thickness - chamfer],
+        [hw, hl, thickness - chamfer], [-hw, hl, thickness - chamfer],
+    ]
+    c_bot = [
+        [-hw, -hl, 0.0], [hw, -hl, 0.0],
+        [hw, hl, 0.0], [-hw, hl, 0.0],
+    ]
+
+    triangles: list[list[list[float]]] = []
+
+    triangles.append([c_top[0], c_top[1], c_top[2]])
+    triangles.append([c_top[0], c_top[2], c_top[3]])
+
+    triangles.append([c_bot[0], c_bot[2], c_bot[1]])
+    triangles.append([c_bot[0], c_bot[3], c_bot[2]])
+
+    for i in range(4):
+        i_next = (i + 1) % 4
+        triangles.append([c_top[i], c_top[i_next], c_mid_t[i_next]])
+        triangles.append([c_top[i], c_mid_t[i_next], c_mid_t[i]])
+
+    for i in range(4):
+        i_next = (i + 1) % 4
+        triangles.append([c_bot[i], c_bot[i_next], c_mid_t[i_next]])
+        triangles.append([c_bot[i], c_mid_t[i_next], c_mid_t[i]])
+
+    all_tris = np.array(triangles, dtype=np.float32)
+    prim = STLPrimitive(
+        id=primitive_id,
+        name="Orom's Literal Wish-Stone Slab",
+        fragment_id=fragment_id,
+        stl_path=Path(output_path) if output_path else None,
+        dimensions=(round(width, 3), round(length, 3), round(thickness, 3)),
+        triangles=all_tris,
+    )
+    if output_path:
+        prim.save(output_path)
+    return prim
+
+
+def generate_entropy_beacon_primitive(
+    base_width: float = 0.90,
+    height: float = 3.20,
+    primitive_id: str = "cryo-entropy-beacon",
+    fragment_id: str = "space-vampires/glyph-entropy-matrix",
+    output_path: Path | str | None = None,
+) -> STLPrimitive:
+    """Generate a tapered obsidian cryo-entropy beacon monolith with pyramidion apex."""
+    bw = base_width / 2.0
+    triangles: list[list[list[float]]] = []
+
+    sw = bw * 1.3
+    c_base = [
+        [-sw, -sw, 0.0], [sw, -sw, 0.0], [sw, sw, 0.0], [-sw, sw, 0.0],
+        [-sw, -sw, 0.35], [sw, -sw, 0.35], [sw, sw, 0.35], [-sw, sw, 0.35],
+    ]
+    f_idx = [
+        [0, 1, 5], [0, 5, 4], [1, 2, 6], [1, 6, 5],
+        [2, 3, 7], [2, 7, 6], [3, 0, 4], [3, 4, 7],
+        [0, 3, 2], [0, 2, 1],
+    ]
+    for f in f_idx:
+        triangles.append([c_base[f[0]], c_base[f[1]], c_base[f[2]]])
+
+    z_shaft_top = height * 0.85
+    tw = bw * 0.55
+    c_shaft_bot = [[-bw, -bw, 0.35], [bw, -bw, 0.35], [bw, bw, 0.35], [-bw, bw, 0.35]]
+    c_shaft_top = [[-tw, -tw, z_shaft_top], [tw, -tw, z_shaft_top], [tw, tw, z_shaft_top], [-tw, tw, z_shaft_top]]
+    for i in range(4):
+        i_next = (i + 1) % 4
+        triangles.append([c_shaft_bot[i], c_shaft_bot[i_next], c_shaft_top[i_next]])
+        triangles.append([c_shaft_bot[i], c_shaft_top[i_next], c_shaft_top[i]])
+
+    apex = [0.0, 0.0, height]
+    for i in range(4):
+        i_next = (i + 1) % 4
+        triangles.append([c_shaft_top[i], c_shaft_top[i_next], apex])
+
+    all_tris = np.array(triangles, dtype=np.float32)
+    prim = STLPrimitive(
+        id=primitive_id,
+        name="Cryo-Entropy Beacon Monolith",
+        fragment_id=fragment_id,
+        stl_path=Path(output_path) if output_path else None,
+        dimensions=(round(base_width * 1.3, 3), round(base_width * 1.3, 3), round(height, 3)),
+        triangles=all_tris,
+    )
+    if output_path:
+        prim.save(output_path)
+    return prim
+
+
+def generate_glass_column_primitive(
+    base_radius: float = 1.50,
+    height: float = 45.00,
+    primitive_id: str = "glass-column-fluted",
+    fragment_id: str = "wizard-tower/glass-cathedral",
+    output_path: Path | str | None = None,
+) -> STLPrimitive:
+    """Generate a 16-fluted asteroid-glass cathedral column with base and capital."""
+    n_flutes = 16
+    angles = [i * (2.0 * math.pi / n_flutes) for i in range(n_flutes)]
+    triangles: list[list[list[float]]] = []
+
+    r_shaft_out = base_radius * 0.90
+    r_shaft_in = base_radius * 0.78
+    r_flutes = [r_shaft_out if (i % 2 == 0) else r_shaft_in for i in range(n_flutes)]
+
+    z_base_plinth = 1.5
+    z_shaft_start = 3.0
+    z_shaft_end = height - 3.0
+    z_top = height
+
+    r_plinth = base_radius * 1.15
+    r_capital = base_radius * 1.25
+
+    center_bot = [0.0, 0.0, 0.0]
+    for i in range(n_flutes):
+        i_next = (i + 1) % n_flutes
+        p0 = [r_plinth * math.cos(angles[i]), r_plinth * math.sin(angles[i]), 0.0]
+        p1 = [r_plinth * math.cos(angles[i_next]), r_plinth * math.sin(angles[i_next]), 0.0]
+        triangles.append([center_bot, p1, p0])
+
+    for i in range(n_flutes):
+        i_next = (i + 1) % n_flutes
+        b0 = [r_plinth * math.cos(angles[i]), r_plinth * math.sin(angles[i]), 0.0]
+        b1 = [r_plinth * math.cos(angles[i_next]), r_plinth * math.sin(angles[i_next]), 0.0]
+        t0 = [r_plinth * math.cos(angles[i]), r_plinth * math.sin(angles[i]), z_base_plinth]
+        t1 = [r_plinth * math.cos(angles[i_next]), r_plinth * math.sin(angles[i_next]), z_base_plinth]
+        triangles.append([b0, b1, t1])
+        triangles.append([b0, t1, t0])
+
+    for i in range(n_flutes):
+        i_next = (i + 1) % n_flutes
+        b0 = [r_plinth * math.cos(angles[i]), r_plinth * math.sin(angles[i]), z_base_plinth]
+        b1 = [r_plinth * math.cos(angles[i_next]), r_plinth * math.sin(angles[i_next]), z_base_plinth]
+        t0 = [r_flutes[i] * math.cos(angles[i]), r_flutes[i] * math.sin(angles[i]), z_shaft_start]
+        t1 = [r_flutes[i_next] * math.cos(angles[i_next]), r_flutes[i_next] * math.sin(angles[i_next]), z_shaft_start]
+        triangles.append([b0, b1, t1])
+        triangles.append([b0, t1, t0])
+
+    for i in range(n_flutes):
+        i_next = (i + 1) % n_flutes
+        b0 = [r_flutes[i] * math.cos(angles[i]), r_flutes[i] * math.sin(angles[i]), z_shaft_start]
+        b1 = [r_flutes[i_next] * math.cos(angles[i_next]), r_flutes[i_next] * math.sin(angles[i_next]), z_shaft_start]
+        t0 = [r_flutes[i] * math.cos(angles[i]), r_flutes[i] * math.sin(angles[i]), z_shaft_end]
+        t1 = [r_flutes[i_next] * math.cos(angles[i_next]), r_flutes[i_next] * math.sin(angles[i_next]), z_shaft_end]
+        triangles.append([b0, b1, t1])
+        triangles.append([b0, t1, t0])
+
+    for i in range(n_flutes):
+        i_next = (i + 1) % n_flutes
+        b0 = [r_flutes[i] * math.cos(angles[i]), r_flutes[i] * math.sin(angles[i]), z_shaft_end]
+        b1 = [r_flutes[i_next] * math.cos(angles[i_next]), r_flutes[i_next] * math.sin(angles[i_next]), z_shaft_end]
+        t0 = [r_capital * math.cos(angles[i]), r_capital * math.sin(angles[i]), z_top]
+        t1 = [r_capital * math.cos(angles[i_next]), r_capital * math.sin(angles[i_next]), z_top]
+        triangles.append([b0, b1, t1])
+        triangles.append([b0, t1, t0])
+
+    center_top = [0.0, 0.0, z_top]
+    for i in range(n_flutes):
+        i_next = (i + 1) % n_flutes
+        p0 = [r_capital * math.cos(angles[i]), r_capital * math.sin(angles[i]), z_top]
+        p1 = [r_capital * math.cos(angles[i_next]), r_capital * math.sin(angles[i_next]), z_top]
+        triangles.append([center_top, p0, p1])
+
+    all_tris = np.array(triangles, dtype=np.float32)
+    prim = STLPrimitive(
+        id=primitive_id,
+        name="Fluted Asteroid-Glass Cathedral Column",
+        fragment_id=fragment_id,
+        stl_path=Path(output_path) if output_path else None,
+        dimensions=(round(r_capital * 2.0, 3), round(r_capital * 2.0, 3), round(height, 3)),
+        triangles=all_tris,
+    )
+    if output_path:
+        prim.save(output_path)
+    return prim
+
+
+def generate_solarium_mirror_primitive(
+    dish_diameter: float = 3.0,
+    height: float = 3.8,
+    primitive_id: str = "solarium-mirror",
+    fragment_id: str = "wizard-tower/three-registers",
+    output_path: Path | str | None = None,
+) -> STLPrimitive:
+    """Generate a parabolic solarium alignment mirror on an articulated pedestal."""
+    triangles: list[list[list[float]]] = []
+
+    n_segs = 8
+    angles = [i * (2.0 * math.pi / n_segs) for i in range(n_segs)]
+    r_ped = 0.75
+    center_bot = [0.0, 0.0, 0.0]
+    center_ped_top = [0.0, 0.0, 1.4]
+    for i in range(n_segs):
+        i_next = (i + 1) % n_segs
+        b0 = [r_ped * math.cos(angles[i]), r_ped * math.sin(angles[i]), 0.0]
+        b1 = [r_ped * math.cos(angles[i_next]), r_ped * math.sin(angles[i_next]), 0.0]
+        t0 = [r_ped * math.cos(angles[i]), r_ped * math.sin(angles[i]), 1.4]
+        t1 = [r_ped * math.cos(angles[i_next]), r_ped * math.sin(angles[i_next]), 1.4]
+        triangles.append([center_bot, b1, b0])
+        triangles.append([b0, b1, t1])
+        triangles.append([b0, t1, t0])
+        triangles.append([center_ped_top, t0, t1])
+
+    fork_h = 1.0
+    fork_w = 0.20
+    for x_side in [-0.6, 0.6]:
+        x0, x1 = x_side - fork_w / 2.0, x_side + fork_w / 2.0
+        y0, y1 = -0.15, 0.15
+        z0, z1 = 1.4, 1.4 + fork_h
+        c_f = [
+            [x0, y0, z0], [x1, y0, z0], [x1, y1, z0], [x0, y1, z0],
+            [x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1],
+        ]
+        f_idx = [
+            [0, 1, 5], [0, 5, 4], [1, 2, 6], [1, 6, 5],
+            [2, 3, 7], [2, 7, 6], [3, 0, 4], [3, 4, 7],
+            [4, 5, 6], [4, 6, 7],
+        ]
+        for f in f_idx:
+            triangles.append([c_f[f[0]], c_f[f[1]], c_f[f[2]]])
+
+    r_dish = dish_diameter / 2.0
+    z_dish_center = 2.4
+    depth = 0.35
+    dish_segs = 12
+    d_angles = [i * (2.0 * math.pi / dish_segs) for i in range(dish_segs)]
+
+    cos_t = math.cos(math.pi / 4.0)
+    sin_t = math.sin(math.pi / 4.0)
+
+    center_dish_front = [0.0, sin_t * (-depth), z_dish_center + cos_t * (-depth)]
+    center_dish_back = [0.0, 0.0, z_dish_center]
+
+    rim_pts = []
+    for a in d_angles:
+        xl = r_dish * math.cos(a)
+        yl = r_dish * math.sin(a)
+        xw = xl
+        yw = yl * cos_t
+        zw = z_dish_center + yl * sin_t
+        rim_pts.append([xw, yw, zw])
+
+    for i in range(dish_segs):
+        i_next = (i + 1) % dish_segs
+        p0 = rim_pts[i]
+        p1 = rim_pts[i_next]
+        triangles.append([center_dish_front, p0, p1])
+        triangles.append([center_dish_back, p1, p0])
+
+    all_tris = np.array(triangles, dtype=np.float32)
+    prim = STLPrimitive(
+        id=primitive_id,
+        name="Solarium Articulated Alignment Mirror",
+        fragment_id=fragment_id,
+        stl_path=Path(output_path) if output_path else None,
+        dimensions=(round(dish_diameter, 3), round(dish_diameter * cos_t + 0.3, 3), round(height, 3)),
+        triangles=all_tris,
+    )
+    if output_path:
+        prim.save(output_path)
+    return prim
+
+
+def generate_solar_focus_primitive(
+    dais_diameter: float = 6.0,
+    height: float = 5.5,
+    primitive_id: str = "solar-focus-lens",
+    fragment_id: str = "wizard-tower/first-cast-beats",
+    output_path: Path | str | None = None,
+) -> STLPrimitive:
+    """Generate a stepped astronomical lens dais with equatorial gimbal cradle."""
+    triangles: list[list[list[float]]] = []
+    n_segs = 12
+    angles = [i * (2.0 * math.pi / n_segs) for i in range(n_segs)]
+
+    tiers = [
+        (0.00, 0.35, dais_diameter / 2.0),
+        (0.35, 0.70, dais_diameter / 2.0 * 0.80),
+        (0.70, 1.05, dais_diameter / 2.0 * 0.60),
+    ]
+
+    r0 = tiers[0][2]
+    center_bot = [0.0, 0.0, 0.0]
+    for i in range(n_segs):
+        i_next = (i + 1) % n_segs
+        p0 = [r0 * math.cos(angles[i]), r0 * math.sin(angles[i]), 0.0]
+        p1 = [r0 * math.cos(angles[i_next]), r0 * math.sin(angles[i_next]), 0.0]
+        triangles.append([center_bot, p1, p0])
+
+    for idx, (z0, z1, r_tier) in enumerate(tiers):
+        for i in range(n_segs):
+            i_next = (i + 1) % n_segs
+            b0 = [r_tier * math.cos(angles[i]), r_tier * math.sin(angles[i]), z0]
+            b1 = [r_tier * math.cos(angles[i_next]), r_tier * math.sin(angles[i_next]), z0]
+            t0 = [r_tier * math.cos(angles[i]), r_tier * math.sin(angles[i]), z1]
+            t1 = [r_tier * math.cos(angles[i_next]), r_tier * math.sin(angles[i_next]), z1]
+            triangles.append([b0, b1, t1])
+            triangles.append([b0, t1, t0])
+
+        r_next = tiers[idx + 1][2] if idx + 1 < len(tiers) else 0.0
+        center_t = [0.0, 0.0, z1]
+        for i in range(n_segs):
+            i_next = (i + 1) % n_segs
+            t0 = [r_tier * math.cos(angles[i]), r_tier * math.sin(angles[i]), z1]
+            t1 = [r_tier * math.cos(angles[i_next]), r_tier * math.sin(angles[i_next]), z1]
+            if r_next > 0.0:
+                in0 = [r_next * math.cos(angles[i]), r_next * math.sin(angles[i]), z1]
+                in1 = [r_next * math.cos(angles[i_next]), r_next * math.sin(angles[i_next]), z1]
+                triangles.append([in0, t0, t1])
+                triangles.append([in0, t1, in1])
+            else:
+                triangles.append([center_t, t0, t1])
+
+    cw, cl = 0.60, 1.20
+    c_cradle = [
+        [-cw, -cl, 1.05], [cw, -cl, 1.05], [cw, cl, 1.05], [-cw, cl, 1.05],
+        [-cw, -cl, 1.65], [cw, -cl, 1.65], [cw, cl, 1.65], [-cw, cl, 1.65],
+    ]
+    f_idx = [
+        [0, 1, 5], [0, 5, 4], [1, 2, 6], [1, 6, 5],
+        [2, 3, 7], [2, 7, 6], [3, 0, 4], [3, 4, 7],
+        [4, 5, 6], [4, 6, 7],
+    ]
+    for f in f_idx:
+        triangles.append([c_cradle[f[0]], c_cradle[f[1]], c_cradle[f[2]]])
+
+    z_lens_center = 3.5
+    r_lens = 2.0
+    lens_thickness = 0.4
+    center_lens_n = [0.0, -lens_thickness / 2.0, z_lens_center]
+    center_lens_s = [0.0, lens_thickness / 2.0, z_lens_center]
+
+    for i in range(n_segs):
+        i_next = (i + 1) % n_segs
+        a0, a1 = angles[i], angles[i_next]
+        p0 = [r_lens * math.cos(a0), 0.0, z_lens_center + r_lens * math.sin(a0)]
+        p1 = [r_lens * math.cos(a1), 0.0, z_lens_center + r_lens * math.sin(a1)]
+        triangles.append([center_lens_n, p0, p1])
+        triangles.append([center_lens_s, p1, p0])
+
+    all_tris = np.array(triangles, dtype=np.float32)
+    prim = STLPrimitive(
+        id=primitive_id,
+        name="High Chancel Solar Focus Lens & Gimbal Dais",
+        fragment_id=fragment_id,
+        stl_path=Path(output_path) if output_path else None,
+        dimensions=(round(dais_diameter, 3), round(dais_diameter, 3), round(height, 3)),
+        triangles=all_tris,
+    )
+    if output_path:
+        prim.save(output_path)
+    return prim
+
+
 # ---------------------------------------------------------------------------
 # Composite Terrain Mesh + Placed 3D STL Primitives
 # ---------------------------------------------------------------------------
@@ -690,6 +1208,49 @@ def ensure_default_stl_primitives(target_dir: Path = STL_PRIMITIVES_DIR) -> dict
         catalog["frontier-brazier"] = generate_brazier_primitive(1.2, 1.0, output_path=brazier_path)
     else:
         catalog["frontier-brazier"] = STLPrimitive.load_stl(brazier_path, "frontier-brazier", "shared/unmodelled-prop")
+
+    # Campaign primitives (The Unwritten Consignment Acts I-IV)
+    coffin_path = target_dir / "glass-stasis-coffin.stl"
+    if not coffin_path.is_file():
+        catalog["glass-stasis-coffin"] = generate_stasis_coffin_primitive(output_path=coffin_path)
+    else:
+        catalog["glass-stasis-coffin"] = STLPrimitive.load_stl(coffin_path, "glass-stasis-coffin", "space-vampires/glass-stasis-coffin")
+
+    cairn_path = target_dir / "relic-cairn.stl"
+    if not cairn_path.is_file():
+        catalog["relic-cairn"] = generate_relic_cairn_primitive(output_path=cairn_path)
+    else:
+        catalog["relic-cairn"] = STLPrimitive.load_stl(cairn_path, "relic-cairn", "cartographers/epistemic-survey")
+
+    wish_path = target_dir / "wish-stone-slab.stl"
+    if not wish_path.is_file():
+        catalog["wish-stone-slab"] = generate_wish_stone_primitive(output_path=wish_path)
+    else:
+        catalog["wish-stone-slab"] = STLPrimitive.load_stl(wish_path, "wish-stone-slab", "grey-wind/wish-granting")
+
+    beacon_path = target_dir / "cryo-entropy-beacon.stl"
+    if not beacon_path.is_file():
+        catalog["cryo-entropy-beacon"] = generate_entropy_beacon_primitive(output_path=beacon_path)
+    else:
+        catalog["cryo-entropy-beacon"] = STLPrimitive.load_stl(beacon_path, "cryo-entropy-beacon", "space-vampires/glyph-entropy-matrix")
+
+    column_path = target_dir / "glass-column-fluted.stl"
+    if not column_path.is_file():
+        catalog["glass-column-fluted"] = generate_glass_column_primitive(output_path=column_path)
+    else:
+        catalog["glass-column-fluted"] = STLPrimitive.load_stl(column_path, "glass-column-fluted", "wizard-tower/glass-cathedral")
+
+    mirror_path = target_dir / "solarium-mirror.stl"
+    if not mirror_path.is_file():
+        catalog["solarium-mirror"] = generate_solarium_mirror_primitive(output_path=mirror_path)
+    else:
+        catalog["solarium-mirror"] = STLPrimitive.load_stl(mirror_path, "solarium-mirror", "wizard-tower/three-registers")
+
+    lens_path = target_dir / "solar-focus-lens.stl"
+    if not lens_path.is_file():
+        catalog["solar-focus-lens"] = generate_solar_focus_primitive(output_path=lens_path)
+    else:
+        catalog["solar-focus-lens"] = STLPrimitive.load_stl(lens_path, "solar-focus-lens", "wizard-tower/first-cast-beats")
 
     # 2. GLB converts from asset-store props (if trimesh is available)
     furniture_map = {

@@ -31,7 +31,14 @@ from companion.stl_primitives import (
     generate_ancient_bastion_primitive,
     generate_brazier_primitive,
     generate_crate_primitive,
+    generate_entropy_beacon_primitive,
+    generate_glass_column_primitive,
+    generate_relic_cairn_primitive,
     generate_signpost_primitive,
+    generate_solar_focus_primitive,
+    generate_solarium_mirror_primitive,
+    generate_stasis_coffin_primitive,
+    generate_wish_stone_primitive,
 )
 from companion.terrain_mesh import TerrainMesh, rasterize_stl_depth
 
@@ -156,9 +163,44 @@ class TestSTLPrimitives(unittest.TestCase):
         self.assertIn("border-signpost", catalog)
         self.assertIn("frontier-brazier", catalog)
 
+        # Campaign primitives
+        self.assertIn("glass-stasis-coffin", catalog)
+        self.assertIn("relic-cairn", catalog)
+        self.assertIn("wish-stone-slab", catalog)
+        self.assertIn("cryo-entropy-beacon", catalog)
+        self.assertIn("glass-column-fluted", catalog)
+        self.assertIn("solarium-mirror", catalog)
+        self.assertIn("solar-focus-lens", catalog)
+
         # Check fragment linkage
         self.assertEqual(catalog["r6-ship-crate"].fragment_id, "customs-house/r6-ship")
         self.assertEqual(catalog["ancient-bastion"].fragment_id, "grey-wind/named-ruins")
+        self.assertEqual(catalog["glass-stasis-coffin"].fragment_id, "space-vampires/glass-stasis-coffin")
+        self.assertEqual(catalog["relic-cairn"].fragment_id, "cartographers/epistemic-survey")
+        self.assertEqual(catalog["wish-stone-slab"].fragment_id, "grey-wind/wish-granting")
+        self.assertEqual(catalog["cryo-entropy-beacon"].fragment_id, "space-vampires/glyph-entropy-matrix")
+        self.assertEqual(catalog["glass-column-fluted"].fragment_id, "wizard-tower/glass-cathedral")
+        self.assertEqual(catalog["solarium-mirror"].fragment_id, "wizard-tower/three-registers")
+        self.assertEqual(catalog["solar-focus-lens"].fragment_id, "wizard-tower/first-cast-beats")
+
+    def test_campaign_primitives_generators_grounding_and_bounds(self):
+        generators = [
+            (generate_stasis_coffin_primitive, (0.85, 2.2, 0.7), "space-vampires/glass-stasis-coffin"),
+            (generate_relic_cairn_primitive, (1.8, 1.8, 1.6), "cartographers/epistemic-survey"),
+            (generate_wish_stone_primitive, (3.0, 8.0, 0.6), "grey-wind/wish-granting"),
+            (generate_entropy_beacon_primitive, (0.9, 3.2), "space-vampires/glyph-entropy-matrix"),
+            (generate_glass_column_primitive, (1.5, 45.0), "wizard-tower/glass-cathedral"),
+            (generate_solarium_mirror_primitive, (3.0, 3.8), "wizard-tower/three-registers"),
+            (generate_solar_focus_primitive, (6.0, 5.5), "wizard-tower/first-cast-beats"),
+        ]
+        for fn, args, frag_id in generators:
+            prim = fn(*args)
+            self.assertGreater(prim.triangle_count, 0)
+            self.assertEqual(prim.fragment_id, frag_id)
+            v = prim.triangles.reshape(-1, 3)
+            # Must sit flush at z=0.0
+            self.assertAlmostEqual(float(v[:, 2].min()), 0.0, places=3, msg=f"{prim.id} min Z")
+            self.assertGreater(float(v[:, 2].max()), 0.5, msg=f"{prim.id} max Z")
 
 
 if __name__ == "__main__":
