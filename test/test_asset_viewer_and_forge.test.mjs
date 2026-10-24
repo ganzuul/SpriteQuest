@@ -234,4 +234,46 @@ describe('Sidebar Asset Viewer & Asset Forge Engine (TDD)', () => {
     assert.ok(serverStatusEl, '#asset-viewer-server-status element must exist');
     assert.ok(serverStatusEl.textContent.length > 0);
   });
+
+  test('11. Cartographers Scene-Coherence Backpressure & Curation Lifecycle (Survey -> Curate/Warrant -> Delete/Criticism)', () => {
+    // 1. Select glass_stasis_coffin (foreign space-vampires asset in customs-house forfeit-corridor)
+    const coffin = viewer.selectAsset('glass_stasis_coffin');
+    assert.ok(coffin, 'Must select glass_stasis_coffin');
+    assert.equal(coffin.zone_context.zone_id, 'forfeit-corridor');
+
+    const cohEl = document.getElementById('asset-viewer-coherence');
+    assert.ok(cohEl.textContent.includes('conflict'), 'Must display scene coherence conflict in DOM');
+
+    // 2. Survey & resolve coherence conflict via Cartographer -> mints provisional field_note
+    const surveyRes = viewer.surveyAssetCoherence('glass_stasis_coffin');
+    assert.equal(surveyRes.success, true);
+    assert.equal(surveyRes.standing_tier, 'provisional');
+    assert.equal(surveyRes.standing_score, 0.40);
+    assert.ok(document.getElementById('asset-viewer-standing').textContent.includes('PROVISIONAL (0.40)'));
+
+    // 3. Edit / Curate the generated fragment -> promotes to WARRANTED (0.90) with Canon Warrant
+    const curateRes = viewer.curateAssetFragment(
+      'glass_stasis_coffin',
+      surveyRes.fragmentId,
+      'padlocked iron forfeiture shackles bolted into the flagstones'
+    );
+    assert.equal(curateRes.success, true);
+    assert.equal(curateRes.standing_tier, 'warranted');
+    assert.equal(curateRes.standing_score, 0.90);
+    assert.ok(curateRes.warrant_id.startsWith('WARRANT-'));
+    assert.ok(document.getElementById('asset-viewer-standing').textContent.includes('WARRANTED (0.90)'));
+
+    // 4. Delete / Criticize the generated fragment -> records criticism tombstone & blocks re-synthesis
+    const critRes = viewer.criticizeAssetFragment('glass_stasis_coffin', surveyRes.fragmentId);
+    assert.equal(critRes.success, true);
+    assert.equal(critRes.standing_tier, 'refined_by_criticism');
+    assert.equal(critRes.standing_score, 0.55);
+    assert.ok(critRes.active_criticisms.length >= 1);
+    assert.ok(document.getElementById('asset-viewer-coherence').textContent.includes('criticized tombstone'));
+
+    // Attempting to re-survey after deletion must be refused by criticism tombstone
+    const retryRes = viewer.surveyAssetCoherence('glass_stasis_coffin');
+    assert.equal(retryRes.success, false);
+    assert.equal(retryRes.reason, 'criticized_by_author');
+  });
 });

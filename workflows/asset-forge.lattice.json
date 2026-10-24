@@ -70,6 +70,28 @@
         "actorScope": "selected",
         "actorId": ""
       },
+      "cartographer-coherence-gate": {
+        "id": "cartographer-coherence-gate",
+        "type": "workflow",
+        "operation": "read-file",
+        "operationVersion": 1,
+        "title": "Read File",
+        "enabled": true,
+        "x": 480,
+        "y": 140,
+        "w": 320,
+        "h": 196,
+        "inGroup": "fragment-compiler-layer",
+        "profileId": null,
+        "model": "cartographer",
+        "modelRole": "cartographer",
+        "alias": "Cartographer Survey · Scene Backpressure & Parsimony Gate",
+        "targetId": "cartographers-ledger",
+        "schema": "epistemic_governance",
+        "columns": ["maturity", "standing_tier", "warrant_id", "saturation_score"],
+        "actorScope": "selected",
+        "actorId": "cartographers"
+      },
       "compile-world-brief": {
         "id": "compile-world-brief",
         "type": "workflow",
@@ -85,10 +107,10 @@
         "profileId": null,
         "model": null,
         "modelRole": null,
-        "alias": "Compose · Fragment & World Specification",
+        "alias": "Compose · Recipe, Scene Backpressure & Epistemic Brief",
         "mode": "template",
         "outputKind": "text",
-        "template": "Subject: {{label}} ({{id}})\nWorld Context: {{world_look.setting}}\nPhysicality: {{physical_specs}}\nMaterial Construction: {{world_look.materials}}\n\nActive Lore Fragments:\n{{fragments_summary}}",
+        "template": "Subject: {{label}} ({{id}})\nWorld Context: {{world_look.setting}}\nHost Zone Backpressure: {{zone_context.zone_name}} ({{zone_context.substrate_material}})\nEpistemic Standing: {{standing_tier}} (saturation: {{saturation_score}})\nPhysicality: {{physical_specs}}\nMaterial Construction: {{world_look.materials}}\n\nAdmitted Lore Fragments:\n{{fragments_summary}}\n\nAuthorial Criticisms:\n{{active_criticisms}}",
         "sections": [],
         "separator": "\n\n",
         "budgetTokens": 0
@@ -258,6 +280,16 @@
         "defaultParameters": {
           "temperature": 0.3,
           "max_tokens": 512
+        }
+      },
+      "cartographer": {
+        "id": "cartographer",
+        "title": "Bureau Cartographer (Coherence & Parsimony Governor)",
+        "description": "Audits scene-to-asset coherence, synthesizes parsimonious field_note fragments when permitted by saturation gates, tracks human curation edits for Canon Warrants, and enforces deleted-fragment criticism tombstones.",
+        "assignedModel": "gemma4-orion",
+        "defaultParameters": {
+          "temperature": 0.2,
+          "max_tokens": 256
         }
       }
     },

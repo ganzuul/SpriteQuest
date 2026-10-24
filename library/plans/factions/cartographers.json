@@ -6,7 +6,7 @@
   "kind": "neutral",
   "world_id": "cartographers",
   "for": "gemma4-orion",
-  "description": "An austere guild of bureaucratic cartographers who certify what is real. Operating from drafty vellum archives along the edge of known space, they view unmapped land and unwritten beings as dangerous epistemic hazards. They grant Canon Warrants through a strict four-stage survey ladder.",
+  "description": "An austere guild of bureaucratic cartographers who govern scene coherence and epistemic maturity across the 4th-wall seam. Operating from drafty vellum archives, they audit whether physical assets cohere with the substrate and atmosphere of their host scenes, draft parsimonious Provisional Field Notes to bridge coherence conflicts, treat authorial deletions as binding Surveyor Criticisms, promote human-edited fragments with Canon Warrants, and engrave permanent copper plates once a library domain reaches epistemic saturation.",
   "fragments": [
     {"id": "cartographers/canon-warrant", "version": 1},
     {"id": "cartographers/epistemic-survey", "version": 1},
@@ -14,6 +14,37 @@
     {"id": "cartographers/unwritten-borders", "version": 1},
     {"id": "cartographers/glyph-surveyor-rose", "version": 1}
   ],
+  "epistemic_governance": {
+    "maturity_ladder": {
+      "field_note": {
+        "standing_score": 0.40,
+        "standing_tier": "provisional",
+        "description": "Parsimonious LLM-synthesized bridging fragment created only to resolve a verified scene-to-asset coherence conflict."
+      },
+      "curated": {
+        "standing_score": 0.90,
+        "standing_tier": "warranted",
+        "description": "Formerly provisional field note refined and edited by the developer or player; awarded a Canon Warrant and elevated provenance."
+      },
+      "criticized": {
+        "standing_score": 0.55,
+        "standing_tier": "refined_by_criticism",
+        "description": "Deleted LLM-generated fragment recorded as a binding negative constraint (tombstone); never re-synthesized or reverted."
+      },
+      "canon": {
+        "standing_score": 1.00,
+        "standing_tier": "canon_locked",
+        "description": "Hand-authored or fully ratified canonical fragment engraved into the Living Atlas."
+      }
+    },
+    "parsimony_rules": {
+      "require_coherence_conflict": true,
+      "max_pending_field_notes_per_archetype": 1,
+      "respect_criticism_tombstones": true,
+      "saturation_threshold": 0.80,
+      "target_archetype_capacity": 4
+    }
+  },
   "composition": {
     "role_suffix": ", Senior Surveyor of the Bureau of the Unwritten Atlas",
     "style_overlay": "austere bureaucratic brass and aged vellum, drafting tables strewn with parchment surveys, indelible iron-gall ink, precise brass theodolites, astrolabes, and seal presses, warm lamp-lit map archives surrounded by raw drifting frontier fog",

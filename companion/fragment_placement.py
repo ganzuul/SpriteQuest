@@ -46,6 +46,14 @@ class FragmentAsset:
     compiled_brief: str = ""
     fragments_used: list[str] = field(default_factory=list)
     world_setting: str = ""
+    zone_context: dict[str, Any] = field(default_factory=dict)
+    coherence_conflicts: list[dict[str, Any]] = field(default_factory=list)
+    active_criticisms: list[str] = field(default_factory=list)
+    standing_tier: str = "verified"
+    standing_score: float = 0.65
+    warrant_id: str | None = None
+    saturation_score: float = 0.0
+    saturation_locked: bool = False
 
 
 class FragmentPlacementEngine:
@@ -468,6 +476,14 @@ class FragmentPlacementEngine:
             fa.diffusion_prompt = cb.rewritten_prompt
             fa.fragments_used = cb.fragments_used
             fa.world_setting = cb.world_look.get("setting", "")
+            fa.zone_context = cb.zone_context
+            fa.coherence_conflicts = cb.coherence_conflicts
+            fa.active_criticisms = cb.active_criticisms
+            fa.standing_tier = cb.standing_tier
+            fa.standing_score = cb.standing_score
+            fa.warrant_id = cb.warrant_id
+            fa.saturation_score = cb.saturation_score
+            fa.saturation_locked = cb.saturation_locked
 
     def export_fragment_assets(self) -> list[dict[str, Any]]:
         """Export list of fragment assets for JSON serialization."""

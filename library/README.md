@@ -273,6 +273,34 @@ Using `companion/compile_faction_npc.py`, a base NPC sheet (e.g., `companion/npc
   - `wish-granting.json`: Open slate-grey palm above which a spoken wish condenses into a dense stone tablet.
   - `glyph-stone-horizon.json`: Chiseled petroglyph of a steep mountain peak intersected by three horizontal fog lines.
 
+### Faction 3: The Bureau of the Unwritten Atlas / Cartographers (`cartographers`)
+
+- **Classification**: Neutral epistemic authority & 4th-wall compiler integration faction.
+- **Lore & 4th-Wall Identity**: An austere guild of bureaucratic surveyors who govern **Scene Coherence Backpressure**, **Parsimonious Library Growth**, and **Human-in-the-Loop Curation Provenance**.
+- **Scene-to-Asset Coherence Backpressure**:
+  When an asset is placed into a floorplan zone, a Cartographer audits whether its materials, domain origin (`world_id`), and mass cohere with the host zone's physical substrate (`zone.material`), acoustic reverb, and lighting.
+- **The Four-Tier Epistemic Maturity Ladder** (`library/cartographers_ledger.json`):
+  1. **`field_note` (Provisional / LLM-Synthesized — Standing `0.40`)**:
+     When the compiler detects a concrete coherence conflict between an asset and its host scene (e.g. a foreign faction relic in a customs hall without a bridging fixture, an extreme mass load on timber planking, or an unmodelled slab), the Cartographer may draft a single atomic bridging fragment—subject to strict parsimony gates.
+  2. **`curated` (Human-Edited Refinement — Standing `0.90`, Canon Warrant)**:
+     If the developer or player **edits** an LLM-generated fragment on disk (detected via SHA-256 content diff against the synthesized baseline), the Bureau treats the edit as authorial verification, promoting the fragment to `curated` and awarding the asset a **Canon Warrant**.
+  3. **`criticized` (Human-Deleted Tombstone — Negative Backpressure)**:
+     If the developer or player **deletes** an LLM-generated fragment file from `library/fragments/`, it is **never** treated as a missing-file error to be reverted via git or re-synthesized. Instead, the Cartographers' Ledger records a permanent **Criticism Tombstone** that blocks re-generation for that conflict and steers the prompt rewriter away from the rejected claim.
+  4. **`canon` (Established / Saturation-Locked — Standing `1.00`)**:
+     Hand-authored fragments or saturated domains where the copper plate is engraved.
+- **Parsimony & Saturation Governance (`EpistemicGovernor`)**:
+  The local LLM is kept parsimonious by four hard gates:
+  - *Conflict Necessity*: Zero fragments may be minted if the asset already coheres with its host zone.
+  - *Single Pending Field Note Cap*: At most `1` uncurated `field_note` may exist per archetype/conflict at a time; human filtering (edit or delete) is required before further exploration.
+  - *Criticism Memory*: Deleted fragments permanently block re-synthesis for the same conflict signature.
+  - *Evolution Saturation Lock*: Once an archetype or scene reaches the epistemic saturation threshold ($\ge 0.80$ from canon, curated, and criticized entries), the Cartographers declare the domain **Engraved (`canon_locked`)**—forbidding any further dynamic additions.
+- **Fragments** (`library/fragments/cartographers/`):
+  - `canon-warrant.json`: Stamped brass medallion certifying human-curated canonical standing.
+  - `epistemic-survey.json`: Four-tiered oak scriptorium governing the maturity ladder from field notes to copper plates.
+  - `the-living-atlas.json`: Monumental counterweighted pigskin-and-brass folio illuminating certified terrain.
+  - `unwritten-borders.json`: Frontier threshold where certified cobblestone meets raw underdetermined mist.
+  - `glyph-surveyor-rose.json`: Sixteen-point compass rose indexing degrees of epistemic certitude.
+
 ## Scene Refinement: Floor Plans
 
 Scenes advance from narrative concept and visual lore fragments to **Floor Plans** (`library/floorplans/*.json`). Floor plans provide the **geometric and spatial ground truth** for downstream architectural refinement, 3D scene construction, movement paths, and stagecraft blocking.

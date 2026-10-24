@@ -1789,13 +1789,21 @@ export function initViewer(config) {
         image_url: assetImages.get(p.id) || p.image_url || null,
         diffusion_prompt: p.diffusion_prompt || p.lore_snippet || `Orthographic asset specification for ${p.label}`,
         compiled_brief: p.compiled_brief || '',
-        fragments_used: p.fragments_used || [p.fragment_id || 'customs-house/the-site'],
+        fragments_used: p.fragments_used ? [...p.fragments_used] : [p.fragment_id || 'customs-house/the-site'],
         world_setting: p.world_setting || 'Border March Customs House',
         lore_snippet: p.lore_snippet || '',
         obstacle_type: p.obstacle_type,
         mass_kg: p.mass_kg,
         interactive_verbs: p.interactive_verbs || ['examine', 'push'],
         forged: assetImages.has(p.id),
+        zone_context: p.zone_context || { zone_id: 'inspection-hall', zone_name: 'Weigh & Inspection Hall', substrate_material: 'scarred timber planking' },
+        coherence_conflicts: p.coherence_conflicts ? p.coherence_conflicts.map((c) => ({ ...c })) : [],
+        active_criticisms: p.active_criticisms ? [...p.active_criticisms] : [],
+        standing_tier: p.standing_tier || 'verified',
+        standing_score: typeof p.standing_score === 'number' ? p.standing_score : 0.65,
+        warrant_id: p.warrant_id || null,
+        saturation_score: typeof p.saturation_score === 'number' ? p.saturation_score : 0.4,
+        saturation_locked: Boolean(p.saturation_locked),
       };
     }
     // 2. Check actors
@@ -1927,6 +1935,31 @@ export function initViewer(config) {
     if (fragsEl) {
       const frags = selectedAsset.fragments_used || [selectedAsset.fragment_id];
       fragsEl.textContent = frags.map(f => f.split('/').pop()).join(' · ') || 'the-site';
+    }
+
+    const standingEl = document.getElementById('asset-viewer-standing');
+    if (standingEl) {
+      const tier = (selectedAsset.standing_tier || 'verified').toUpperCase();
+      const score = typeof selectedAsset.standing_score === 'number' ? selectedAsset.standing_score.toFixed(2) : '0.65';
+      const warrantSuffix = selectedAsset.warrant_id ? ` · ${selectedAsset.warrant_id}` : '';
+      standingEl.textContent = `${tier} (${score})${warrantSuffix}`;
+    }
+
+    const cohEl = document.getElementById('asset-viewer-coherence');
+    if (cohEl) {
+      const zId = selectedAsset.zone_context?.zone_id || 'inspection-hall';
+      const conflicts = selectedAsset.coherence_conflicts || [];
+      const unresolved = conflicts.filter((c) => c.resolution_status === 'unresolved');
+      if (unresolved.length > 0) {
+        cohEl.textContent = `${zId} · ${unresolved.length} conflict (${unresolved[0].kind})`;
+        cohEl.style.color = '#fbbf24';
+      } else if (selectedAsset.standing_tier === 'refined_by_criticism') {
+        cohEl.textContent = `${zId} · criticized tombstone active`;
+        cohEl.style.color = '#f87171';
+      } else {
+        cohEl.textContent = `${zId} · coherent`;
+        cohEl.style.color = '#34d399';
+      }
     }
 
     const physEl = document.getElementById('asset-viewer-physicality');
@@ -2216,6 +2249,141 @@ export function initViewer(config) {
 
   function renderSelectedAssetInForge() {
     return selectedAsset ? renderAssetInForge(selectedAsset.id) : null;
+  }
+
+  // --- Cartographers' Scene-Coherence & Epistemic Curation Engine (Client Runtime) ---
+  function surveyAssetCoherence(assetId) {
+    const id = assetId || (selectedAsset ? selectedAsset.id : null);
+    if (!id || !physicalPropsMap.has(id)) {
+      return { success: false, reason: 'asset_not_found' };
+    }
+    const p = physicalPropsMap.get(id);
+    const conflicts = p.coherence_conflicts || [];
+    const criticized = conflicts.find((c) => c.resolution_status === 'criticized_by_author');
+    if (criticized) {
+      log('CARTOGRAPHER', `Refused synthesis for '${id}': conflict '${criticized.kind}' was criticized/deleted by author.`, 'warn');
+      return { success: false, reason: 'criticized_by_author' };
+    }
+    if (p.saturation_locked) {
+      log('CARTOGRAPHER', `Refused synthesis for '${id}': archetype is saturation-locked (${p.saturation_score}).`, 'warn');
+      return { success: false, reason: 'saturation_locked' };
+    }
+    const unresolved = conflicts.find((c) => c.resolution_status === 'unresolved');
+    if (!unresolved) {
+      log('CARTOGRAPHER', `No unresolved scene coherence conflicts for '${id}'.`);
+      return { success: false, reason: 'no_unresolved_conflict' };
+    }
+
+    const fid = unresolved.proposed_fragment_id;
+    const detail = unresolved.proposed_detail;
+    unresolved.resolution_status = 'resolved_by_field_note';
+    unresolved.bridging_fragment_id = fid;
+
+    p.fragments_used = p.fragments_used ? [...p.fragments_used] : [p.fragment_id];
+    if (!p.fragments_used.includes(fid)) {
+      p.fragments_used.push(fid);
+    }
+    p.standing_tier = 'provisional';
+    p.standing_score = 0.40;
+    p.diffusion_prompt = `${p.diffusion_prompt}, ${detail}`;
+
+    log('CARTOGRAPHER', `Synthesized provisional field_note '${fid}' to resolve ${unresolved.kind} in ${p.zone_context?.zone_id || 'scene'}.`);
+    if (selectedAsset && selectedAsset.id === id) {
+      selectAsset(id);
+    }
+    return {
+      success: true,
+      assetId: id,
+      fragmentId: fid,
+      standing_tier: p.standing_tier,
+      standing_score: p.standing_score,
+    };
+  }
+
+  function curateAssetFragment(assetId, fragmentId, refinedDetail) {
+    const id = assetId || (selectedAsset ? selectedAsset.id : null);
+    if (!id || !physicalPropsMap.has(id)) {
+      return { success: false, reason: 'asset_not_found' };
+    }
+    const p = physicalPropsMap.get(id);
+    const fid = fragmentId || (p.fragments_used || []).find((f) => f.startsWith('cartographers/'));
+    if (!fid) {
+      return { success: false, reason: 'no_dynamic_fragment' };
+    }
+    const slugPart = fid.split('/').pop().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12);
+    const warrantId = `WARRANT-${slugPart}-CURATED`;
+
+    p.standing_tier = 'warranted';
+    p.standing_score = 0.90;
+    p.warrant_id = warrantId;
+    p.saturation_score = Math.min(1.0, Number(((p.saturation_score || 0.4) + 0.45).toFixed(2)));
+    if (p.saturation_score >= 0.80) {
+      p.saturation_locked = true;
+    }
+    if (refinedDetail) {
+      p.diffusion_prompt = `${p.diffusion_prompt}, ${refinedDetail}`;
+    }
+    for (const c of (p.coherence_conflicts || [])) {
+      if (c.bridging_fragment_id === fid) {
+        c.resolution_status = 'resolved_by_curated';
+        c.warrant_id = warrantId;
+      }
+    }
+
+    log('CARTOGRAPHER', `Authorial edit verified on '${fid}' -> Promoted to CURATED (${warrantId}, standing: 0.90).`);
+    if (selectedAsset && selectedAsset.id === id) {
+      selectAsset(id);
+    }
+    return {
+      success: true,
+      assetId: id,
+      fragmentId: fid,
+      warrant_id: warrantId,
+      standing_tier: p.standing_tier,
+      standing_score: p.standing_score,
+      saturation_score: p.saturation_score,
+      saturation_locked: p.saturation_locked,
+    };
+  }
+
+  function criticizeAssetFragment(assetId, fragmentId) {
+    const id = assetId || (selectedAsset ? selectedAsset.id : null);
+    if (!id || !physicalPropsMap.has(id)) {
+      return { success: false, reason: 'asset_not_found' };
+    }
+    const p = physicalPropsMap.get(id);
+    const fid = fragmentId || (p.fragments_used || []).find((f) => f.startsWith('cartographers/'));
+    if (!fid) {
+      return { success: false, reason: 'no_dynamic_fragment' };
+    }
+
+    p.fragments_used = (p.fragments_used || []).filter((f) => f !== fid);
+    p.standing_tier = 'refined_by_criticism';
+    p.standing_score = 0.55;
+    p.warrant_id = null;
+    p.active_criticisms = p.active_criticisms || [];
+    const critMsg = `Author rejected and deleted fragment '${fid}'; do not re-propose this framing.`;
+    if (!p.active_criticisms.includes(critMsg)) {
+      p.active_criticisms.push(critMsg);
+    }
+    for (const c of (p.coherence_conflicts || [])) {
+      if (c.bridging_fragment_id === fid || c.proposed_fragment_id === fid) {
+        c.resolution_status = 'criticized_by_author';
+      }
+    }
+
+    log('CARTOGRAPHER', `Author deleted '${fid}' -> Recorded criticism tombstone (standing: 0.55, re-synthesis blocked).`);
+    if (selectedAsset && selectedAsset.id === id) {
+      selectAsset(id);
+    }
+    return {
+      success: true,
+      assetId: id,
+      fragmentId: fid,
+      standing_tier: p.standing_tier,
+      standing_score: p.standing_score,
+      active_criticisms: [...p.active_criticisms],
+    };
   }
 
   function handleClick(pxX, pxY, wWidth = (world ? world.clientWidth || 600 : 600), wHeight = (world ? world.clientHeight || 700 : 700)) {
@@ -3028,6 +3196,9 @@ export function initViewer(config) {
     getSelectedAsset: () => selectedAsset,
     renderAssetInForge,
     renderSelectedAssetInForge,
+    surveyAssetCoherence,
+    curateAssetFragment,
+    criticizeAssetFragment,
     getLogs: () => [...logEntries],
     clearLogs,
     log,
@@ -3088,6 +3259,9 @@ export function initViewer(config) {
     globalRoot.getSelectedAsset = () => selectedAsset;
     globalRoot.renderAssetInForge = renderAssetInForge;
     globalRoot.renderSelectedAssetInForge = renderSelectedAssetInForge;
+    globalRoot.surveyAssetCoherence = surveyAssetCoherence;
+    globalRoot.curateAssetFragment = curateAssetFragment;
+    globalRoot.criticizeAssetFragment = criticizeAssetFragment;
     globalRoot.getLogs = () => [...logEntries];
     globalRoot.clearLogs = clearLogs;
     globalRoot.log = log;
