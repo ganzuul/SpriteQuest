@@ -723,22 +723,18 @@ def rasterize_stl_depth(
     y_min, y_max = float(ys.min()), float(ys.max())
     z_min, z_max = float(zs.min()), float(zs.max())
 
-    # Detect grid resolution
-    u_xs = np.unique(np.round(xs, 3))
-    dxs = np.diff(u_xs)
-    step_x = float(dxs[dxs > 1e-4].min()) if len(dxs[dxs > 1e-4]) > 0 else 1.0
-
-    u_ys = np.unique(np.round(ys, 3))
-    dys = np.diff(u_ys)
-    step_y = float(dys[dys > 1e-4].min()) if len(dys[dys > 1e-4]) > 0 else 1.0
-
-    grid_cols = int(round((x_max - x_min) / step_x)) + 1
-    grid_rows = int(round((y_max - y_min) / step_y)) + 1
+    # Bounded raster grid directly at target resolution (or capped at 1024)
+    grid_cols = max(16, min(width, 1024))
+    grid_rows = max(16, min(height, 1024))
+    span_x = max(x_max - x_min, 1e-4)
+    span_y = max(y_max - y_min, 1e-4)
 
     grid = np.full((grid_rows, grid_cols), z_min, dtype=np.float32)
-    col_idx = np.clip(np.round((xs - x_min) / step_x).astype(int), 0, grid_cols - 1)
-    row_idx = np.clip(np.round((ys - y_min) / step_y).astype(int), 0, grid_rows - 1)
-    grid[row_idx, col_idx] = zs
+    col_idx = np.clip(np.round(((xs - x_min) / span_x) * (grid_cols - 1)).astype(int), 0, grid_cols - 1)
+    row_idx = np.clip(np.round(((ys - y_min) / span_y) * (grid_rows - 1)).astype(int), 0, grid_rows - 1)
+
+    # Assign reverse of descending-sorted Z so highest elevation overwrites at each cell
+    grid[row_idx[::-1], col_idx[::-1]] = zs[::-1]
 
     denom = max(z_max - z_min, 1e-6)
     norm = (grid - z_min) / denom
@@ -850,7 +846,72 @@ def compile_outdoor_map_bundle(map_path: Path, out_dir: Path) -> dict:
 
     tm, map_data = load_outdoor_map_scene(map_path)
     stl_path = out_dir / f"{map_path.stem}.stl"
-    tri_count = tm.export_stl(stl_path, solid_base=True)
+
+    # Resolve and place 3D STL primitives originating from fragments
+    try:
+        from companion.stl_primitives import (
+            PlacedSTLPrimitive,
+            composite_terrain_and_primitives_stl,
+            ensure_default_stl_primitives,
+        )
+        catalog = ensure_default_stl_primitives()
+        placed_prims: list[PlacedSTLPrimitive] = []
+
+        # 1. Map declared stl_primitives
+        for item in map_data.get("stl_primitives", []):
+            pid = item.get("primitive") or item.get("primitive_id")
+            prim = catalog.get(pid)
+            if prim:
+                at = item.get("at", [0.0, 0.0])
+                mode = item.get("elevation_mode", "surface")
+                if mode == "surface":
+                    elev = tm.sample_elevation(float(at[0]), float(at[1]))
+                else:
+                    elev = float(item.get("elevation", 0.0))
+                placed_prims.append(PlacedSTLPrimitive(
+                    primitive=prim,
+                    world_x=float(at[0]),
+                    world_y=float(at[1]),
+                    world_z=elev,
+                    yaw_deg=float(item.get("yaw_deg", 0.0)),
+                    scale=item.get("scale", 1.0),
+                    id=item.get("id", pid),
+                ))
+
+        # 2. Floorplan props matching catalog primitives
+        from companion.scene_placement import ScenePlacementEngine
+        scene_engine = ScenePlacementEngine(tm, map_data)
+        for prop in scene_engine.props:
+            cand_id = None
+            if prop.glb:
+                g_parts = Path(prop.glb).parts
+                if "props" in g_parts:
+                    idx = g_parts.index("props")
+                    if idx + 2 < len(g_parts):
+                        cand_id = g_parts[idx + 2]
+                if not cand_id:
+                    cand_id = Path(prop.glb).stem
+            if not cand_id and prop.id in catalog:
+                cand_id = prop.id
+            if cand_id and cand_id in catalog:
+                placed_prims.append(PlacedSTLPrimitive(
+                    primitive=catalog[cand_id],
+                    world_x=prop.world_x,
+                    world_y=prop.world_y,
+                    world_z=prop.world_z,
+                    yaw_deg=prop.yaw_deg,
+                    scale=prop.scale,
+                    id=prop.id,
+                ))
+
+        if placed_prims:
+            tri_count = composite_terrain_and_primitives_stl(tm, placed_prims, stl_path, solid_base=True)
+        else:
+            tri_count = tm.export_stl(stl_path, solid_base=True)
+    except Exception as exc:
+        print(f"Notice: STL primitive placement skipped ({exc}), exporting base terrain mesh.", file=sys.stderr)
+        tri_count = tm.export_stl(stl_path, solid_base=True)
+        placed_prims = []
 
     relief_img = tm.render_topdown_relief(contour_step_m=2.0)
     # Resize relief cleanly to 1024x1024 for crisp visual display
@@ -887,6 +948,7 @@ def compile_outdoor_map_bundle(map_path: Path, out_dir: Path) -> dict:
         "grid_resolution": [tm.cols, tm.rows],
         "triangles": tri_count,
         "stl_file": str(stl_path.relative_to(REPO_ROOT) if stl_path.is_relative_to(REPO_ROOT) else stl_path),
+        "stl_primitives_placed": len(placed_prims),
         "traversability": stats,
         "strata": strata_records,
         "build_plates": map_data.get("build_plates", []),

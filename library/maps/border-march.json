@@ -102,6 +102,53 @@
       "wall_slope_width": 6.0
     }
   ],
+  "stl_primitives": [
+    {
+      "id": "north-ancient-bastion",
+      "primitive": "ancient-bastion",
+      "fragment_id": "grey-wind/named-ruins",
+      "at": [24.0, 24.0],
+      "elevation_mode": "surface",
+      "yaw_deg": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "west-watch-ruin",
+      "primitive": "ancient-bastion",
+      "fragment_id": "grey-wind/named-ruins",
+      "at": [18.0, 110.0],
+      "elevation_mode": "surface",
+      "yaw_deg": 45.0,
+      "scale": 0.85
+    },
+    {
+      "id": "prop-border-signpost",
+      "primitive": "border-signpost",
+      "fragment_id": "shared/unmodelled-prop",
+      "at": [32.0, 64.0],
+      "elevation_mode": "surface",
+      "yaw_deg": 45.0,
+      "scale": 1.0
+    },
+    {
+      "id": "prop-checkpoint-brazier",
+      "primitive": "frontier-brazier",
+      "fragment_id": "shared/unmodelled-prop",
+      "at": [37.5, 47.0],
+      "elevation_mode": "surface",
+      "yaw_deg": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "prop-approach-crates",
+      "primitive": "r6-ship-crate",
+      "fragment_id": "customs-house/r6-ship",
+      "at": [38.0, 72.0],
+      "elevation_mode": "surface",
+      "yaw_deg": 15.0,
+      "scale": 1.2
+    }
+  ],
   "props": [
     {
       "id": "prop-border-signpost",
