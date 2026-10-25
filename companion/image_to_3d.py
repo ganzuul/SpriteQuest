@@ -845,7 +845,16 @@ def process_ruin_pipeline(
     collage_path = RENDERS_DIR / f"{asset_id}-collage.png"
     render_5cell_collage(s_path, source_mesh, lowpoly_mesh, collider_pieces, collage_path, asset_name=name)
 
-    # 7. Synchronize alternative alias (e.g. prop-relic-cairn <-> relic-cairn)
+    # 7. Rasterize authentic top-down Z-depth map directly from full-resolution source mesh
+    depth_path = RENDERS_DIR / f"{asset_id}-depth.png"
+    try:
+        from companion.terrain_mesh import rasterize_mesh_depth
+        depth_img = rasterize_mesh_depth(source_mesh, width=1024, height=1024)
+        depth_img.save(depth_path)
+    except Exception as e:
+        print(f"[3D Pipeline] Failed to rasterize depth map for {asset_id}: {e}", file=sys.stderr)
+
+    # 8. Synchronize alternative alias (e.g. prop-relic-cairn <-> relic-cairn)
     alt_id = asset_id[5:] if asset_id.startswith("prop-") else f"prop-{asset_id}"
     try:
         shutil.copy2(stl_path, STL_DIR / f"{alt_id}.stl")
@@ -853,6 +862,8 @@ def process_ruin_pipeline(
         shutil.copy2(source_glb_path, MESH_DIR / f"{alt_id}-source.glb")
         shutil.copy2(lowpoly_glb_path, MESH_DIR / f"{alt_id}-lowpoly.glb")
         shutil.copy2(collage_path, RENDERS_DIR / f"{alt_id}-collage.png")
+        if depth_path.is_file():
+            shutil.copy2(depth_path, RENDERS_DIR / f"{alt_id}-depth.png")
     except Exception:
         pass
 
@@ -868,6 +879,7 @@ def process_ruin_pipeline(
         "collider_pieces": len(collider_pieces),
         "collider_faces": sum(len(p.faces) for p in collider_pieces),
         "stl_path": str(stl_path.relative_to(REPO_ROOT)),
+        "depth_path": str(depth_path.relative_to(REPO_ROOT)) if depth_path.is_file() else None,
         "source_glb": str(source_glb_path.relative_to(REPO_ROOT)),
         "lowpoly_glb": str(lowpoly_glb_path.relative_to(REPO_ROOT)),
         "collider_glb": str(collider_glb_path.relative_to(REPO_ROOT)),

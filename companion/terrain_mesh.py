@@ -19,10 +19,28 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import struct
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
+
+# Ensure PyTorch routes to GPU 0 (RTX 2070 Super) avoiding compute 6.1 warnings on secondary GPU
+os.environ.setdefault("CUDA_VISIBLE_DEVICES", "0")
+
+try:
+    import torch
+    HAVE_TORCH = True
+except ImportError:
+    torch = None
+    HAVE_TORCH = False
+
+try:
+    from scipy.ndimage import grey_dilation, binary_fill_holes
+    HAVE_SCIPY = True
+except ImportError:
+    HAVE_SCIPY = False
 
 import numpy as np
 from PIL import Image, ImageDraw
@@ -669,109 +687,282 @@ class TerrainMesh:
         return Image.fromarray(rgba_arr, mode="RGBA")
 
 
-def rasterize_stl_depth(
-    stl_path: Path | str,
+def load_mesh_triangles(mesh_or_path: Any) -> np.ndarray:
+    """
+    Extract 3D triangle faces as float32 np.ndarray of shape (N, 3, 3).
+    Supports:
+      - numpy ndarrays of shape (N, 3, 3)
+      - trimesh.Trimesh instances
+      - Binary or ASCII STL files (.stl)
+      - Binary glTF files (.glb)
+      - Any 3D geometry loadable via trimesh
+    """
+    if isinstance(mesh_or_path, np.ndarray):
+        if mesh_or_path.ndim == 3 and mesh_or_path.shape[1:] == (3, 3):
+            return mesh_or_path.astype(np.float32)
+        raise ValueError(f"Expected array of shape (N, 3, 3), got {mesh_or_path.shape}")
+
+    if hasattr(mesh_or_path, "triangles"):
+        return np.asarray(mesh_or_path.triangles, dtype=np.float32)
+
+    path = Path(mesh_or_path)
+    if not path.is_file():
+        raise FileNotFoundError(f"Mesh file not found: {path}")
+
+    suffix = path.suffix.lower()
+    if suffix == ".stl":
+        with open(path, "rb") as f:
+            _hdr = f.read(80)
+            raw_n = f.read(4)
+            if len(raw_n) < 4:
+                raise ValueError(f"Corrupt STL header in {path}")
+            n_tri = struct.unpack("<I", raw_n)[0]
+            data = f.read(n_tri * 50)
+        rec = np.dtype([
+            ("norm", "<f4", (3,)),
+            ("v0", "<f4", (3,)),
+            ("v1", "<f4", (3,)),
+            ("v2", "<f4", (3,)),
+            ("attr", "<u2")
+        ])
+        arr = np.frombuffer(data, dtype=rec)
+        if len(arr) == 0:
+            return np.zeros((0, 3, 3), dtype=np.float32)
+        tris = np.stack([arr["v0"], arr["v1"], arr["v2"]], axis=1)
+        return tris.astype(np.float32)
+
+    elif suffix == ".glb":
+        try:
+            with open(path, "rb") as f:
+                f.read(12)  # magic, version, length
+                c_len, _ = struct.unpack("<I4s", f.read(8))
+                gltf = json.loads(f.read(c_len).decode("utf-8"))
+                b_len, _ = struct.unpack("<I4s", f.read(8))
+                bin_data = f.read(b_len)
+
+            prim = gltf["meshes"][0]["primitives"][0]
+            pos_acc = gltf["accessors"][prim["attributes"]["POSITION"]]
+            pos_bv = gltf["bufferViews"][pos_acc["bufferView"]]
+            pos_offset = pos_bv.get("byteOffset", 0) + pos_acc.get("byteOffset", 0)
+            verts = np.frombuffer(
+                bin_data[pos_offset : pos_offset + pos_acc["count"] * 12],
+                dtype="<f4"
+            ).reshape(-1, 3)
+
+            if "indices" in prim:
+                ind_acc = gltf["accessors"][prim["indices"]]
+                ind_bv = gltf["bufferViews"][ind_acc["bufferView"]]
+                ind_offset = ind_bv.get("byteOffset", 0) + ind_acc.get("byteOffset", 0)
+                ctype = ind_acc["componentType"]
+                dt = "<u2" if ctype == 5123 else "<u4"
+                byte_size = 2 if ctype == 5123 else 4
+                indices = np.frombuffer(
+                    bin_data[ind_offset : ind_offset + ind_acc["count"] * byte_size],
+                    dtype=dt
+                )
+                tris = verts[indices].reshape(-1, 3, 3)
+            else:
+                tris = verts.reshape(-1, 3, 3)
+            return tris.astype(np.float32)
+        except Exception:
+            pass
+
+    import trimesh
+    loaded = trimesh.load(path)
+    if hasattr(loaded, "triangles"):
+        return np.asarray(loaded.triangles, dtype=np.float32)
+    elif hasattr(loaded, "geometry"):
+        all_tris = [np.asarray(g.triangles, dtype=np.float32) for g in loaded.geometry.values() if hasattr(g, "triangles")]
+        if all_tris:
+            return np.concatenate(all_tris, axis=0)
+    raise ValueError(f"Unable to extract triangles from mesh: {path}")
+
+
+def _rasterize_triangles_torch(
+    tris_np: np.ndarray,
     width: int = 1024,
     height: int = 1024,
     invert: bool = False,
     pad_ratio: float = 0.08,
 ) -> Image.Image:
-    """
-    Directly parse a binary STL file and rasterize an authentic, solid,
-    orthographic top-down Z-depth map using vectorized triangle scan conversion
-    and barycentric interpolation.
-
-    Extracts triangles, projects to (X, Y) pixel coordinates with border padding,
-    rasterizes every triangle face with depth interpolation into a Z-buffer,
-    and normalizes elevation to [0, 255] (mode 'L').
-    """
-    stl_path = Path(stl_path)
-    if not stl_path.is_file():
-        raise FileNotFoundError(f"STL file not found: {stl_path}")
-
-    with open(stl_path, "rb") as f:
-        _hdr = f.read(80)
-        num_tri_raw = f.read(4)
-        if len(num_tri_raw) < 4:
-            raise ValueError(f"Corrupt STL header in {stl_path}")
-        num_tri = struct.unpack("<I", num_tri_raw)[0]
-        data = f.read(num_tri * 50)
-
-    record_dtype = np.dtype([
-        ("normal", "<f4", (3,)),
-        ("v0", "<f4", (3,)),
-        ("v1", "<f4", (3,)),
-        ("v2", "<f4", (3,)),
-        ("attr", "<u2")
-    ])
-    triangles = np.frombuffer(data, dtype=record_dtype)
-    if len(triangles) == 0:
+    if len(tris_np) == 0:
         return Image.new("L", (width, height), 0)
 
-    v0 = triangles["v0"]
-    v1 = triangles["v1"]
-    v2 = triangles["v2"]
-    all_v = np.concatenate([v0, v1, v2], axis=0)
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    tris = torch.from_numpy(tris_np).to(device)
 
+    all_v = tris.reshape(-1, 3)
+    x_min, x_max = float(all_v[:, 0].min().item()), float(all_v[:, 0].max().item())
+    y_min, y_max = float(all_v[:, 1].min().item()), float(all_v[:, 1].max().item())
+
+    span_x = max(x_max - x_min, 1e-4) * (1.0 + 2.0 * pad_ratio)
+    span_y = max(y_max - y_min, 1e-4) * (1.0 + 2.0 * pad_ratio)
+    x_min -= max(x_max - x_min, 1e-4) * pad_ratio
+    y_min -= max(y_max - y_min, 1e-4) * pad_ratio
+
+    scale_x = (width - 1) / span_x
+    scale_y = (height - 1) / span_y
+
+    # Adaptive subdivision for triangles with edges > 3.5 px
+    max_edge_px = 3.5
+    for _ in range(3):
+        e0 = torch.hypot((tris[:, 1, 0] - tris[:, 0, 0]) * scale_x, (tris[:, 1, 1] - tris[:, 0, 1]) * scale_y)
+        e1 = torch.hypot((tris[:, 2, 0] - tris[:, 1, 0]) * scale_x, (tris[:, 2, 1] - tris[:, 1, 1]) * scale_y)
+        e2 = torch.hypot((tris[:, 0, 0] - tris[:, 2, 0]) * scale_x, (tris[:, 0, 1] - tris[:, 2, 1]) * scale_y)
+        max_e = torch.maximum(torch.maximum(e0, e1), e2)
+        split_mask = max_e > max_edge_px
+        if not split_mask.any():
+            break
+        small = tris[~split_mask]
+        large = tris[split_mask]
+        v0, v1, v2 = large[:, 0], large[:, 1], large[:, 2]
+        m01 = (v0 + v1) * 0.5
+        m12 = (v1 + v2) * 0.5
+        m20 = (v2 + v0) * 0.5
+        t0 = torch.stack([v0, m01, m20], dim=1)
+        t1 = torch.stack([v1, m12, m01], dim=1)
+        t2 = torch.stack([v2, m20, m12], dim=1)
+        t3 = torch.stack([m01, m12, m20], dim=1)
+        sub = torch.cat([t0, t1, t2, t3], dim=0)
+        tris = torch.cat([small, sub], dim=0)
+
+    # Dense barycentric sampling: 7 points per triangle (3 vertices, 3 edge midpoints, 1 centroid)
+    weights = torch.tensor([
+        [1.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0],
+        [0.0, 0.0, 1.0],
+        [0.5, 0.5, 0.0],
+        [0.5, 0.0, 0.5],
+        [0.0, 0.5, 0.5],
+        [0.33333334, 0.33333334, 0.33333334],
+    ], device=device, dtype=torch.float32)
+
+    pts = torch.einsum("sw, nwv -> nsv", weights, tris)
+    pts_flat = pts.reshape(-1, 3)
+
+    px = (((pts_flat[:, 0] - x_min) / span_x) * (width - 1)).round().long().clamp(0, width - 1)
+    py = ((height - 1) - (((pts_flat[:, 1] - y_min) / span_y) * (height - 1))).round().long().clamp(0, height - 1)
+    pz = pts_flat[:, 2]
+
+    flat_idx = py * width + px
+    z_buffer = torch.full((height * width,), -1e9, device=device, dtype=torch.float32)
+    z_buffer.scatter_reduce_(0, flat_idx, pz, reduce="amax")
+
+    z_2d = z_buffer.view(height, width)
+    mask = z_2d > -1e8
+    coverage = int(mask.sum().item())
+
+    if coverage == 0:
+        return Image.new("L", (width, height), 0)
+
+    z_valid = z_2d[mask]
+    z_lo = float(z_valid.min().item())
+    z_hi = float(z_valid.max().item())
+    denom = max(z_hi - z_lo, 1e-6)
+
+    norm = torch.zeros_like(z_2d)
+    if invert:
+        norm[mask] = 1.0 - (0.15 + 0.85 * ((z_2d[mask] - z_lo) / denom))
+        norm[~mask] = 1.0
+    else:
+        norm[mask] = 0.15 + 0.85 * ((z_2d[mask] - z_lo) / denom)
+
+    u8 = (norm * 255.0).clamp(0, 255).byte().cpu().numpy()
+
+    if HAVE_SCIPY and coverage > 0:
+        dilated = grey_dilation(u8, size=(3, 3))
+        hole_mask = (u8 == 0) & (dilated > 0)
+        solid_mask = binary_fill_holes(u8 > 0)
+        u8[hole_mask & solid_mask] = dilated[hole_mask & solid_mask]
+
+    return Image.fromarray(u8, mode="L")
+
+
+def _rasterize_triangles_numpy(
+    tris: np.ndarray,
+    width: int = 1024,
+    height: int = 1024,
+    invert: bool = False,
+    pad_ratio: float = 0.08,
+) -> Image.Image:
+    if len(tris) == 0:
+        return Image.new("L", (width, height), 0)
+
+    all_v = tris.reshape(-1, 3)
     x_min, x_max = float(all_v[:, 0].min()), float(all_v[:, 0].max())
     y_min, y_max = float(all_v[:, 1].min()), float(all_v[:, 1].max())
 
-    span_x = max(x_max - x_min, 1e-4)
-    span_y = max(y_max - y_min, 1e-4)
-    x_min -= span_x * pad_ratio
-    x_max += span_x * pad_ratio
-    y_min -= span_y * pad_ratio
-    y_max += span_y * pad_ratio
-    span_x = x_max - x_min
-    span_y = y_max - y_min
+    span_x = max(x_max - x_min, 1e-4) * (1.0 + 2.0 * pad_ratio)
+    span_y = max(y_max - y_min, 1e-4) * (1.0 + 2.0 * pad_ratio)
+    x_min -= max(x_max - x_min, 1e-4) * pad_ratio
+    y_min -= max(y_max - y_min, 1e-4) * pad_ratio
 
-    z_buffer = np.full((height, width), -1e9, dtype=np.float32)
+    if len(tris) > 10000:
+        # Fast vectorized point sampling for dense / full-resolution meshes
+        weights = np.array([
+            [1.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.0, 0.0, 1.0],
+            [0.5, 0.5, 0.0],
+            [0.5, 0.0, 0.5],
+            [0.0, 0.5, 0.5],
+            [0.33333334, 0.33333334, 0.33333334],
+        ], dtype=np.float32)
+        pts = np.einsum("sw, nwv -> nsv", weights, tris).reshape(-1, 3)
+        px = np.clip(np.round(((pts[:, 0] - x_min) / span_x) * (width - 1)).astype(np.int64), 0, width - 1)
+        py = np.clip(np.round((height - 1) - (((pts[:, 1] - y_min) / span_y) * (height - 1))).astype(np.int64), 0, height - 1)
+        pz = pts[:, 2]
 
-    def to_px(v: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        px = ((v[:, 0] - x_min) / span_x) * (width - 1)
-        py = ((v[:, 1] - y_min) / span_y) * (height - 1)
-        # Flip Y so +Y is world up, row 0 is top
-        py = (height - 1) - py
-        return px, py, v[:, 2]
+        flat_idx = py * width + px
+        z_buf = np.full(height * width, -1e9, dtype=np.float32)
+        np.maximum.at(z_buf, flat_idx, pz)
+        z_buffer = z_buf.reshape(height, width)
+    else:
+        # Exact scanline conversion for smaller meshes (<10,000 tris)
+        v0 = tris[:, 0]
+        v1 = tris[:, 1]
+        v2 = tris[:, 2]
 
-    p0x, p0y, p0z = to_px(v0)
-    p1x, p1y, p1z = to_px(v1)
-    p2x, p2y, p2z = to_px(v2)
+        def to_px(v: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+            px = ((v[:, 0] - x_min) / span_x) * (width - 1)
+            py = (height - 1) - (((v[:, 1] - y_min) / span_y) * (height - 1))
+            return px, py, v[:, 2]
 
-    for i in range(num_tri):
-        x0, y0, z0 = p0x[i], p0y[i], p0z[i]
-        x1, y1, z1 = p1x[i], p1y[i], p1z[i]
-        x2, y2, z2 = p2x[i], p2y[i], p2z[i]
+        p0x, p0y, p0z = to_px(v0)
+        p1x, p1y, p1z = to_px(v1)
+        p2x, p2y, p2z = to_px(v2)
 
-        min_x = max(0, int(np.floor(min(x0, x1, x2))))
-        max_x = min(width - 1, int(np.ceil(max(x0, x1, x2))))
-        min_y = max(0, int(np.floor(min(y0, y1, y2))))
-        max_y = min(height - 1, int(np.ceil(max(y0, y1, y2))))
+        z_buffer = np.full((height, width), -1e9, dtype=np.float32)
+        for i in range(len(tris)):
+            x0, y0, z0 = p0x[i], p0y[i], p0z[i]
+            x1, y1, z1 = p1x[i], p1y[i], p1z[i]
+            x2, y2, z2 = p2x[i], p2y[i], p2z[i]
 
-        if min_x > max_x or min_y > max_y:
-            continue
+            min_x = max(0, int(np.floor(min(x0, x1, x2))))
+            max_x = min(width - 1, int(np.ceil(max(x0, x1, x2))))
+            min_y = max(0, int(np.floor(min(y0, y1, y2))))
+            max_y = min(height - 1, int(np.ceil(max(y0, y1, y2))))
+            if min_x > max_x or min_y > max_y:
+                continue
 
-        gx, gy = np.meshgrid(np.arange(min_x, max_x + 1), np.arange(min_y, max_y + 1))
-        # Edge equations for barycentric coordinates
-        w0 = (gx - x1) * (y2 - y1) - (gy - y1) * (x2 - x1)
-        w1 = (gx - x2) * (y0 - y2) - (gy - y2) * (x0 - x2)
-        w2 = (gx - x0) * (y1 - y0) - (gy - y0) * (x1 - x0)
+            gx, gy = np.meshgrid(np.arange(min_x, max_x + 1), np.arange(min_y, max_y + 1))
+            w0 = (gx - x1) * (y2 - y1) - (gy - y1) * (x2 - x1)
+            w1 = (gx - x2) * (y0 - y2) - (gy - y2) * (x0 - x2)
+            w2 = (gx - x0) * (y1 - y0) - (gy - y0) * (x1 - x0)
+            inside = ((w0 >= 0) & (w1 >= 0) & (w2 >= 0)) | ((w0 <= 0) & (w1 <= 0) & (w2 <= 0))
+            if not np.any(inside):
+                continue
 
-        # Allow both clockwise and counter-clockwise winding
-        inside = ((w0 >= 0) & (w1 >= 0) & (w2 >= 0)) | ((w0 <= 0) & (w1 <= 0) & (w2 <= 0))
-        if not np.any(inside):
-            continue
+            total_w = w0 + w1 + w2
+            valid = (inside) & (np.abs(total_w) > 1e-8)
+            if not np.any(valid):
+                continue
 
-        total_w = w0 + w1 + w2
-        valid = (inside) & (np.abs(total_w) > 1e-8)
-        if not np.any(valid):
-            continue
-
-        z_interp = (w0 * z0 + w1 * z1 + w2 * z2) / total_w
-        sub_buf = z_buffer[min_y:max_y+1, min_x:max_x+1]
-        update_mask = valid & (z_interp > sub_buf)
-        sub_buf[update_mask] = z_interp[update_mask]
-        z_buffer[min_y:max_y+1, min_x:max_x+1] = sub_buf
+            z_interp = (w0 * z0 + w1 * z1 + w2 * z2) / total_w
+            sub_buf = z_buffer[min_y : max_y + 1, min_x : max_x + 1]
+            update_mask = valid & (z_interp > sub_buf)
+            sub_buf[update_mask] = z_interp[update_mask]
+            z_buffer[min_y : max_y + 1, min_x : max_x + 1] = sub_buf
 
     mask = z_buffer > -1e8
     z_valid = z_buffer[mask]
@@ -789,8 +980,70 @@ def rasterize_stl_depth(
     else:
         u8 = np.zeros((height, width), dtype=np.uint8)
 
-    img = Image.fromarray(u8, mode="L")
-    return img
+    if HAVE_SCIPY and np.any(u8 > 0):
+        dilated = grey_dilation(u8, size=(3, 3))
+        hole_mask = (u8 == 0) & (dilated > 0)
+        solid_mask = binary_fill_holes(u8 > 0)
+        u8[hole_mask & solid_mask] = dilated[hole_mask & solid_mask]
+
+    return Image.fromarray(u8, mode="L")
+
+
+def rasterize_mesh_depth(
+    mesh_or_path: Any,
+    width: int = 1024,
+    height: int = 1024,
+    invert: bool = False,
+    pad_ratio: float = 0.08,
+) -> Image.Image:
+    """
+    Rasterize an authentic, solid, orthographic top-down Z-depth map
+    directly from full-resolution 3D mesh geometry (GLB, STL, or Trimesh).
+
+    Uses hardware-accelerated vectorized rasterization (PyTorch / CUDA when available)
+    with seamless CPU NumPy fallback.
+    """
+    tris = load_mesh_triangles(mesh_or_path)
+    if HAVE_TORCH:
+        try:
+            return _rasterize_triangles_torch(tris, width=width, height=height, invert=invert, pad_ratio=pad_ratio)
+        except Exception:
+            pass
+    return _rasterize_triangles_numpy(tris, width=width, height=height, invert=invert, pad_ratio=pad_ratio)
+
+
+def rasterize_stl_depth(
+    stl_path: Path | str,
+    width: int = 1024,
+    height: int = 1024,
+    invert: bool = False,
+    pad_ratio: float = 0.08,
+    prefer_source_mesh: bool = True,
+) -> Image.Image:
+    """
+    Directly parse a binary STL file (or its high-resolution companion source GLB)
+    and rasterize an authentic, solid, orthographic top-down Z-depth map using
+    vectorized triangle scan conversion and barycentric interpolation.
+
+    When prefer_source_mesh=True, checks for a full-resolution source mesh
+    (e.g. library/mesh/<id>-source.glb) to ensure depth templates capture the
+    authentic micro-geometry and relief of the original asset.
+    """
+    stl_p = Path(stl_path)
+    if prefer_source_mesh:
+        candidates = []
+        stem = stl_p.stem
+        candidates.append(stl_p.parent.parent / "mesh" / f"{stem}-source.glb")
+        if stem.startswith("prop-"):
+            candidates.append(stl_p.parent.parent / "mesh" / f"{stem[5:]}-source.glb")
+        else:
+            candidates.append(stl_p.parent.parent / "mesh" / f"prop-{stem}-source.glb")
+
+        for cand in candidates:
+            if cand.is_file() and cand.stat().st_size > 1000:
+                return rasterize_mesh_depth(cand, width=width, height=height, invert=invert, pad_ratio=pad_ratio)
+
+    return rasterize_mesh_depth(stl_p, width=width, height=height, invert=invert, pad_ratio=pad_ratio)
 
 
 def load_outdoor_map_scene(map_path: Path) -> tuple[TerrainMesh, dict]:

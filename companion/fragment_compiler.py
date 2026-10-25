@@ -30,6 +30,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 import sys
 import urllib.error
@@ -1163,6 +1164,7 @@ def compile_asset_brief(
     fragments_dir: Path | None = None,
     ledger_path: Path | None = None,
     llm_callback: Callable[[dict[str, Any]], str] | None = None,
+    use_live_rewriter: bool = False,
 ) -> CompiledAssetBrief:
     """
     Hardened Recipe-based Compilation Engine with Scene Coherence Backpressure
@@ -1365,6 +1367,7 @@ def compile_asset_brief(
         active_criticisms=active_criticisms,
         base_prompt=base_prompt,
         llm_callback=llm_callback,
+        use_live_rewriter=use_live_rewriter,
     )
 
     negative_clauses = [
@@ -1496,6 +1499,7 @@ def rewrite_prompt(
     base_prompt: str = "",
     llm_callback: Callable[[dict[str, Any]], str] | None = None,
     endpoint_url: str = "http://127.0.0.1:8080/v1/chat/completions",
+    use_live_rewriter: bool = False,
 ) -> str:
     """
     Lattice Fragment Compiler Prompt Rewriter Pass:
@@ -1525,10 +1529,11 @@ def rewrite_prompt(
         except Exception:
             pass
 
-    # 2. Live local inference server with model gemma4-orion
-    live_result = query_gemma4_orion_rewriter(context, endpoint_url=endpoint_url, model="gemma4-orion")
-    if live_result:
-        return live_result
+    # 2. Live local inference server with model gemma4-orion (when explicitly enabled)
+    if use_live_rewriter or os.environ.get("USE_LIVE_REWRITER") == "1":
+        live_result = query_gemma4_orion_rewriter(context, endpoint_url=endpoint_url, model="gemma4-orion")
+        if live_result:
+            return live_result
 
     # 3. Authentic deterministic gemma4-orion doctrine rewrite pass
     clauses = [f"{label}"]

@@ -802,12 +802,35 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
                         return
 
                     out_depth_path = REPO_ROOT / "renders" / "primitives" / f"{primitive_id}-depth.png"
-                    depth_img = rasterize_stl_depth(stl_path, width=width, height=height)
+                    depth_img = rasterize_stl_depth(stl_path, width=width, height=height, prefer_source_mesh=True)
                     depth_img.save(out_depth_path)
 
-                    with open(stl_path, "rb") as f:
-                        f.read(80)
-                        num_tri = struct.unpack("<I", f.read(4))[0]
+                    # Mirror to alias (prop- prefix)
+                    alt_id = primitive_id[5:] if primitive_id.startswith("prop-") else f"prop-{primitive_id}"
+                    try:
+                        shutil.copy2(out_depth_path, REPO_ROOT / "renders" / "primitives" / f"{alt_id}-depth.png")
+                    except Exception:
+                        pass
+
+                    source_glb = REPO_ROOT / "library" / "mesh" / f"{primitive_id}-source.glb"
+                    if not source_glb.is_file():
+                        alt_cand = REPO_ROOT / "library" / "mesh" / (f"{primitive_id[5:]}-source.glb" if primitive_id.startswith("prop-") else f"prop-{primitive_id}-source.glb")
+                        if alt_cand.is_file():
+                            source_glb = alt_cand
+
+                    num_tri = 0
+                    if source_glb.is_file():
+                        try:
+                            from companion.terrain_mesh import load_mesh_triangles
+                            tris = load_mesh_triangles(source_glb)
+                            num_tri = len(tris)
+                        except Exception:
+                            pass
+
+                    if num_tri == 0:
+                        with open(stl_path, "rb") as f:
+                            f.read(80)
+                            num_tri = struct.unpack("<I", f.read(4))[0]
 
                     is_overhang_compliant = True
 

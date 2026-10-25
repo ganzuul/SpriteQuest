@@ -23,12 +23,14 @@ if str(REPO_ROOT) not in sys.path:
 
 from companion.terrain_mesh import rasterize_stl_depth
 
+MESH_DIR = REPO_ROOT / "library" / "mesh"
 STL_DIR = REPO_ROOT / "library" / "stl_primitives"
 OUT_DIR = REPO_ROOT / "renders" / "primitives"
 
 
 def rasterize_all_primitive_depths(
     stl_dir: Path = STL_DIR,
+    mesh_dir: Path = MESH_DIR,
     out_dir: Path = OUT_DIR,
     width: int = 1024,
     height: int = 1024,
@@ -43,10 +45,22 @@ def rasterize_all_primitive_depths(
         if target_ids and pid not in target_ids:
             continue
         out_png = out_dir / f"{pid}-depth.png"
-        img = rasterize_stl_depth(stl_path, width=width, height=height)
+        img = rasterize_stl_depth(stl_path, width=width, height=height, prefer_source_mesh=True)
         img.save(out_png)
         results.append((pid, out_png))
         print(f"[3D Depth] Rasterized '{pid}' -> {out_png.relative_to(REPO_ROOT)} ({img.width}x{img.height})")
+
+    # Also rasterize any standalone source GLBs
+    for source_glb in sorted(mesh_dir.glob("*-source.glb")):
+        pid = source_glb.stem[:-7]  # strip '-source'
+        if target_ids and pid not in target_ids:
+            continue
+        out_png = out_dir / f"{pid}-depth.png"
+        img = rasterize_stl_depth(source_glb, width=width, height=height, prefer_source_mesh=True)
+        img.save(out_png)
+        if (pid, out_png) not in results:
+            results.append((pid, out_png))
+            print(f"[3D Depth] Rasterized source mesh '{pid}' -> {out_png.relative_to(REPO_ROOT)} ({img.width}x{img.height})")
 
     return results
 
