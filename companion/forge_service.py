@@ -372,14 +372,13 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
                     html_text = preview_html.read_text(encoding="utf-8")
                     viewer_js_path = REPO_ROOT / "companion" / "web" / "viewer.js"
                     if viewer_js_path.is_file():
-                        import re
                         live_js = viewer_js_path.read_text(encoding="utf-8").replace("export function initViewer", "function initViewer")
-                        html_text = re.sub(
-                            r"<script>\s*/\*\*\s*\* companion/web/viewer\.js.*?function setLayerMode",
-                            f"<script>\n{live_js}\n\n  function setLayerMode",
-                            html_text,
-                            flags=re.DOTALL,
-                        )
+                        start_tag = "<script>\n/**\n * companion/web/viewer.js"
+                        end_marker = "\n  function setLayerMode"
+                        if start_tag in html_text and end_marker in html_text:
+                            prefix = html_text.split(start_tag, 1)[0]
+                            suffix = html_text.split(end_marker, 1)[1]
+                            html_text = f"{prefix}<script>\n{live_js}\n\n  function setLayerMode{suffix}"
                     body = html_text.encode("utf-8")
                     try:
                         self.send_response(200)

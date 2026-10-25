@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import shutil
+import subprocess
 import sys
 import tempfile
 import threading
@@ -494,6 +495,13 @@ class TestForgeCorsAndStaticServing(ForgeCase):
             self.assertIn("text/html", resp.headers.get("Content-Type", ""))
             body = resp.read()
             self.assertIn(b"SpriteQuest 2.5D", body)
+
+            # Ensure served inlined JavaScript has zero syntax errors (no unescaped string literal breaks)
+            html_str = body.decode("utf-8")
+            if "<script>" in html_str and "</script>" in html_str:
+                script_body = html_str.split("<script>", 1)[1].rsplit("</script>", 1)[0]
+                proc = subprocess.run(["node", "--check", "-"], input=script_body, text=True, capture_output=True)
+                self.assertEqual(proc.returncode, 0, f"Served viewer JavaScript has syntax errors: {proc.stderr}")
 
     def test_broken_pipe_handled_gracefully(self):
         import socket
