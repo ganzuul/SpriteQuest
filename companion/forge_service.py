@@ -703,18 +703,37 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
                                     sys.stderr.write(f"[forge_service] Base64 image decode error: {exc}\n")
                                     sprite_source_path = None
                         elif isinstance(image_data, str) and not image_data.startswith("data:"):
-                            cand = REPO_ROOT / image_data
-                            if cand.is_file():
-                                sprite_source_path = cand
+                            if image_data.startswith(("http://", "https://")):
+                                try:
+                                    req = urllib.request.Request(image_data)
+                                    with urllib.request.urlopen(req, timeout=20) as resp:
+                                        raw_bytes = resp.read()
+                                    gen_sprite = Image.open(io.BytesIO(raw_bytes))
+                                    gen_path = REPO_ROOT / "renders" / "primitives" / f"{primitive_id}-generated.png"
+                                    gen_path.parent.mkdir(parents=True, exist_ok=True)
+                                    gen_sprite.save(gen_path)
+                                    sprite_source_path = gen_path
+                                except Exception as exc:
+                                    sys.stderr.write(f"[forge_service] HTTP image fetch error: {exc}\n")
+                                    sprite_source_path = None
                             else:
-                                for sub in ("renders/primitives", "library/sprites"):
-                                    cand = REPO_ROOT / sub / Path(image_data).name
-                                    if cand.is_file():
-                                        sprite_source_path = cand
-                                        break
+                                clean_img = image_data.split("?")[0].split("#")[0]
+                                cand = REPO_ROOT / clean_img
+                                if cand.is_file():
+                                    sprite_source_path = cand
+                                else:
+                                    for sub in ("renders/primitives", "library/sprites"):
+                                        cand = REPO_ROOT / sub / Path(clean_img).name
+                                        if cand.is_file():
+                                            sprite_source_path = cand
+                                            break
 
                     if not sprite_source_path:
                         for sub in ("renders/primitives", "library/sprites"):
+                            cand = REPO_ROOT / sub / f"{primitive_id}-generated.png"
+                            if cand.is_file():
+                                sprite_source_path = cand
+                                break
                             cand = REPO_ROOT / sub / f"{primitive_id}.png"
                             if cand.is_file():
                                 sprite_source_path = cand
@@ -724,9 +743,10 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
                     collider_url = None
                     mesh_glb_url = None
                     stl_path = None
+                    model_used = "stored_stl_template"
 
-                    # Only run full 3D reconstruction if explicit 2D image_data or reconstruct flag was provided
-                    should_reconstruct = bool(sprite_source_path and HAVE_IMAGE_TO_3D and (image_data or payload.get("reconstruct")))
+                    # Always run 3D reconstruction from 2D asset unless explicitly set to False
+                    should_reconstruct = bool(sprite_source_path and HAVE_IMAGE_TO_3D and payload.get("reconstruct", True))
 
                     if should_reconstruct:
                         try:
@@ -746,11 +766,13 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
                                 target_faces=ruin_spec.get("target_faces", 350),
                                 coacd_cap=ruin_spec.get("coacd_cap", 8),
                                 fast=True,
+                                use_hunyuan=payload.get("use_hunyuan", True),
                             )
                             stl_path = REPO_ROOT / recon_res["stl_path"]
                             collage_url = recon_res.get("collage_path")
                             collider_url = recon_res.get("collider_glb")
                             mesh_glb_url = recon_res.get("lowpoly_glb")
+                            model_used = recon_res.get("model", "Hunyuan3D-2.1")
                             reconstructed_from_2d = True
                         except Exception as recon_err:
                             import traceback
@@ -792,6 +814,7 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
                             "overhang_compliant": is_overhang_compliant,
                             "watertight": True,
                             "reconstructed_from_2d": reconstructed_from_2d,
+                            "model": model_used,
                             "source_image": str(sprite_source_path.relative_to(REPO_ROOT)) if sprite_source_path else None,
                         },
                         "gate": {"rule": "coacd_stl_watertightness", "verdict": "pass"},
@@ -813,6 +836,7 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
                         "overhang_compliant": is_overhang_compliant,
                         "watertight": True,
                         "reconstructed_from_2d": reconstructed_from_2d,
+                        "model": model_used,
                         "source_image": str(sprite_source_path.relative_to(REPO_ROOT)) if sprite_source_path else None,
                         "collage_url": collage_url or f"renders/primitives/{primitive_id}-collage.png",
                         "collider_url": collider_url or f"library/mesh/{primitive_id}-collider.glb",

@@ -29,7 +29,7 @@ from forge_service import Ledger, make_handler  # noqa: E402
 from companion.fragment_compiler import CartographersLedger
 
 
-def _request(url: str, payload: dict | None = None, timeout: float = 20.0) -> tuple[int, dict]:
+def _request(url: str, payload: dict | None = None, timeout: float = 60.0) -> tuple[int, dict]:
     data = json.dumps(payload).encode() if payload is not None else None
     req = urllib.request.Request(
         url, data=data, method="POST" if data else "GET",
@@ -72,11 +72,11 @@ class ForgeCase(unittest.TestCase):
         cls.server.shutdown()
         cls.tmp.cleanup()
 
-    def get(self, route):
-        return _request(f"{self.base}{route}")
+    def get(self, route, timeout: float = 60.0):
+        return _request(f"{self.base}{route}", timeout=timeout)
 
-    def post(self, route, payload):
-        return _request(f"{self.base}{route}", payload)
+    def post(self, route, payload, timeout: float = 60.0):
+        return _request(f"{self.base}{route}", payload, timeout=timeout)
 
     def member(self, entity):
         _, roster = self.get("/roster")

@@ -28,12 +28,16 @@ QWEN.md / Stagecraft Compliance:
 from __future__ import annotations
 
 import argparse
+import io
 import json
 import math
 import os
 import struct
 import sys
 import time
+import urllib.parse
+import urllib.request
+import uuid
 from pathlib import Path
 from typing import Any, Sequence
 
@@ -57,6 +61,8 @@ RENDERS_DIR = REPO_ROOT / "renders" / "primitives"
 
 CELL_SIZE = 448
 BG_GREY = 233
+COMFY_SERVER_DEFAULT = os.environ.get("COMFY_SERVER", "http://127.0.0.1:8080/upstream/comfyui")
+COMFY_INPUT_DIR = Path.home() / "ComfyUI" / "input"
 
 
 # ---------------------------------------------------------------------------
@@ -296,6 +302,171 @@ def reconstruct_3d_from_image(
     # Ensure normal orientation
     raw_mesh.fix_normals()
     return raw_mesh
+
+
+# ---------------------------------------------------------------------------
+# 2b. Hunyuan3D-2.1 Volumetric Model Reconstruction via ComfyUI
+# ---------------------------------------------------------------------------
+
+def generate_hunyuan_3d(
+    sprite_path: Path | str,
+    target_extents: tuple[float, float, float] = (2.0, 2.0, 2.0),
+    steps: int = 15,
+    cfg: float = 5.0,
+    octree: int = 256,
+    timeout: float = 180.0,
+    server: str | None = None,
+) -> tuple[trimesh.Trimesh, str] | None:
+    """
+    Generate 3D volumetric mesh from 2D sprite via Hunyuan3D-2.1 in ComfyUI.
+    Returns (trimesh.Trimesh, ckpt_name) or None if ComfyUI / model is unavailable.
+    """
+    srv = (server or COMFY_SERVER_DEFAULT).rstrip("/")
+    s_path = Path(sprite_path)
+    if not s_path.is_file():
+        return None
+
+    # 1. Fast probe to check if ComfyUI is up and has ImageOnlyCheckpointLoader
+    try:
+        req = urllib.request.Request(f"{srv}/object_info/ImageOnlyCheckpointLoader")
+        with urllib.request.urlopen(req, timeout=3.0) as r:
+            info = json.loads(r.read())
+            ckpts = info.get("ImageOnlyCheckpointLoader", {}).get("input", {}).get("required", {}).get("ckpt_name", [[]])[0]
+    except Exception as exc:
+        print(f"[Hunyuan3D] ComfyUI probe skipped at {srv}: {exc}", file=sys.stderr)
+        return None
+
+    if not ckpts:
+        return None
+
+    # Prefer fp16 if available (verified working on RTX 2070 Super without kernel issues)
+    ckpt = None
+    for cand in ("hunyuan_3d_v2.1-fp16.safetensors", "hunyuan_3d_v2.1-fp8-e5m2-comfy-quant.safetensors"):
+        if cand in ckpts:
+            ckpt = cand
+            break
+    if not ckpt:
+        for c in ckpts:
+            if "hunyuan" in c.lower():
+                ckpt = c
+                break
+    if not ckpt:
+        print("[Hunyuan3D] No Hunyuan3D checkpoint found in ComfyUI checkpoints", file=sys.stderr)
+        return None
+
+    # 2. Prepare square white canvas with centered, cropped sprite
+    try:
+        im = Image.open(s_path).convert("RGBA")
+        alpha = im.getchannel("A")
+        bbox = alpha.getbbox() or (0, 0, im.width, im.height)
+        cropped = im.crop(bbox)
+        side = max(cropped.width, cropped.height)
+        canvas = Image.new("RGB", (side, side), (255, 255, 255))
+        canvas.paste(cropped, ((side - cropped.width) // 2, (side - cropped.height) // 2), cropped)
+
+        in_filename = f"hunyuan_{s_path.stem}_{uuid.uuid4().hex[:6]}.png"
+        COMFY_INPUT_DIR.mkdir(parents=True, exist_ok=True)
+        in_file_path = COMFY_INPUT_DIR / in_filename
+        canvas.save(in_file_path)
+    except Exception as exc:
+        print(f"[Hunyuan3D] Failed to prepare input image: {exc}", file=sys.stderr)
+        return None
+
+    # 3. Assemble Hunyuan3D-2.1 graph
+    run_id = uuid.uuid4().hex[:8]
+    workflow = {
+        "1": {"class_type": "ImageOnlyCheckpointLoader", "inputs": {"ckpt_name": ckpt}},
+        "2": {"class_type": "LoadImage", "inputs": {"image": in_filename}},
+        "3": {"class_type": "ModelSamplingAuraFlow", "inputs": {"model": ["1", 0], "shift": 1.0}},
+        "13": {"class_type": "CLIPVisionEncode", "inputs": {"clip_vision": ["1", 1], "image": ["2", 0], "crop": "center"}},
+        "6": {"class_type": "Hunyuan3Dv2Conditioning", "inputs": {"clip_vision_output": ["13", 0]}},
+        "4": {"class_type": "EmptyLatentHunyuan3Dv2", "inputs": {"resolution": 4096, "batch_size": 1}},
+        "7": {"class_type": "KSampler", "inputs": {"model": ["3", 0], "seed": 42, "steps": steps, "cfg": cfg, "sampler_name": "euler", "scheduler": "normal", "positive": ["6", 0], "negative": ["6", 1], "latent_image": ["4", 0], "denoise": 1.0}},
+        "8": {"class_type": "VAEDecodeHunyuan3D", "inputs": {"samples": ["7", 0], "vae": ["1", 2], "num_chunks": 8000, "octree_resolution": octree}},
+        "9": {"class_type": "VoxelToMesh", "inputs": {"voxel": ["8", 0], "algorithm": "surface net", "threshold": 0.6}},
+        "10": {"class_type": "SaveGLB", "inputs": {"mesh": ["9", 0], "filename_prefix": f"3d/hunyuan_{s_path.stem}/{run_id}"}},
+    }
+
+    # 4. Queue workflow
+    try:
+        payload = json.dumps({"prompt": workflow, "client_id": run_id}).encode()
+        req = urllib.request.Request(f"{srv}/prompt", data=payload, headers={"Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=15) as r:
+            prompt_res = json.loads(r.read())
+        prompt_id = prompt_res.get("prompt_id")
+        if not prompt_id:
+            print(f"[Hunyuan3D] Failed to queue prompt: {prompt_res}", file=sys.stderr)
+            return None
+    except Exception as exc:
+        print(f"[Hunyuan3D] Error queueing prompt: {exc}", file=sys.stderr)
+        return None
+
+    # 5. Poll for completion
+    t0 = time.monotonic()
+    glb_info = None
+    while time.monotonic() - t0 < timeout:
+        time.sleep(2.0)
+        try:
+            req = urllib.request.Request(f"{srv}/history/{prompt_id}")
+            with urllib.request.urlopen(req, timeout=10) as r:
+                hist = json.loads(r.read())
+                if prompt_id in hist:
+                    entry = hist[prompt_id]
+                    status = entry.get("status", {})
+                    if status.get("status_str") == "error":
+                        print(f"[Hunyuan3D] Execution error in ComfyUI: {status}", file=sys.stderr)
+                        return None
+                    outputs = entry.get("outputs", {})
+                    for node_out in outputs.values():
+                        if isinstance(node_out, dict):
+                            for key in ("3d", "glb", "mesh", "files"):
+                                items = node_out.get(key, [])
+                                for item in items:
+                                    if isinstance(item, dict) and item.get("filename", "").endswith((".glb", ".gltf")):
+                                        glb_info = item
+                                        break
+                                if glb_info:
+                                    break
+                        if glb_info:
+                            break
+                    if glb_info or status.get("completed"):
+                        break
+        except Exception:
+            pass
+
+    if not glb_info:
+        print(f"[Hunyuan3D] Timed out or no GLB output produced after {timeout}s", file=sys.stderr)
+        return None
+
+    # 6. Fetch GLB bytes
+    try:
+        q = urllib.parse.urlencode({
+            "filename": glb_info["filename"],
+            "subfolder": glb_info.get("subfolder", ""),
+            "type": glb_info.get("type", "output"),
+        })
+        view_url = f"{srv}/view?{q}"
+        req = urllib.request.Request(view_url)
+        with urllib.request.urlopen(req, timeout=60) as r:
+            glb_bytes = r.read()
+
+        loaded = trimesh.load(io.BytesIO(glb_bytes), file_type="glb")
+        mesh = loaded.to_geometry() if isinstance(loaded, trimesh.Scene) else loaded
+    except Exception as exc:
+        print(f"[Hunyuan3D] Failed to download or parse generated GLB: {exc}", file=sys.stderr)
+        return None
+
+    # 7. Normalize geometry: ground at Z=0.0m and scale to target_extents
+    try:
+        min_b, max_b = mesh.bounds
+        mesh.apply_translation([- (min_b[0] + max_b[0]) / 2.0, - (min_b[1] + max_b[1]) / 2.0, - min_b[2]])
+        scale_factors = [target_extents[i] / max(mesh.extents[i], 1e-4) for i in range(3)]
+        mesh.apply_scale(scale_factors)
+        mesh.fix_normals()
+    except Exception as exc:
+        print(f"[Hunyuan3D] Normalization warning: {exc}", file=sys.stderr)
+
+    return mesh, ckpt
 
 
 # ---------------------------------------------------------------------------
@@ -616,11 +787,12 @@ def process_ruin_pipeline(
     coacd_threshold: float = 0.08,
     coacd_cap: int = 12,
     fast: bool = True,
+    use_hunyuan: bool = True,
 ) -> dict[str, Any]:
     """
     Run complete end-to-end pipeline on an outdoor ruin asset:
       1. Load 2D diffusion sprite -> segment alpha.
-      2. Reconstruct 3D volumetric source mesh -> (<id>-source.glb).
+      2. Reconstruct 3D volumetric source mesh via Hunyuan3D-2.1 (or geometric relief fallback).
       3. Decimate to game-ready lowpoly -> (<id>-lowpoly.glb).
       4. Export metric binary STL -> (library/stl_primitives/<id>.stl).
       5. Run CoACD convex decomposition -> (<id>-collider.glb).
@@ -631,11 +803,25 @@ def process_ruin_pipeline(
     if not s_path.is_file():
         raise FileNotFoundError(f"Sprite not found: {s_path}")
 
-    # 1. Segment sprite
-    rgba_img, mask = load_and_segment_sprite(s_path)
+    model_name = "geometric_relief_fallback"
+    source_mesh = None
 
-    # 2. Reconstruct 3D source mesh
-    source_mesh = reconstruct_3d_from_image(rgba_img, mask, target_extents=target_extents, style=style)
+    # 1. Attempt Hunyuan3D-2.1 generation via ComfyUI
+    if use_hunyuan:
+        try:
+            hunyuan_res = generate_hunyuan_3d(s_path, target_extents=target_extents)
+            if hunyuan_res is not None:
+                source_mesh, ckpt_name = hunyuan_res
+                model_name = f"Hunyuan3D-2.1 ({ckpt_name})"
+                print(f"[3D Pipeline] Hunyuan3D generated source mesh: {len(source_mesh.faces):,} faces from {s_path.name}", file=sys.stderr)
+        except Exception as e:
+            print(f"[3D Pipeline] Hunyuan3D generation failed ({e}); falling back to geometric relief.", file=sys.stderr)
+
+    # 2. Geometric relief fallback if ComfyUI / Hunyuan3D is offline
+    if source_mesh is None:
+        rgba_img, mask = load_and_segment_sprite(s_path)
+        source_mesh = reconstruct_3d_from_image(rgba_img, mask, target_extents=target_extents, style=style)
+
     source_glb_path = MESH_DIR / f"{asset_id}-source.glb"
     source_glb_path.parent.mkdir(parents=True, exist_ok=True)
     source_mesh.export(source_glb_path)
@@ -664,6 +850,7 @@ def process_ruin_pipeline(
         "name": name,
         "fragment_id": fragment_id,
         "dimensions": target_extents,
+        "model": model_name,
         "source_faces": len(source_mesh.faces),
         "lowpoly_faces": len(lowpoly_mesh.faces),
         "collider_pieces": len(collider_pieces),

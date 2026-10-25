@@ -1412,7 +1412,7 @@ def query_gemma4_orion_rewriter(
     prompt_context: dict[str, Any],
     endpoint_url: str = "http://127.0.0.1:8080/v1/chat/completions",
     model: str = "gemma4-orion",
-    timeout: float = 1.0,
+    timeout: float = 45.0,
 ) -> str | None:
     """
     HTTP adapter querying local OpenAI-compatible inference servers (e.g. llama-swap, llama.cpp, vLLM)
@@ -1461,7 +1461,7 @@ def query_gemma4_orion_rewriter(
             {"role": "user", "content": user_prompt},
         ],
         "temperature": 0.3,
-        "max_tokens": 250,
+        "max_tokens": 600,
     }
     try:
         req = urllib.request.Request(
@@ -1474,9 +1474,10 @@ def query_gemma4_orion_rewriter(
             data = json.loads(resp.read().decode("utf-8"))
             choices = data.get("choices", [])
             if choices:
-                content = choices[0].get("message", {}).get("content", "")
-                if content and len(content.strip()) >= 30:
-                    return content.strip().strip('"')
+                msg = choices[0].get("message", {})
+                content = msg.get("content", "").strip().strip('"')
+                if content and len(content) >= 30 and not content.lower().startswith(("checking", "*checking", "here is", "sure")):
+                    return content
     except (urllib.error.URLError, TimeoutError, OSError, json.JSONDecodeError):
         return None
     return None

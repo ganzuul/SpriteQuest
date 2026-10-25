@@ -2535,7 +2535,7 @@ export function initViewer(config) {
         scene_id: activeSceneId,
         facet: options.facet || 'portrait',
         asset: selectedAsset,
-      }, 6000).then(remote => {
+      }, 60000).then(remote => {
         if (remote && remote.ok) {
           selectedAsset.diffusion_prompt = remote.diffusion_prompt;
           selectedAsset.compiled_brief = remote.compiled_brief;
@@ -2552,29 +2552,40 @@ export function initViewer(config) {
             void previewPrompt.offsetWidth;
             previewPrompt.classList.add('prompt-updated-flash');
           }
+          log('LATTICE', `[gemma4-orion] Rewriter refined prompt (${(remote.diffusion_prompt || '').length} chars).`);
           log('LATTICE', `[remote-sync] Synced gemma4-orion compiled prompt from companion forge service on port 8788.`);
           renderAssetViewerDOM();
           const activeItem = getSelectedScenePrimitive();
           if (activeItem && (activeItem.id === id || activeItem.asset_id === id)) {
             renderSidebarPreviewDOM(activeItem);
           }
+          playAudioCue('seal_stamp');
+        } else {
+          log('LATTICE', `[remote-sync] Companion forge compile returned: ${remote?.error || 'unspecified'}.`, 'warn');
         }
-      }).catch(() => {});
+      }).catch((err) => {
+        log('LATTICE', `[remote-sync] Companion forge compile error: ${err?.message || 'offline'}.`, 'warn');
+      }).finally(() => {
+        if (btnCompile) {
+          btnCompile.disabled = false;
+          btnCompile.innerText = '⚡ Re-compile (gemma4-orion)';
+        }
+      });
+    } else {
+      if (btnCompile) {
+        btnCompile.disabled = false;
+        btnCompile.innerText = '⚡ Re-compile (gemma4-orion)';
+      }
     }
 
     log('LATTICE', `[compile-world-brief] Fragment Compiler assembled brief from ${selectedAsset.fragments_used.length} fragments.`);
     log('LATTICE', `[rewrite-prompt] Lattice prompt rewriter refined prompt (${(selectedAsset.diffusion_prompt || '').length} chars).`);
-    log('LATTICE', `[gemma4-orion] Rewriter refined prompt (${(selectedAsset.diffusion_prompt || '').length} chars).`);
-    log('LATTICE', `[format-flux3-conditioning] Conditioned for Flux 3 Klein (steps: 16, cfg: 1.0, 1024x1024).`);
+    log('LATTICE', `[gemma4-orion] Calling gemma4-orion prompt rewriter...`);
+    log('LATTICE', `[format-flux3-conditioning] Conditioned for Black Forest Labs Flux 3 Klein (1024x1024).`);
 
     playAudioCue('click');
 
     renderAssetViewerDOM();
-
-    if (btnCompile) {
-      btnCompile.disabled = false;
-      btnCompile.innerText = '⚡ Re-compile (Lattice)';
-    }
 
     const latticeRun = executeLatticeGraph('asset-forge.lattice.json', {
       targetNode: 'rewrite-prompt',
@@ -2622,11 +2633,11 @@ export function initViewer(config) {
     const btn3dViewer = typeof document !== 'undefined' ? document.getElementById('btn-forge-2d-to-3d') : null;
     if (btn3dSidebar) {
       btn3dSidebar.disabled = true;
-      btn3dSidebar.innerText = '⏳ 2D→3D Forging...';
+      btn3dSidebar.innerText = '⏳ Hunyuan3D Sampling...';
     }
     if (btn3dViewer) {
       btn3dViewer.disabled = true;
-      btn3dViewer.innerText = '⏳ 2D→3D Forging...';
+      btn3dViewer.innerText = '⏳ Hunyuan3D Sampling...';
     }
 
     function reset3DButtons() {
@@ -2641,7 +2652,8 @@ export function initViewer(config) {
     }
 
     if (active2DImg) {
-      log('LATTICE', `[3D Pipeline] Ingesting 2D asset from viewer for '${pid}'. Reconstructing watertight solid geometry via image_to_3d...`);
+      log('LATTICE', `[3D Pipeline] Ingesting 2D asset from viewer for '${pid}'. Dispatching to Hunyuan3D-2.1 (ComfyUI GPU engine)...`);
+      log('LATTICE', `[3D Pipeline] Sampling volumetric 3D mesh via KSampler (takes ~60s on GPU)...`);
     } else {
       log('LATTICE', `[3D Pipeline] Ingesting dense watertight STL: library/stl_primitives/${pid}.stl...`);
     }
@@ -2667,7 +2679,9 @@ export function initViewer(config) {
         height: 1024,
         image_data: active2DImg || null,
         image_url: typeof active2DImg === 'string' && !active2DImg.startsWith('data:') ? active2DImg : null,
-      }, 45000).then((res) => {
+        reconstruct: true,
+        use_hunyuan: true,
+      }, 180000).then((res) => {
         reset3DButtons();
         if (res && res.ok) {
           const bust = `?t=${Date.now()}`;
@@ -2689,9 +2703,9 @@ export function initViewer(config) {
             if (res.triangle_count) selectedAsset.triangle_count = res.triangle_count;
           }
           if (res.reconstructed_from_2d) {
-            log('LATTICE', `[3D Pipeline] Verified watertight 3D solid reconstructed from 2D asset (${res.triangle_count.toLocaleString()} triangles, CoACD colliders & 1024x1024 depth map).`);
+            log('LATTICE', `[3D Pipeline] Verified watertight 3D solid reconstructed from 2D asset via ${res.model || 'Hunyuan3D-2.1'} (${res.triangle_count.toLocaleString()} triangles, CoACD colliders & 1024x1024 depth map).`);
           } else {
-            log('LATTICE', `[3D Pipeline] Verified watertight STL (${res.triangle_count.toLocaleString()} triangles). Depth template: ${res.depth_url}.`);
+            log('LATTICE', `[3D Pipeline] Verified watertight STL via ${res.model || 'template'} (${res.triangle_count.toLocaleString()} triangles). Depth template: ${res.depth_url}.`);
           }
           setPreviewFacet('depth');
           renderSidebarPreviewDOM(itemInScene || getSelectedScenePrimitive());
