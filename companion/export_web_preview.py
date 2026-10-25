@@ -2338,7 +2338,7 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
           <div class="sidebar-preview-actions">
             <button class="prim-act-btn prim-btn-blueprint" onclick="window.viewer && window.viewer.focusSceneAssetOnMap && window.viewer.focusSceneAssetOnMap()" title="Pan & move probe to this asset on the map">📍 Focus Map</button>
             <button class="prim-act-btn prim-btn-blueprint" id="btn-sidebar-compile" onclick="window.viewer && window.viewer.compileSelectedAssetBrief && window.viewer.compileSelectedAssetBrief()" title="Gather fragments and call gemma4-orion to rewrite the prompt">⚡ Compile</button>
-            <button class="prim-act-btn prim-btn-3d" id="btn-sidebar-3d-pipeline" onclick="window.viewer && window.viewer.runPrimitive3DPipeline && window.viewer.runPrimitive3DPipeline()" title="Reconstruct dense 3D watertight STL & high-detail depth map">📐 3D Pipeline</button>
+            <button class="prim-act-btn prim-btn-3d" id="btn-sidebar-3d-pipeline" onclick="window.viewer && window.viewer.runPrimitive3DPipeline && window.viewer.runPrimitive3DPipeline()" title="Reconstruct dense 3D watertight STL, CoACD colliders & high-detail depth map from 2D asset">📐 2D → 3D Pipeline</button>
             <button class="prim-act-btn prim-btn-forge" onclick="window.viewer && window.viewer.forgeScenePrimitive && window.viewer.forgeScenePrimitive()" title="Render 2D art via Flux 3 Klein">✨ Forge Art</button>
           </div>
         </div>
@@ -2434,6 +2434,9 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
             </button>
             <button class="btn-forge-render" id="btn-forge-render" onclick="window.viewer && window.viewer.renderSelectedAssetInForge && window.viewer.renderSelectedAssetInForge()">
               ✨ Render in Forge
+            </button>
+            <button class="btn-forge-render btn-3d" id="btn-forge-2d-to-3d" style="background: linear-gradient(135deg, #064e3b 0%, #047857 100%); border-color: #34d399; color: #ecfdf5; font-weight: 600;" onclick="window.viewer && window.viewer.runPrimitive3DPipeline && window.viewer.runPrimitive3DPipeline()" title="Reconstruct watertight 3D solid STL, CoACD collider, and high-detail depth map from 2D asset">
+              📐 2D → 3D
             </button>
           </div>
           <div class="cartographer-actions" style="display: flex; gap: 6px;">

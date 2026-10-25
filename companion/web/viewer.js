@@ -87,7 +87,7 @@ export function initViewer(config) {
     return 'http://127.0.0.1:8788';
   }
 
-  async function postForgeJson(route, payload, timeoutMs = 6000) {
+  async function postForgeJson(route, payload, timeoutMs = 30000) {
     if (typeof fetch !== 'function') return null;
     const base = getForgeServiceUrl();
     const url = `${base}${route}`;
@@ -2202,6 +2202,14 @@ export function initViewer(config) {
         ? '🔄 Re-render in Asset Forge'
         : '✨ Render in Asset Forge';
     }
+
+    const btn2dTo3d = document.getElementById('btn-forge-2d-to-3d');
+    if (btn2dTo3d) {
+      btn2dTo3d.disabled = false;
+      btn2dTo3d.innerText = selectedAsset.depth_url
+        ? '📐 Re-forge 2D → 3D'
+        : '📐 2D → 3D';
+    }
   }
 
   function executeLatticeGraph(workflowFile, execution = {}) {
@@ -2610,6 +2618,28 @@ export function initViewer(config) {
       || itemInScene?.image_2d
       || itemInScene?.sprite_url;
 
+    const btn3dSidebar = typeof document !== 'undefined' ? document.getElementById('btn-sidebar-3d-pipeline') : null;
+    const btn3dViewer = typeof document !== 'undefined' ? document.getElementById('btn-forge-2d-to-3d') : null;
+    if (btn3dSidebar) {
+      btn3dSidebar.disabled = true;
+      btn3dSidebar.innerText = '⏳ 2D→3D Forging...';
+    }
+    if (btn3dViewer) {
+      btn3dViewer.disabled = true;
+      btn3dViewer.innerText = '⏳ 2D→3D Forging...';
+    }
+
+    function reset3DButtons() {
+      if (btn3dSidebar) {
+        btn3dSidebar.disabled = false;
+        btn3dSidebar.innerText = '📐 2D → 3D Pipeline';
+      }
+      if (btn3dViewer) {
+        btn3dViewer.disabled = false;
+        btn3dViewer.innerText = (selectedAsset?.depth_url || itemInScene?.depth_url) ? '📐 Re-forge 2D → 3D' : '📐 2D → 3D';
+      }
+    }
+
     if (active2DImg) {
       log('LATTICE', `[3D Pipeline] Ingesting 2D asset from viewer for '${pid}'. Reconstructing watertight solid geometry via image_to_3d...`);
     } else {
@@ -2637,19 +2667,45 @@ export function initViewer(config) {
         height: 1024,
         image_data: active2DImg || null,
         image_url: typeof active2DImg === 'string' && !active2DImg.startsWith('data:') ? active2DImg : null,
-      }, 6000).then((res) => {
+      }, 45000).then((res) => {
+        reset3DButtons();
         if (res && res.ok) {
-          if (res.collage_url && itemInScene) itemInScene.collage_url = res.collage_url;
-          if (res.collider_url && itemInScene) itemInScene.collider_url = res.collider_url;
-          if (res.mesh_glb && itemInScene) itemInScene.mesh_glb = res.mesh_glb;
-          if (res.reconstructed_from_2d) {
-            log('LATTICE', `[3D Pipeline] Verified watertight mesh reconstructed from 2D asset (${res.triangle_count} triangles).`);
-          } else {
-            log('LATTICE', `[3D Pipeline] Verified watertight STL (${res.triangle_count} triangles). Depth template: ${res.depth_url}.`);
+          const bust = `?t=${Date.now()}`;
+          const finalDepth = (res.depth_url || depthUrl) + bust;
+          const finalCollage = (res.collage_url || `renders/primitives/${pid}-collage.png`) + bust;
+
+          if (itemInScene) {
+            itemInScene.depth_url = finalDepth;
+            itemInScene.collage_url = finalCollage;
+            if (res.collider_url) itemInScene.collider_url = res.collider_url;
+            if (res.mesh_glb) itemInScene.mesh_glb = res.mesh_glb;
+            if (res.triangle_count) itemInScene.triangle_count = res.triangle_count;
           }
+          if (selectedAsset && (selectedAsset.id === pid || selectedAsset.asset_id === pid)) {
+            selectedAsset.depth_url = finalDepth;
+            selectedAsset.collage_url = finalCollage;
+            if (res.collider_url) selectedAsset.collider_url = res.collider_url;
+            if (res.mesh_glb) selectedAsset.mesh_glb = res.mesh_glb;
+            if (res.triangle_count) selectedAsset.triangle_count = res.triangle_count;
+          }
+          if (res.reconstructed_from_2d) {
+            log('LATTICE', `[3D Pipeline] Verified watertight 3D solid reconstructed from 2D asset (${res.triangle_count.toLocaleString()} triangles, CoACD colliders & 1024x1024 depth map).`);
+          } else {
+            log('LATTICE', `[3D Pipeline] Verified watertight STL (${res.triangle_count.toLocaleString()} triangles). Depth template: ${res.depth_url}.`);
+          }
+          setPreviewFacet('depth');
           renderSidebarPreviewDOM(itemInScene || getSelectedScenePrimitive());
+          renderAssetViewerDOM();
+          playAudioCue('seal_stamp');
+        } else {
+          log('LATTICE', `[3D Pipeline] Server returned status: ${res?.error || 'unspecified'}.`, 'warn');
         }
-      }).catch(() => {});
+      }).catch((err) => {
+        reset3DButtons();
+        log('LATTICE', `[3D Pipeline] Encountered error: ${err?.message || 'offline'}.`, 'warn');
+      });
+    } else {
+      setTimeout(reset3DButtons, 600);
     }
 
     log('LATTICE', `[3D Pipeline] High-detail depth template ready: ${depthUrl}. Conditioning Black Forest Labs Flux 3 Klein.`);

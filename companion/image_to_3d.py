@@ -37,15 +37,19 @@ import time
 from pathlib import Path
 from typing import Any, Sequence
 
+REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+venv_site = REPO_ROOT / ".venv" / "lib" / f"python{sys.version_info.major}.{sys.version_info.minor}" / "site-packages"
+if venv_site.is_dir() and str(venv_site) not in sys.path:
+    sys.path.insert(0, str(venv_site))
+
 import cv2
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from scipy import ndimage
 import trimesh
-
-REPO_ROOT = Path(__file__).resolve().parent.parent
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
 
 STL_DIR = REPO_ROOT / "library" / "stl_primitives"
 MESH_DIR = REPO_ROOT / "library" / "mesh"
@@ -326,8 +330,9 @@ def decimate_to_lowpoly(mesh: trimesh.Trimesh, target_faces: int = 600) -> trime
 
 def decompose_coacd_colliders(
     body: trimesh.Trimesh,
-    threshold: float = 0.06,
-    cap: int = 16,
+    threshold: float = 0.08,
+    cap: int = 12,
+    fast: bool = True,
 ) -> list[trimesh.Trimesh]:
     """
     Decompose 3D mesh into convex collision pieces using CoACD.
@@ -341,8 +346,8 @@ def decompose_coacd_colliders(
         threshold=threshold,
         max_convex_hull=cap,
         preprocess_mode="auto",
-        preprocess_resolution=30,
-        mcts_iterations=60,
+        preprocess_resolution=20 if fast else 30,
+        mcts_iterations=20 if fast else 60,
     )
 
     pieces: list[trimesh.Trimesh] = []
@@ -607,9 +612,10 @@ def process_ruin_pipeline(
     sprite_path: Path | str,
     target_extents: tuple[float, float, float],
     style: str = "ruin",
-    target_faces: int = 600,
-    coacd_threshold: float = 0.05,
-    coacd_cap: int = 24,
+    target_faces: int = 500,
+    coacd_threshold: float = 0.08,
+    coacd_cap: int = 12,
+    fast: bool = True,
 ) -> dict[str, Any]:
     """
     Run complete end-to-end pipeline on an outdoor ruin asset:
@@ -644,7 +650,7 @@ def process_ruin_pipeline(
     export_binary_stl(lowpoly_mesh, stl_path, primitive_id=asset_id, fragment_id=fragment_id)
 
     # 5. CoACD physics collider decomposition
-    collider_pieces = decompose_coacd_colliders(lowpoly_mesh, threshold=coacd_threshold, cap=coacd_cap)
+    collider_pieces = decompose_coacd_colliders(lowpoly_mesh, threshold=coacd_threshold, cap=coacd_cap, fast=fast)
     collider_glb_path = MESH_DIR / f"{asset_id}-collider.glb"
     export_collider_glb(collider_pieces, collider_glb_path)
 

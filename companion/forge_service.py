@@ -369,7 +369,29 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
             if route in ("/", "/viewer", "/preview"):
                 preview_html = REPO_ROOT / "renders" / "maps" / "border-march" / "index.html"
                 if preview_html.is_file():
-                    return self._serve_file(preview_html, "text/html; charset=utf-8")
+                    html_text = preview_html.read_text(encoding="utf-8")
+                    viewer_js_path = REPO_ROOT / "companion" / "web" / "viewer.js"
+                    if viewer_js_path.is_file():
+                        import re
+                        live_js = viewer_js_path.read_text(encoding="utf-8").replace("export function initViewer", "function initViewer")
+                        html_text = re.sub(
+                            r"<script>\s*/\*\*\s*\* companion/web/viewer\.js.*?function setLayerMode",
+                            f"<script>\n{live_js}\n\n  function setLayerMode",
+                            html_text,
+                            flags=re.DOTALL,
+                        )
+                    body = html_text.encode("utf-8")
+                    try:
+                        self.send_response(200)
+                        self.send_header("Content-Type", "text/html; charset=utf-8")
+                        self.send_header("Content-Length", str(len(body)))
+                        self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
+                        self._cors_headers()
+                        self.end_headers()
+                        self.wfile.write(body)
+                    except (BrokenPipeError, ConnectionResetError):
+                        pass
+                    return
                 return self._send(200, {
                     "service": "forge",
                     "status": "ready",
@@ -644,6 +666,13 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
                         "wish-stone-slab": [3.0, 8.0, 0.8],
                         "ruined-watchtower": [6.0, 6.0, 9.0],
                         "ancient-ruin-terrace": [22.0, 22.0, 16.0],
+                        "common-table": [2.4, 1.2, 0.85],
+                        "glass-stasis-coffin": [2.2, 1.0, 0.9],
+                        "solar-focus-lens": [3.0, 3.0, 4.5],
+                        "r6-ship-crate-standard": [1.2, 1.2, 1.2],
+                        "quartermaster_desk": [2.2, 1.4, 0.85],
+                        "specimen_rack": [1.8, 0.8, 2.1],
+                        "hollis_ledger_plinth": [1.0, 1.0, 1.3],
                     }
                     dims = dims_map.get(primitive_id, [5.0, 5.0, 3.0])
 
@@ -653,16 +682,27 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
                     # If 2D image data/url is provided or available, run 2D -> 3D reconstruction pipeline
                     if image_data:
                         if isinstance(image_data, str) and image_data.startswith("data:image/"):
-                            try:
-                                header, encoded = image_data.split(",", 1)
-                                raw_bytes = base64.b64decode(encoded)
-                                gen_sprite = Image.open(io.BytesIO(raw_bytes))
-                                gen_path = REPO_ROOT / "renders" / "primitives" / f"{primitive_id}-generated.png"
-                                gen_path.parent.mkdir(parents=True, exist_ok=True)
-                                gen_sprite.save(gen_path)
-                                sprite_source_path = gen_path
-                            except Exception:
+                            if image_data.startswith("data:image/svg+xml"):
+                                # SVG data from vector blueprint draft cannot be parsed directly by PIL;
+                                # look for existing high-detail disk raster for this primitive
                                 sprite_source_path = None
+                                for sub in ("renders/primitives", "library/sprites"):
+                                    cand = REPO_ROOT / sub / f"{primitive_id}.png"
+                                    if cand.is_file():
+                                        sprite_source_path = cand
+                                        break
+                            else:
+                                try:
+                                    header, encoded = image_data.split(",", 1)
+                                    raw_bytes = base64.b64decode(encoded)
+                                    gen_sprite = Image.open(io.BytesIO(raw_bytes))
+                                    gen_path = REPO_ROOT / "renders" / "primitives" / f"{primitive_id}-generated.png"
+                                    gen_path.parent.mkdir(parents=True, exist_ok=True)
+                                    gen_sprite.save(gen_path)
+                                    sprite_source_path = gen_path
+                                except Exception as exc:
+                                    sys.stderr.write(f"[forge_service] Base64 image decode error: {exc}\n")
+                                    sprite_source_path = None
                         elif isinstance(image_data, str) and not image_data.startswith("data:"):
                             cand = REPO_ROOT / image_data
                             if cand.is_file():
@@ -684,6 +724,7 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
                     collage_url = None
                     collider_url = None
                     mesh_glb_url = None
+                    stl_path = None
 
                     # Only run full 3D reconstruction if explicit 2D image_data or reconstruct flag was provided
                     should_reconstruct = bool(sprite_source_path and HAVE_IMAGE_TO_3D and (image_data or payload.get("reconstruct")))
@@ -691,7 +732,7 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
                     if should_reconstruct:
                         try:
                             ruin_spec = RUIN_SPECS.get(primitive_id, {})
-                            name = payload.get("name") or ruin_spec.get("name") or primitive_id
+                            name = payload.get("name") or ruin_spec.get("name") or primitive_id.replace("-", " ").title()
                             fragment_id = payload.get("fragment_id") or ruin_spec.get("fragment_id") or "grey-wind/named-ruins"
                             extents = ruin_spec.get("dimensions") or tuple(dims)
                             style = ruin_spec.get("style") or "ruin"
@@ -705,16 +746,20 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
                                 style=style,
                                 target_faces=ruin_spec.get("target_faces", 350),
                                 coacd_cap=ruin_spec.get("coacd_cap", 8),
+                                fast=True,
                             )
                             stl_path = REPO_ROOT / recon_res["stl_path"]
                             collage_url = recon_res.get("collage_path")
                             collider_url = recon_res.get("collider_glb")
                             mesh_glb_url = recon_res.get("lowpoly_glb")
                             reconstructed_from_2d = True
-                        except Exception:
-                            pass
+                        except Exception as recon_err:
+                            import traceback
+                            traceback.print_exc()
+                            sys.stderr.write(f"[forge_service] process_ruin_pipeline failed for {primitive_id}: {recon_err}\n")
 
-                    stl_path = REPO_ROOT / "library" / "stl_primitives" / f"{primitive_id}.stl"
+                    if not stl_path or not stl_path.is_file():
+                        stl_path = REPO_ROOT / "library" / "stl_primitives" / f"{primitive_id}.stl"
                     if not stl_path.is_file():
                         alt_path = REPO_ROOT / "library" / "stl_primitives" / f"{primitive_id.replace('-', '_')}.stl"
                         if alt_path.is_file():
