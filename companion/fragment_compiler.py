@@ -1412,7 +1412,7 @@ def query_gemma4_orion_rewriter(
     prompt_context: dict[str, Any],
     endpoint_url: str = "http://127.0.0.1:8080/v1/chat/completions",
     model: str = "gemma4-orion",
-    timeout: float = 3.0,
+    timeout: float = 1.0,
 ) -> str | None:
     """
     HTTP adapter querying local OpenAI-compatible inference servers (e.g. llama-swap, llama.cpp, vLLM)

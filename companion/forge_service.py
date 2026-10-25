@@ -254,6 +254,17 @@ def _record(data: dict) -> EventRecord:
         raise Refused(str(exc)) from exc
 
 
+class ForgeHTTPServer(ThreadingHTTPServer):
+    """Threading HTTPServer that gracefully handles broken pipes and client disconnects."""
+    daemon_threads = True
+
+    def handle_error(self, request, client_address):
+        exc_type, _, _ = sys.exc_info()
+        if exc_type in (BrokenPipeError, ConnectionResetError):
+            return
+        super().handle_error(request, client_address)
+
+
 def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | None = None):
     if cartographers_ledger is None:
         cart_path = REPO_ROOT / "library" / "cartographers_ledger.json"
@@ -282,12 +293,15 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
 
         def _send(self, code: int, payload: dict) -> None:
             body = json.dumps(payload, indent=2).encode()
-            self.send_response(code)
-            self.send_header("Content-Type", "application/json")
-            self.send_header("Content-Length", str(len(body)))
-            self._cors_headers()
-            self.end_headers()
-            self.wfile.write(body)
+            try:
+                self.send_response(code)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(body)))
+                self._cors_headers()
+                self.end_headers()
+                self.wfile.write(body)
+            except (BrokenPipeError, ConnectionResetError):
+                pass
 
         def _serve_file(self, file_path: Path, content_type: str | None = None) -> None:
             if not file_path.is_file():
@@ -310,21 +324,33 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
                     ".wasm": "application/wasm",
                 }
                 content_type = types.get(suffix, "application/octet-stream")
-            self.send_response(200)
-            self.send_header("Content-Type", content_type)
-            self.send_header("Content-Length", str(len(body)))
-            self._cors_headers()
-            self.end_headers()
-            self.wfile.write(body)
+            try:
+                self.send_response(200)
+                self.send_header("Content-Type", content_type)
+                self.send_header("Content-Length", str(len(body)))
+                self._cors_headers()
+                self.end_headers()
+                self.wfile.write(body)
+            except (BrokenPipeError, ConnectionResetError):
+                pass
 
         def do_OPTIONS(self):
             # Preflight requests require RFC 9110 compliant 204 with NO body and Content-Length: 0
-            self.send_response(204)
-            self._cors_headers()
-            self.send_header("Content-Length", "0")
-            self.end_headers()
+            try:
+                self.send_response(204)
+                self._cors_headers()
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+            except (BrokenPipeError, ConnectionResetError):
+                pass
 
         def do_GET(self):
+            try:
+                self._do_get()
+            except (BrokenPipeError, ConnectionResetError):
+                pass
+
+        def _do_get(self):
             route = self.path.split("?", 1)[0].rstrip("/") or "/"
             if route in ("/", "/viewer", "/preview"):
                 preview_html = REPO_ROOT / "renders" / "maps" / "border-march" / "index.html"
@@ -398,6 +424,12 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
                                  "known": known_routes})
 
         def do_POST(self):
+            try:
+                self._do_post()
+            except (BrokenPipeError, ConnectionResetError):
+                pass
+
+        def _do_post(self):
             route = self.path.split("?", 1)[0].rstrip("/")
             if route == "/events":
                 try:
@@ -821,7 +853,10 @@ def main() -> int:
               f"into {args.state}")
     print(f"the forge is lit: http://127.0.0.1:{args.port}/roster "
           f"({args.state}, {len(ledger.events)} lines)")
-    ThreadingHTTPServer(("127.0.0.1", args.port), make_handler(ledger)).serve_forever()
+    try:
+        ForgeHTTPServer(("127.0.0.1", args.port), make_handler(ledger)).serve_forever()
+    except KeyboardInterrupt:
+        print("\nthe forge is banked.")
     return 0
 
 

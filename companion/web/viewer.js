@@ -87,7 +87,7 @@ export function initViewer(config) {
     return 'http://127.0.0.1:8788';
   }
 
-  async function postForgeJson(route, payload, timeoutMs = 2000) {
+  async function postForgeJson(route, payload, timeoutMs = 6000) {
     if (typeof fetch !== 'function') return null;
     const base = getForgeServiceUrl();
     const url = `${base}${route}`;
@@ -2527,7 +2527,7 @@ export function initViewer(config) {
         scene_id: activeSceneId,
         facet: options.facet || 'portrait',
         asset: selectedAsset,
-      }, 1500).then(remote => {
+      }, 6000).then(remote => {
         if (remote && remote.ok) {
           selectedAsset.diffusion_prompt = remote.diffusion_prompt;
           selectedAsset.compiled_brief = remote.compiled_brief;
@@ -2625,7 +2625,7 @@ export function initViewer(config) {
         scene_id: currentSceneId || 'border-march',
         width: 1024,
         height: 1024,
-      }, 2000).then((res) => {
+      }, 6000).then((res) => {
         if (res && res.ok) {
           log('LATTICE', `[3D Pipeline] Verified watertight STL (${res.triangle_count} triangles). Depth template: ${res.depth_url}.`);
         }

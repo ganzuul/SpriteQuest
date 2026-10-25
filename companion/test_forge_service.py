@@ -475,6 +475,18 @@ class TestForgeCorsAndStaticServing(ForgeCase):
             body = resp.read()
             self.assertIn(b"SpriteQuest 2.5D", body)
 
+    def test_broken_pipe_handled_gracefully(self):
+        import socket
+        # Open socket, send request and abruptly close before reading response
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect(("127.0.0.1", self.server.server_address[1]))
+        s.sendall(b"POST /forge/compile HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Type: application/json\r\nContent-Length: 2\r\n\r\n{}")
+        s.close()
+        # Verify server is still completely healthy and responding
+        code, body = self.get("/health")
+        self.assertEqual(code, 200)
+        self.assertTrue(body["ok"])
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
