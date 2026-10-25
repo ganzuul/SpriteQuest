@@ -85,9 +85,16 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
     import io
     strata_b64: list[str] = []
     for s_idx in range(4):
-        s_img = tm.render_stratum_layer(s_idx, num_strata=4, contour_step_m=2.0, base_art=base_art)
-        if s_img.size != (600, 700):
-            s_img = s_img.resize((600, 700), Image.Resampling.BILINEAR)
+        s_path = map_dir / f"stratum_{s_idx}.png"
+        if not s_path.is_file():
+            s_img = tm.render_stratum_layer(s_idx, num_strata=4, contour_step_m=2.0, base_art=base_art)
+            if s_img.size != (600, 700):
+                s_img = s_img.resize((600, 700), Image.Resampling.BILINEAR)
+            s_img.save(s_path, format="PNG")
+        else:
+            s_img = Image.open(s_path)
+            if s_img.size != (600, 700):
+                s_img = s_img.resize((600, 700), Image.Resampling.BILINEAR)
         s_buf = io.BytesIO()
         s_img.save(s_buf, format="PNG")
         strata_b64.append(base64.b64encode(s_buf.getvalue()).decode("ascii"))

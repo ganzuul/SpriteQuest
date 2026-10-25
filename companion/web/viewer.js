@@ -4072,7 +4072,8 @@ export function initViewer(config) {
     if (hasModelViewer && mv && glb) {
       if (canvas) canvas.style.display = 'none';
       mv.style.display = 'block';
-      if (mv.src !== glb && !mv.src.endsWith(glb)) {
+      const currentSrc = typeof mv.src === 'string' ? mv.src : (mv.getAttribute('src') || '');
+      if (!currentSrc || (currentSrc !== glb && !currentSrc.endsWith(glb))) {
         mv.src = glb;
       }
       mv.setAttribute('alt', `3D model for ${item.name || cleanId}`);
