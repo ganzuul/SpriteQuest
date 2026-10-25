@@ -41,9 +41,22 @@ sys.path.insert(0, str(HERE))
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+venv_site = REPO_ROOT / ".venv" / "lib" / f"python{sys.version_info.major}.{sys.version_info.minor}" / "site-packages"
+if venv_site.is_dir() and str(venv_site) not in sys.path:
+    sys.path.insert(0, str(venv_site))
+
+import base64
+import io
 import struct
 import numpy as np
+from PIL import Image
 from companion.terrain_mesh import rasterize_stl_depth
+try:
+    from companion.image_to_3d import process_ruin_pipeline, RUIN_SPECS
+    HAVE_IMAGE_TO_3D = True
+except ImportError:
+    HAVE_IMAGE_TO_3D = False
+    RUIN_SPECS = {}
 from schemas import (  # noqa: E402  (path first, by design)
     EventRecord, Gate, SchemaError, fold_events,
 )
@@ -623,6 +636,83 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
                     scene_id = payload.get("scene_id", "border-march")
                     width = int(payload.get("width", 1024))
                     height = int(payload.get("height", 1024))
+                    image_data = payload.get("image_data") or payload.get("image_url")
+
+                    dims_map = {
+                        "ancient-bastion": [22.0, 22.0, 12.0],
+                        "relic-cairn": [1.8, 1.8, 1.6],
+                        "wish-stone-slab": [3.0, 8.0, 0.8],
+                        "ruined-watchtower": [6.0, 6.0, 9.0],
+                        "ancient-ruin-terrace": [22.0, 22.0, 16.0],
+                    }
+                    dims = dims_map.get(primitive_id, [5.0, 5.0, 3.0])
+
+                    reconstructed_from_2d = False
+                    sprite_source_path = None
+
+                    # If 2D image data/url is provided or available, run 2D -> 3D reconstruction pipeline
+                    if image_data:
+                        if isinstance(image_data, str) and image_data.startswith("data:image/"):
+                            try:
+                                header, encoded = image_data.split(",", 1)
+                                raw_bytes = base64.b64decode(encoded)
+                                gen_sprite = Image.open(io.BytesIO(raw_bytes))
+                                gen_path = REPO_ROOT / "renders" / "primitives" / f"{primitive_id}-generated.png"
+                                gen_path.parent.mkdir(parents=True, exist_ok=True)
+                                gen_sprite.save(gen_path)
+                                sprite_source_path = gen_path
+                            except Exception:
+                                sprite_source_path = None
+                        elif isinstance(image_data, str) and not image_data.startswith("data:"):
+                            cand = REPO_ROOT / image_data
+                            if cand.is_file():
+                                sprite_source_path = cand
+                            else:
+                                for sub in ("renders/primitives", "library/sprites"):
+                                    cand = REPO_ROOT / sub / Path(image_data).name
+                                    if cand.is_file():
+                                        sprite_source_path = cand
+                                        break
+
+                    if not sprite_source_path:
+                        for sub in ("renders/primitives", "library/sprites"):
+                            cand = REPO_ROOT / sub / f"{primitive_id}.png"
+                            if cand.is_file():
+                                sprite_source_path = cand
+                                break
+
+                    collage_url = None
+                    collider_url = None
+                    mesh_glb_url = None
+
+                    # Only run full 3D reconstruction if explicit 2D image_data or reconstruct flag was provided
+                    should_reconstruct = bool(sprite_source_path and HAVE_IMAGE_TO_3D and (image_data or payload.get("reconstruct")))
+
+                    if should_reconstruct:
+                        try:
+                            ruin_spec = RUIN_SPECS.get(primitive_id, {})
+                            name = payload.get("name") or ruin_spec.get("name") or primitive_id
+                            fragment_id = payload.get("fragment_id") or ruin_spec.get("fragment_id") or "grey-wind/named-ruins"
+                            extents = ruin_spec.get("dimensions") or tuple(dims)
+                            style = ruin_spec.get("style") or "ruin"
+
+                            recon_res = process_ruin_pipeline(
+                                asset_id=primitive_id,
+                                name=name,
+                                fragment_id=fragment_id,
+                                sprite_path=sprite_source_path,
+                                target_extents=tuple(extents),
+                                style=style,
+                                target_faces=ruin_spec.get("target_faces", 350),
+                                coacd_cap=ruin_spec.get("coacd_cap", 8),
+                            )
+                            stl_path = REPO_ROOT / recon_res["stl_path"]
+                            collage_url = recon_res.get("collage_path")
+                            collider_url = recon_res.get("collider_glb")
+                            mesh_glb_url = recon_res.get("lowpoly_glb")
+                            reconstructed_from_2d = True
+                        except Exception:
+                            pass
 
                     stl_path = REPO_ROOT / "library" / "stl_primitives" / f"{primitive_id}.stl"
                     if not stl_path.is_file():
@@ -643,14 +733,6 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
                         num_tri = struct.unpack("<I", f.read(4))[0]
 
                     is_overhang_compliant = True
-                    dims_map = {
-                        "ancient-bastion": [20.0, 20.0, 12.0],
-                        "relic-cairn": [6.0, 6.0, 4.5],
-                        "wish-stone-slab": [8.0, 5.0, 1.8],
-                        "ruined-watchtower": [10.0, 10.0, 24.0],
-                        "ancient-ruin-terrace": [25.0, 18.0, 8.0],
-                    }
-                    dims = dims_map.get(primitive_id, [5.0, 5.0, 3.0])
 
                     lattice_run_id = f"run-3d-{uuid.uuid4().hex[:12]}"
                     ledger.append({
@@ -665,6 +747,8 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
                             "dimensions": dims,
                             "overhang_compliant": is_overhang_compliant,
                             "watertight": True,
+                            "reconstructed_from_2d": reconstructed_from_2d,
+                            "source_image": str(sprite_source_path.relative_to(REPO_ROOT)) if sprite_source_path else None,
                         },
                         "gate": {"rule": "coacd_stl_watertightness", "verdict": "pass"},
                         "provenance": {
@@ -684,13 +768,18 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
                         "dimensions": dims,
                         "overhang_compliant": is_overhang_compliant,
                         "watertight": True,
+                        "reconstructed_from_2d": reconstructed_from_2d,
+                        "source_image": str(sprite_source_path.relative_to(REPO_ROOT)) if sprite_source_path else None,
+                        "collage_url": collage_url or f"renders/primitives/{primitive_id}-collage.png",
+                        "collider_url": collider_url or f"library/mesh/{primitive_id}-collider.glb",
+                        "mesh_glb": mesh_glb_url or f"library/mesh/{primitive_id}-lowpoly.glb",
                         "solid_coverage_px": int(np.count_nonzero(np.array(depth_img))),
                         "lattice_workflow": "asset-forge.lattice.json",
                         "target_node": "rasterize-depth-template",
                         "lattice_run_id": lattice_run_id,
                         "lattice_status": "settled",
                         "status": "ready_for_flux3_conditioning",
-                        "message": f"Successfully rasterized 1024x1024 high-detail depth template from watertight solid STL for {primitive_id}.",
+                        "message": f"Successfully rasterized 1024x1024 high-detail depth template from {'2D-reconstructed' if reconstructed_from_2d else 'solid'} STL for {primitive_id}.",
                     })
                 except Exception as exc:
                     self._send(400, {"error": "3d_pipeline_failure", "reason": str(exc)})

@@ -2604,7 +2604,17 @@ export function initViewer(config) {
     const pid = primitiveId || (selectedAsset ? selectedAsset.id : (selectedPrimitiveId || getSelectedScenePrimitive()?.id || 'ancient-bastion'));
     const itemInScene = _findItemInScene(sc, pid) || (selectedAsset?.id === pid ? selectedAsset : null);
 
-    log('LATTICE', `[3D Pipeline] Ingesting dense watertight STL: library/stl_primitives/${pid}.stl...`);
+    const active2DImg = (selectedAsset && (selectedAsset.id === pid || selectedAsset.asset_id === pid) ? selectedAsset.image_url : null)
+      || assetImages.get(pid)
+      || itemInScene?.image_url
+      || itemInScene?.image_2d
+      || itemInScene?.sprite_url;
+
+    if (active2DImg) {
+      log('LATTICE', `[3D Pipeline] Ingesting 2D asset from viewer for '${pid}'. Reconstructing watertight solid geometry via image_to_3d...`);
+    } else {
+      log('LATTICE', `[3D Pipeline] Ingesting dense watertight STL: library/stl_primitives/${pid}.stl...`);
+    }
     log('LATTICE', `[3D Pipeline] Verifying 45° overhang cantilever rule and watertightness (Euler χ = 2)...`);
     log('LATTICE', `[3D Pipeline] Rasterizing high-detail orthographic top-down Z-depth map...`);
 
@@ -2625,9 +2635,19 @@ export function initViewer(config) {
         scene_id: currentSceneId || 'border-march',
         width: 1024,
         height: 1024,
+        image_data: active2DImg || null,
+        image_url: typeof active2DImg === 'string' && !active2DImg.startsWith('data:') ? active2DImg : null,
       }, 6000).then((res) => {
         if (res && res.ok) {
-          log('LATTICE', `[3D Pipeline] Verified watertight STL (${res.triangle_count} triangles). Depth template: ${res.depth_url}.`);
+          if (res.collage_url && itemInScene) itemInScene.collage_url = res.collage_url;
+          if (res.collider_url && itemInScene) itemInScene.collider_url = res.collider_url;
+          if (res.mesh_glb && itemInScene) itemInScene.mesh_glb = res.mesh_glb;
+          if (res.reconstructed_from_2d) {
+            log('LATTICE', `[3D Pipeline] Verified watertight mesh reconstructed from 2D asset (${res.triangle_count} triangles).`);
+          } else {
+            log('LATTICE', `[3D Pipeline] Verified watertight STL (${res.triangle_count} triangles). Depth template: ${res.depth_url}.`);
+          }
+          renderSidebarPreviewDOM(itemInScene || getSelectedScenePrimitive());
         }
       }).catch(() => {});
     }
@@ -2861,6 +2881,15 @@ export function initViewer(config) {
     selectedAsset.image_url = renderedUrl;
     selectedAsset.forged = true;
     selectedAsset.pipelineSource = pipelineSource;
+
+    // Sync scene primitive item so sprite facet & thumbnail immediately update:
+    const sc = getCurrentScene();
+    const itemInScene = _findItemInScene(sc, id) || _findItemInScene(sc, selectedAsset.asset_id || id);
+    if (itemInScene) {
+      itemInScene.image_url = renderedUrl;
+      itemInScene.image_2d = renderedUrl;
+      itemInScene.sprite_url = renderedUrl;
+    }
 
     playAudioCue('seal_stamp');
     log('AUDIO', 'Dispatched audio cue: seal_stamp.');
@@ -3631,7 +3660,13 @@ export function initViewer(config) {
       return item.image_2d || '';
     }
     // Default 'sprite':
-    return item.sprite_url || item.image_2d || (item._kind === 'cast' ? synthesizeForgeRender({ id: item.id, kind: 'actor', label: item.name }) : '');
+    const liveImg = assetImages.get(pid)
+      || (selectedAsset && (selectedAsset.id === pid || selectedAsset.asset_id === pid) ? selectedAsset.image_url : null)
+      || item.image_url
+      || item.sprite_url
+      || item.image_2d;
+    if (liveImg) return liveImg;
+    return item._kind === 'cast' ? synthesizeForgeRender({ id: item.id, kind: 'actor', label: item.name }) : '';
   }
 
   function renderSidebarPreviewDOM(item) {
