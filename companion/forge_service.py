@@ -257,6 +257,7 @@ def _record(data: dict) -> EventRecord:
 class ForgeHTTPServer(ThreadingHTTPServer):
     """Threading HTTPServer that gracefully handles broken pipes and client disconnects."""
     daemon_threads = True
+    allow_reuse_address = True
 
     def handle_error(self, request, client_address):
         exc_type, _, _ = sys.exc_info()
