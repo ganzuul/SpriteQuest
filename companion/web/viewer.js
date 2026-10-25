@@ -2661,6 +2661,7 @@ export function initViewer(config) {
     log('LATTICE', `[3D Pipeline] Rasterizing high-detail orthographic top-down Z-depth map...`);
 
     const depthUrl = `renders/primitives/${pid}-depth.png`;
+    updatePrimitiveRecord(pid, { depth_url: depthUrl });
     if (itemInScene) {
       itemInScene.depth_url = depthUrl;
     }
@@ -2687,29 +2688,47 @@ export function initViewer(config) {
           const bust = `?t=${Date.now()}`;
           const finalDepth = (res.depth_url || depthUrl) + bust;
           const finalCollage = (res.collage_url || `renders/primitives/${pid}-collage.png`) + bust;
+          const meshGlb = (res.mesh_glb || `library/mesh/${pid}-lowpoly.glb`) + bust;
+          const sourceGlb = (res.source_glb || `library/mesh/${pid}-source.glb`) + bust;
+          const lowpolyGlb = (res.lowpoly_glb || `library/mesh/${pid}-lowpoly.glb`) + bust;
+          const colliderGlb = (res.collider_url || `library/mesh/${pid}-collider.glb`) + bust;
+          const stlUrl = (res.stl_url || `library/stl_primitives/${pid}.stl`) + bust;
+
+          const updates = {
+            depth_url: finalDepth,
+            collage_url: finalCollage,
+            mesh_glb: meshGlb,
+            source_glb: sourceGlb,
+            lowpoly_glb: lowpolyGlb,
+            collider_url: colliderGlb,
+            stl_url: stlUrl,
+            triangle_count: res.triangle_count,
+            source_triangles: res.source_triangles,
+            coacd_pieces: res.coacd_pieces ? `${res.coacd_pieces} CoACD Boxes` : undefined,
+          };
+
+          updatePrimitiveRecord(pid, updates);
 
           if (itemInScene) {
-            itemInScene.depth_url = finalDepth;
-            itemInScene.collage_url = finalCollage;
-            if (res.collider_url) itemInScene.collider_url = res.collider_url;
-            if (res.mesh_glb) itemInScene.mesh_glb = res.mesh_glb;
-            if (res.triangle_count) itemInScene.triangle_count = res.triangle_count;
+            Object.assign(itemInScene, updates);
           }
           if (selectedAsset && (selectedAsset.id === pid || selectedAsset.asset_id === pid)) {
-            selectedAsset.depth_url = finalDepth;
-            selectedAsset.collage_url = finalCollage;
-            if (res.collider_url) selectedAsset.collider_url = res.collider_url;
-            if (res.mesh_glb) selectedAsset.mesh_glb = res.mesh_glb;
-            if (res.triangle_count) selectedAsset.triangle_count = res.triangle_count;
+            Object.assign(selectedAsset, updates);
           }
           if (res.reconstructed_from_2d) {
             log('LATTICE', `[3D Pipeline] Verified watertight 3D solid reconstructed from 2D asset via ${res.model || 'Hunyuan3D-2.1'} (${res.triangle_count.toLocaleString()} triangles, CoACD colliders & 1024x1024 depth map).`);
           } else {
             log('LATTICE', `[3D Pipeline] Verified watertight STL via ${res.model || 'template'} (${res.triangle_count.toLocaleString()} triangles). Depth template: ${res.depth_url}.`);
           }
-          setPreviewFacet('depth');
+          setPreviewFacet('mesh');
           renderSidebarPreviewDOM(itemInScene || getSelectedScenePrimitive());
           renderAssetViewerDOM();
+          if (typeof document !== 'undefined') {
+            const modal = document.getElementById('primitive-lightbox');
+            if (modal && !modal.classList.contains('hidden')) {
+              openPrimitiveLightbox(pid, 'mesh');
+            }
+          }
           playAudioCue('seal_stamp');
         } else {
           log('LATTICE', `[3D Pipeline] Server returned status: ${res?.error || 'unspecified'}.`, 'warn');
@@ -3305,15 +3324,63 @@ export function initViewer(config) {
 
   function _findItemInScene(sc, itemId) {
     if (!itemId) return null;
+    const cleanId = itemId.replace(/^prop-/, '');
     if (sc) {
-      const prim = (sc.primitives || []).find((p) => p.id === itemId || p.asset_id === itemId);
+      const prim = (sc.primitives || []).find((p) => (
+        p.id === itemId || p.asset_id === itemId ||
+        p.id === cleanId || p.asset_id === cleanId ||
+        p.id === `prop-${cleanId}` || p.asset_id === `prop-${cleanId}`
+      ));
       if (prim) return { ...prim, _kind: 'primitive' };
-      const cast = (sc.cast || []).find((c) => c.id === itemId);
+      const cast = (sc.cast || []).find((c) => c.id === itemId || c.id === cleanId);
       if (cast) return { ...cast, _kind: 'cast' };
     }
-    const staged = STAGING_PRIMITIVES_PALETTE.find((p) => p.id === itemId || p.asset_id === itemId);
+    const staged = STAGING_PRIMITIVES_PALETTE.find((p) => (
+      p.id === itemId || p.asset_id === itemId ||
+      p.id === cleanId || p.asset_id === cleanId ||
+      p.id === `prop-${cleanId}` || p.asset_id === `prop-${cleanId}`
+    ));
     if (staged) return { ...staged, _kind: 'primitive', _staged: true };
     return null;
+  }
+
+  function updatePrimitiveRecord(pid, updates) {
+    if (!pid || !updates) return;
+    const cleanId = pid.replace(/^prop-/, '');
+    const matchFn = (p) => p && (
+      p.id === pid || p.asset_id === pid ||
+      p.id === cleanId || p.asset_id === cleanId ||
+      p.id === `prop-${cleanId}` || p.asset_id === `prop-${cleanId}`
+    );
+
+    if (scenesManifest && scenesManifest.scenes_by_id) {
+      for (const s of Object.values(scenesManifest.scenes_by_id)) {
+        if (Array.isArray(s.primitives)) {
+          for (const p of s.primitives) {
+            if (matchFn(p)) Object.assign(p, updates);
+          }
+        }
+      }
+    }
+    const sc = getCurrentScene();
+    if (sc && Array.isArray(sc.primitives)) {
+      for (const p of sc.primitives) {
+        if (matchFn(p)) Object.assign(p, updates);
+      }
+    }
+    for (const p of STAGING_PRIMITIVES_PALETTE) {
+      if (matchFn(p)) Object.assign(p, updates);
+    }
+    if (physicalPropsMap) {
+      for (const [k, v] of physicalPropsMap.entries()) {
+        if (k === pid || k === cleanId || k === `prop-${cleanId}`) {
+          Object.assign(v, updates);
+        }
+      }
+    }
+    if (selectedAsset && matchFn(selectedAsset)) {
+      Object.assign(selectedAsset, updates);
+    }
   }
 
   function getSelectedScenePrimitive() {
@@ -3680,8 +3747,368 @@ export function initViewer(config) {
     return section ? section.classList.contains('is-collapsed') : false;
   }
 
-  // --- Multi-Representation Preview Facets ---
+  // --- Multi-Representation Preview Facets & 3D Interactive Viewer ---
   let currentPreviewFacet = 'sprite';
+  const activeWebGLRenderers = new Map();
+
+  function getFacet3DModelForItem(item, facet = 'mesh') {
+    if (!item) return { glb: null, stl: null, cleanId: '' };
+    const pid = item.id || item.asset_id || '';
+    const cleanId = pid.replace(/^prop-/, '');
+    const altPid = pid.startsWith('prop-') ? cleanId : `prop-${pid}`;
+
+    let glbUrl = null;
+    let stlUrl = null;
+
+    if (facet === 'collider') {
+      glbUrl = item.collider_url || `library/mesh/${cleanId}-collider.glb`;
+    } else {
+      if (item.mesh_glb) glbUrl = item.mesh_glb;
+      else if (item.lowpoly_glb) glbUrl = item.lowpoly_glb;
+      else glbUrl = `library/mesh/${cleanId}-lowpoly.glb`;
+    }
+
+    if (item.stl_url) stlUrl = item.stl_url;
+    else stlUrl = `library/stl_primitives/${cleanId}.stl`;
+
+    return { glb: glbUrl, stl: stlUrl, pid, cleanId, altPid };
+  }
+
+  function reset3DCamera(targetPrefix) {
+    if (typeof document === 'undefined') return;
+    const mv = document.getElementById(`${targetPrefix}-model-viewer`);
+    if (mv && typeof mv.resetTurntable === 'function') {
+      mv.resetTurntable();
+    }
+    const canvas = document.getElementById(`${targetPrefix}-3d-canvas`);
+    if (canvas && activeWebGLRenderers.has(canvas)) {
+      const r = activeWebGLRenderers.get(canvas);
+      if (r && r.resetCamera) r.resetCamera();
+    }
+  }
+
+  function parseBinarySTL(buffer) {
+    if (!buffer || buffer.byteLength < 84) return null;
+    const data = new DataView(buffer);
+    const numTriangles = data.getUint32(80, true);
+    if (numTriangles <= 0 || numTriangles > 2000000) return null;
+    const positions = new Float32Array(numTriangles * 9);
+    const normals = new Float32Array(numTriangles * 9);
+    let minX = Infinity, minY = Infinity, minZ = Infinity;
+    let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+
+    let offset = 84;
+    for (let i = 0; i < numTriangles; i++) {
+      if (offset + 50 > buffer.byteLength) break;
+      const nx = data.getFloat32(offset, true);
+      const ny = data.getFloat32(offset + 4, true);
+      const nz = data.getFloat32(offset + 8, true);
+      offset += 12;
+      for (let v = 0; v < 3; v++) {
+        const idx = (i * 3 + v) * 3;
+        const x = data.getFloat32(offset, true);
+        const y = data.getFloat32(offset + 4, true);
+        const z = data.getFloat32(offset + 8, true);
+        positions[idx] = x;
+        positions[idx + 1] = y;
+        positions[idx + 2] = z;
+        normals[idx] = nx;
+        normals[idx + 1] = ny;
+        normals[idx + 2] = nz;
+        if (x < minX) minX = x; if (x > maxX) maxX = x;
+        if (y < minY) minY = y; if (y > maxY) maxY = y;
+        if (z < minZ) minZ = z; if (z > maxZ) maxZ = z;
+        offset += 12;
+      }
+      offset += 2;
+    }
+
+    const cx = (minX + maxX) / 2;
+    const cy = (minY + maxY) / 2;
+    const cz = (minZ + maxZ) / 2;
+    const maxDim = Math.max(maxX - minX, maxY - minY, maxZ - minZ) || 1.0;
+    const scale = 1.8 / maxDim;
+
+    for (let i = 0; i < positions.length; i += 3) {
+      positions[i] = (positions[i] - cx) * scale;
+      positions[i + 1] = (positions[i + 1] - cy) * scale;
+      positions[i + 2] = (positions[i + 2] - cz) * scale;
+    }
+
+    return { positions, normals, count: numTriangles * 3 };
+  }
+
+  function initOrUpdateWebGLCanvas(canvas, stlUrl, loadingEl) {
+    if (!canvas || typeof window === 'undefined') return;
+    const gl = canvas.getContext ? (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')) : null;
+    if (!gl || typeof gl.createProgram !== 'function') {
+      if (loadingEl) loadingEl.textContent = '3D mesh ready (GLB / STL)';
+      return;
+    }
+
+    if (activeWebGLRenderers.has(canvas)) {
+      const existing = activeWebGLRenderers.get(canvas);
+      if (existing.stlUrl === stlUrl) {
+        if (loadingEl) loadingEl.style.display = 'none';
+        return;
+      }
+      existing.destroy();
+    }
+
+    let destroyed = false;
+    let animId = null;
+    let rotX = 0.45;
+    let rotY = -0.55;
+    let zoom = 1.0;
+    let isDragging = false;
+    let lastMouseX = 0;
+    let lastMouseY = 0;
+
+    const renderer = {
+      stlUrl,
+      resetCamera() {
+        rotX = 0.45;
+        rotY = -0.55;
+        zoom = 1.0;
+      },
+      destroy() {
+        destroyed = true;
+        if (animId && typeof cancelAnimationFrame === 'function') cancelAnimationFrame(animId);
+        activeWebGLRenderers.delete(canvas);
+      }
+    };
+    activeWebGLRenderers.set(canvas, renderer);
+
+    const onMouseDown = (e) => {
+      isDragging = true;
+      lastMouseX = e.clientX;
+      lastMouseY = e.clientY;
+    };
+    const onMouseMove = (e) => {
+      if (!isDragging) return;
+      const dx = e.clientX - lastMouseX;
+      const dy = e.clientY - lastMouseY;
+      lastMouseX = e.clientX;
+      lastMouseY = e.clientY;
+      rotY += dx * 0.012;
+      rotX += dy * 0.012;
+    };
+    const onMouseUp = () => { isDragging = false; };
+    const onWheel = (e) => {
+      e.preventDefault();
+      zoom = Math.max(0.4, Math.min(3.5, zoom + e.deltaY * -0.0015));
+    };
+
+    canvas.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+    canvas.addEventListener('wheel', onWheel, { passive: false });
+
+    const vsSource = `
+      attribute vec3 aPosition;
+      attribute vec3 aNormal;
+      uniform mat4 uMVP;
+      uniform mat3 uNormalMatrix;
+      varying vec3 vNormal;
+      void main() {
+        vNormal = normalize(uNormalMatrix * aNormal);
+        gl_Position = uMVP * vec4(aPosition, 1.0);
+      }
+    `;
+    const fsSource = `
+      precision mediump float;
+      varying vec3 vNormal;
+      void main() {
+        vec3 n = normalize(vNormal);
+        vec3 light = normalize(vec3(0.5, 0.8, 1.0));
+        float diff = max(dot(n, light), 0.15) + max(dot(-n, light), 0.0) * 0.3;
+        vec3 base = vec3(0.85, 0.81, 0.74);
+        vec3 ambient = vec3(0.25, 0.22, 0.20);
+        gl_FragColor = vec4(ambient + base * diff * 0.75, 1.0);
+      }
+    `;
+
+    function createShader(glCtx, type, source) {
+      const s = glCtx.createShader(type);
+      glCtx.shaderSource(s, source);
+      glCtx.compileShader(s);
+      return s;
+    }
+
+    const prog = gl.createProgram();
+    gl.attachShader(prog, createShader(gl, gl.VERTEX_SHADER, vsSource));
+    gl.attachShader(prog, createShader(gl, gl.FRAGMENT_SHADER, fsSource));
+    gl.linkProgram(prog);
+    gl.useProgram(prog);
+
+    const aPos = gl.getAttribLocation(prog, 'aPosition');
+    const aNorm = gl.getAttribLocation(prog, 'aNormal');
+    const uMVP = gl.getUniformLocation(prog, 'uMVP');
+    const uNormMat = gl.getUniformLocation(prog, 'uNormalMatrix');
+
+    const posBuffer = gl.createBuffer();
+    const normBuffer = gl.createBuffer();
+    let vertexCount = 0;
+
+    if (typeof fetch === 'function') {
+      fetch(stlUrl)
+        .then((res) => {
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          return res.arrayBuffer();
+        })
+        .then((buffer) => {
+          if (destroyed) return;
+          const parsed = parseBinarySTL(buffer);
+          if (!parsed) {
+            if (loadingEl) loadingEl.textContent = '⚠️ Invalid STL geometry';
+            return;
+          }
+          vertexCount = parsed.count;
+          gl.bindBuffer(gl.ARRAY_BUFFER, posBuffer);
+          gl.bufferData(gl.ARRAY_BUFFER, parsed.positions, gl.STATIC_DRAW);
+          gl.bindBuffer(gl.ARRAY_BUFFER, normBuffer);
+          gl.bufferData(gl.ARRAY_BUFFER, parsed.normals, gl.STATIC_DRAW);
+          if (loadingEl) loadingEl.style.display = 'none';
+          renderLoop();
+        })
+        .catch((err) => {
+          if (loadingEl) loadingEl.textContent = `⚠️ Mesh offline (${err.message})`;
+        });
+    }
+
+    function renderLoop() {
+      if (destroyed) return;
+      const width = canvas.clientWidth || 300;
+      const height = canvas.clientHeight || 200;
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+        gl.viewport(0, 0, width, height);
+      }
+
+      gl.enable(gl.DEPTH_TEST);
+      gl.clearColor(0.04, 0.04, 0.03, 1.0);
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+      if (vertexCount > 0) {
+        if (!isDragging) rotY += 0.005;
+
+        const aspect = width / height;
+        const fov = 45 * Math.PI / 180;
+        const near = 0.1;
+        const far = 100.0;
+        const f = 1.0 / Math.tan(fov / 2);
+        const proj = [
+          f / aspect, 0, 0, 0,
+          0, f, 0, 0,
+          0, 0, (far + near) / (near - far), -1,
+          0, 0, (2 * far * near) / (near - far), 0
+        ];
+
+        const cosX = Math.cos(rotX), sinX = Math.sin(rotX);
+        const cosY = Math.cos(rotY), sinY = Math.sin(rotY);
+        const dist = 3.0 / zoom;
+
+        const mv = [
+          cosY, sinX * sinY, -cosX * sinY, 0,
+          0, cosX, sinX, 0,
+          sinY, -sinX * cosY, cosX * cosY, 0,
+          0, 0, -dist, 1
+        ];
+
+        const mvp = new Float32Array(16);
+        for (let r = 0; r < 4; r++) {
+          for (let c = 0; c < 4; c++) {
+            let sum = 0;
+            for (let k = 0; k < 4; k++) sum += proj[k * 4 + r] * mv[c * 4 + k];
+            mvp[c * 4 + r] = sum;
+          }
+        }
+
+        const normMat = new Float32Array([
+          cosY, sinX * sinY, -cosX * sinY,
+          0, cosX, sinX,
+          sinY, -sinX * cosY, cosX * cosY
+        ]);
+
+        gl.uniformMatrix4fv(uMVP, false, mvp);
+        gl.uniformMatrix3fv(uNormMat, false, normMat);
+
+        gl.enableVertexAttribArray(aPos);
+        gl.bindBuffer(gl.ARRAY_BUFFER, posBuffer);
+        gl.vertexAttribPointer(aPos, 3, gl.FLOAT, false, 0, 0);
+
+        gl.enableVertexAttribArray(aNorm);
+        gl.bindBuffer(gl.ARRAY_BUFFER, normBuffer);
+        gl.vertexAttribPointer(aNorm, 3, gl.FLOAT, false, 0, 0);
+
+        gl.drawArrays(gl.TRIANGLES, 0, vertexCount);
+      }
+
+      if (typeof requestAnimationFrame === 'function') {
+        animId = requestAnimationFrame(renderLoop);
+      }
+    }
+  }
+
+  function render3DModel(targetPrefix, item, facet = 'mesh') {
+    if (typeof document === 'undefined') return;
+    const wrap = document.getElementById(`${targetPrefix}-3d-wrap`);
+    const mv = document.getElementById(`${targetPrefix}-model-viewer`);
+    const canvas = document.getElementById(`${targetPrefix}-3d-canvas`);
+    const loading = document.getElementById(`${targetPrefix}-3d-loading`);
+
+    if (!wrap) return;
+
+    const { glb, stl, cleanId } = getFacet3DModelForItem(item, facet);
+
+    if (loading) {
+      loading.textContent = '⏳ Loading 3D Mesh...';
+      loading.style.display = 'block';
+    }
+
+    const hasModelViewer = typeof customElements !== 'undefined' && customElements.get('model-viewer');
+
+    if (hasModelViewer && mv && glb) {
+      if (canvas) canvas.style.display = 'none';
+      mv.style.display = 'block';
+      if (mv.src !== glb && !mv.src.endsWith(glb)) {
+        mv.src = glb;
+      }
+      mv.setAttribute('alt', `3D model for ${item.name || cleanId}`);
+
+      const onLoad = () => {
+        if (loading) loading.style.display = 'none';
+        mv.removeEventListener('load', onLoad);
+        mv.removeEventListener('error', onError);
+      };
+      const onError = () => {
+        mv.removeEventListener('load', onLoad);
+        mv.removeEventListener('error', onError);
+        mv.style.display = 'none';
+        if (canvas && stl) {
+          canvas.style.display = 'block';
+          initOrUpdateWebGLCanvas(canvas, stl, loading);
+        } else {
+          if (loading) loading.textContent = '⚠️ 3D preview unavailable';
+        }
+      };
+
+      mv.addEventListener('load', onLoad);
+      mv.addEventListener('error', onError);
+      if (mv.loaded) {
+        if (loading) loading.style.display = 'none';
+      }
+    } else if (canvas) {
+      if (mv) mv.style.display = 'none';
+      canvas.style.display = 'block';
+      if (stl) {
+        initOrUpdateWebGLCanvas(canvas, stl, loading);
+      } else if (loading) {
+        loading.textContent = '⚠️ 3D mesh unavailable';
+      }
+    }
+  }
 
   function setPreviewFacet(facet) {
     currentPreviewFacet = facet || 'sprite';
@@ -3710,28 +4137,37 @@ export function initViewer(config) {
   function getFacetImageForItem(item, facet) {
     if (!item) return '';
     const pid = item.id;
+    const cleanId = pid.replace(/^prop-/, '');
+    if (facet === 'mesh') {
+      if (item.collage_url) return item.collage_url;
+      if (['ancient-bastion', 'relic-cairn', 'wish-stone-slab', 'ruined-watchtower', 'ancient-ruin-terrace'].includes(cleanId)) {
+        return `renders/primitives/${cleanId}-collage.png`;
+      }
+      return item.image_2d || item.image_url || '';
+    }
     if (facet === 'collage') {
       if (item.collage_url) return item.collage_url;
-      if (['ancient-bastion', 'relic-cairn', 'wish-stone-slab', 'ruined-watchtower', 'ancient-ruin-terrace'].includes(pid)) {
-        return `renders/primitives/${pid}-collage.png`;
+      if (['ancient-bastion', 'relic-cairn', 'wish-stone-slab', 'ruined-watchtower', 'ancient-ruin-terrace'].includes(cleanId)) {
+        return `renders/primitives/${cleanId}-collage.png`;
       }
       return item.image_2d || '';
     }
     if (facet === 'depth') {
       if (item.depth_url) return item.depth_url;
-      return `renders/primitives/${pid}-depth.png`;
+      return `renders/primitives/${cleanId}-depth.png`;
     }
     if (facet === 'collider') {
-      if (item.collider_url) return item.collider_url;
+      if (item.collider_img) return item.collider_img;
       if (item.collage_url) return item.collage_url;
-      if (['ancient-bastion', 'relic-cairn', 'wish-stone-slab', 'ruined-watchtower', 'ancient-ruin-terrace'].includes(pid)) {
-        return `renders/primitives/${pid}-collage.png`;
+      if (['ancient-bastion', 'relic-cairn', 'wish-stone-slab', 'ruined-watchtower', 'ancient-ruin-terrace'].includes(cleanId)) {
+        return `renders/primitives/${cleanId}-collage.png`;
       }
       return item.image_2d || '';
     }
     // Default 'sprite':
     const liveImg = assetImages.get(pid)
-      || (selectedAsset && (selectedAsset.id === pid || selectedAsset.asset_id === pid) ? selectedAsset.image_url : null)
+      || assetImages.get(cleanId)
+      || (selectedAsset && (selectedAsset.id === pid || selectedAsset.asset_id === pid || selectedAsset.id === cleanId) ? selectedAsset.image_url : null)
       || item.image_url
       || item.sprite_url
       || item.image_2d;
@@ -3745,6 +4181,7 @@ export function initViewer(config) {
     if (!activeItem) return;
 
     const previewImg = document.getElementById('sidebar-preview-img');
+    const sidebar3dWrap = document.getElementById('sidebar-3d-wrap');
     const previewTitle = document.getElementById('sidebar-preview-title');
     const previewRole = document.getElementById('sidebar-preview-role');
     const previewMeta = document.getElementById('sidebar-preview-meta');
@@ -3760,13 +4197,25 @@ export function initViewer(config) {
       });
     }
 
-    if (previewImg) {
-      previewImg.src = imgUrl;
-      previewImg.alt = `${activeItem.name || activeItem.id} (${currentPreviewFacet})`;
+    if (currentPreviewFacet === 'mesh') {
+      if (previewImg) previewImg.style.display = 'none';
+      if (sidebar3dWrap) {
+        sidebar3dWrap.style.display = 'flex';
+        render3DModel('sidebar', activeItem, 'mesh');
+      }
+    } else {
+      if (sidebar3dWrap) sidebar3dWrap.style.display = 'none';
+      if (previewImg) {
+        previewImg.style.display = 'block';
+        previewImg.src = imgUrl;
+        previewImg.alt = `${activeItem.name || activeItem.id} (${currentPreviewFacet})`;
+      }
     }
 
     if (zoomHint) {
-      if (currentPreviewFacet === 'collage') {
+      if (currentPreviewFacet === 'mesh') {
+        zoomHint.textContent = '🧊 Interactive 3D Watertight Solid (Click to Enlarge)';
+      } else if (currentPreviewFacet === 'collage') {
         zoomHint.textContent = '🔬 5-Cell Pipeline Review (Click to Enlarge)';
       } else if (currentPreviewFacet === 'depth') {
         zoomHint.textContent = '⛰️ 3D Depth Template (Click to Enlarge)';
@@ -4074,8 +4523,22 @@ export function initViewer(config) {
     if (!modal || !imgEl || !detailsEl) return;
 
     const imgUrl = getFacetImageForItem(prim, activeFacet);
-    imgEl.src = imgUrl;
-    imgEl.alt = `${prim.name} (${activeFacet})`;
+    const lightbox3dWrap = document.getElementById('lightbox-3d-wrap');
+
+    if (activeFacet === 'mesh') {
+      if (imgEl) imgEl.style.display = 'none';
+      if (lightbox3dWrap) {
+        lightbox3dWrap.style.display = 'flex';
+        render3DModel('lightbox', prim, 'mesh');
+      }
+    } else {
+      if (lightbox3dWrap) lightbox3dWrap.style.display = 'none';
+      if (imgEl) {
+        imgEl.style.display = 'block';
+        imgEl.src = imgUrl;
+        imgEl.alt = `${prim.name} (${activeFacet})`;
+      }
+    }
 
     const dims = prim.dimensions ? `${prim.dimensions[0]}m × ${prim.dimensions[1]}m × ${prim.dimensions[2]}m` : 'Character Sheet';
     const trisStr = prim.source_triangles
@@ -4089,8 +4552,9 @@ export function initViewer(config) {
     detailsEl.innerHTML = `
       <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; flex-wrap: wrap;">
         <div class="lightbox-title">${escapeHtml(prim.name)}</div>
-        <div class="sidebar-facet-tabs" style="margin: 0; min-width: 260px;">
+        <div class="sidebar-facet-tabs" style="margin: 0; min-width: 320px;">
           <button class="facet-tab ${activeFacet === 'sprite' ? 'active' : ''}" onclick="window.viewer && window.viewer.openPrimitiveLightbox('${escapeHtml(prim.id)}', 'sprite')">🖼️ Sprite</button>
+          <button class="facet-tab ${activeFacet === 'mesh' ? 'active' : ''}" onclick="window.viewer && window.viewer.openPrimitiveLightbox('${escapeHtml(prim.id)}', 'mesh')">🧊 3D Mesh</button>
           <button class="facet-tab ${activeFacet === 'depth' ? 'active' : ''}" onclick="window.viewer && window.viewer.openPrimitiveLightbox('${escapeHtml(prim.id)}', 'depth')">⛰️ 3D Depth</button>
           <button class="facet-tab ${activeFacet === 'collage' ? 'active' : ''}" onclick="window.viewer && window.viewer.openPrimitiveLightbox('${escapeHtml(prim.id)}', 'collage')">🔬 5-Cell Collage</button>
           <button class="facet-tab ${activeFacet === 'collider' ? 'active' : ''}" onclick="window.viewer && window.viewer.openPrimitiveLightbox('${escapeHtml(prim.id)}', 'collider')">📦 Collider</button>
@@ -5064,6 +5528,10 @@ export function initViewer(config) {
     closePrimitiveLightbox,
     forgeScenePrimitive,
     runPrimitive3DPipeline,
+    reset3DCamera,
+    render3DModel,
+    getFacet3DModelForItem,
+    updatePrimitiveRecord,
   };
 
   const globalRoot = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this);
@@ -5165,6 +5633,10 @@ export function initViewer(config) {
     globalRoot.closePrimitiveLightbox = closePrimitiveLightbox;
     globalRoot.forgeScenePrimitive = forgeScenePrimitive;
     globalRoot.runPrimitive3DPipeline = runPrimitive3DPipeline;
+    globalRoot.reset3DCamera = reset3DCamera;
+    globalRoot.render3DModel = render3DModel;
+    globalRoot.getFacet3DModelForItem = getFacet3DModelForItem;
+    globalRoot.updatePrimitiveRecord = updatePrimitiveRecord;
     globalRoot.onCampaignSelectChange = (val) => selectCampaign(val);
     globalRoot.onActSelectChange = (val) => selectAct(val);
     globalRoot.onSceneSelectChange = (val) => selectScene(val);

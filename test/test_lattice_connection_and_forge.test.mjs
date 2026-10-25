@@ -450,4 +450,57 @@ describe('Interface Connection with Lattice & Prompt Rewrite Pipeline (TDD)', ()
       }
     }
   });
+
+  test('11. Interactive 3D Mesh Inspection & Facet Resolution', async () => {
+    // 1. Select generated/reconstructed ruin: relic-cairn / prop-relic-cairn
+    const selected = viewer.selectScenePrimitive('relic-cairn') || viewer.selectScenePrimitive('prop-relic-cairn');
+    assert.ok(selected, 'Must select relic-cairn');
+
+    // 2. Facet tab buttons present in DOM
+    const tabMesh = document.getElementById('facet-tab-mesh');
+    assert.ok(tabMesh, '🧊 3D Mesh facet tab button must exist in sidebar');
+
+    // 3. Switch to 3D Mesh facet
+    viewer.setPreviewFacet('mesh');
+    assert.equal(viewer.getPreviewFacet(), 'mesh', 'Preview facet must be mesh');
+
+    // 4. Verify 3D container visibility and 2D image suppression
+    const previewImg = document.getElementById('sidebar-preview-img');
+    const wrap3D = document.getElementById('sidebar-3d-wrap');
+    if (previewImg && wrap3D) {
+      assert.equal(previewImg.style.display, 'none', '2D image must be hidden when viewing 3D mesh');
+      assert.equal(wrap3D.style.display, 'flex', '3D wrapper must be active when viewing 3D mesh');
+    }
+
+    // 5. 3D Model URL Resolution
+    assert.equal(typeof viewer.getFacet3DModelForItem, 'function');
+    const model = viewer.getFacet3DModelForItem(selected, 'mesh');
+    assert.ok(model, '3D model object must resolve');
+    assert.ok(model.glb.includes('relic-cairn-lowpoly.glb'), 'Mesh GLB must resolve to lowpoly GLB');
+    assert.ok(model.stl.includes('relic-cairn.stl'), 'STL URL must resolve to watertight STL solid');
+
+    // 6. Camera reset controls
+    assert.equal(typeof viewer.reset3DCamera, 'function');
+    viewer.reset3DCamera('sidebar');
+
+    // 7. Lightbox inspection with 3D mesh facet
+    assert.equal(typeof viewer.openPrimitiveLightbox, 'function');
+    viewer.openPrimitiveLightbox(selected.id, 'mesh');
+    const lightbox3dWrap = document.getElementById('lightbox-3d-wrap');
+    const lightboxImg = document.getElementById('lightbox-img');
+    if (lightbox3dWrap && lightboxImg) {
+      assert.equal(lightboxImg.style.display, 'none', 'Lightbox 2D image must be hidden when viewing 3D mesh');
+      assert.equal(lightbox3dWrap.style.display, 'flex', 'Lightbox 3D wrapper must be active when viewing 3D mesh');
+    }
+    viewer.closePrimitiveLightbox();
+
+    // 8. Update primitive record synchronizes across all registries
+    viewer.updatePrimitiveRecord('relic-cairn', {
+      source_triangles: 1061696,
+      triangle_count: 5200,
+    });
+    const refreshed = viewer.getSelectedScenePrimitive();
+    assert.equal(refreshed.source_triangles, 1061696);
+    assert.equal(refreshed.triangle_count, 5200);
+  });
 });

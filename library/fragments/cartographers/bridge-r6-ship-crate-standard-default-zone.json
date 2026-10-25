@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "id": "cartographers/bridge-r6-ship-crate-standard-default-zone",
+  "version": 1,
+  "world_id": "cartographers",
+  "for": "diffusion",
+  "facets": [
+    "home",
+    "favored_items"
+  ],
+  "detail": "stamped brass surveyor brackets and customs transit chalk marks securing the r6-ship standardized bounding crate directly onto the weathered stone and timber subfloor",
+  "evidence": {
+    "kind": "directed",
+    "source": "library/cartographers_ledger.json",
+    "quote": "Foreign domain asset ('customs-house') placed in 'border-march' zone 'default-zone' (weathered stone and timber subfloor) without bridging fixture."
+  },
+  "facts": {
+    "extent": "base mounting brackets 25 cm across",
+    "scale_ref": "fastened along the bottom contact perimeter",
+    "material": "weathered brass and surveyor chalk on weathered stone and timber subfloor",
+    "state": "surveyed in transit"
+  },
+  "note": "Synthesized as a Provisional Field Note by the Bureau of the Unwritten Atlas to resolve cross_domain_anomaly (border-march:default-zone:r6_ship_crate_standard:cross_domain_anomaly). Edit to curate and grant a Canon Warrant; delete to record an authorial criticism tombstone."
+}

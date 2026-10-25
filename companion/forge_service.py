@@ -336,6 +336,9 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
                     ".webp": "image/webp",
                     ".svg": "image/svg+xml",
                     ".wasm": "application/wasm",
+                    ".glb": "model/gltf-binary",
+                    ".gltf": "model/gltf+json",
+                    ".stl": "model/stl",
                 }
                 content_type = types.get(suffix, "application/octet-stream")
             try:
@@ -345,6 +348,14 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
                 self._cors_headers()
                 self.end_headers()
                 self.wfile.write(body)
+            except (BrokenPipeError, ConnectionResetError):
+                pass
+
+        def do_HEAD(self):
+            try:
+                self.send_response(200)
+                self._cors_headers()
+                self.end_headers()
             except (BrokenPipeError, ConnectionResetError):
                 pass
 

@@ -32,6 +32,7 @@ import io
 import json
 import math
 import os
+import shutil
 import struct
 import sys
 import time
@@ -843,6 +844,17 @@ def process_ruin_pipeline(
     # 6. Render 5-cell review collage
     collage_path = RENDERS_DIR / f"{asset_id}-collage.png"
     render_5cell_collage(s_path, source_mesh, lowpoly_mesh, collider_pieces, collage_path, asset_name=name)
+
+    # 7. Synchronize alternative alias (e.g. prop-relic-cairn <-> relic-cairn)
+    alt_id = asset_id[5:] if asset_id.startswith("prop-") else f"prop-{asset_id}"
+    try:
+        shutil.copy2(stl_path, STL_DIR / f"{alt_id}.stl")
+        shutil.copy2(collider_glb_path, MESH_DIR / f"{alt_id}-collider.glb")
+        shutil.copy2(source_glb_path, MESH_DIR / f"{alt_id}-source.glb")
+        shutil.copy2(lowpoly_glb_path, MESH_DIR / f"{alt_id}-lowpoly.glb")
+        shutil.copy2(collage_path, RENDERS_DIR / f"{alt_id}-collage.png")
+    except Exception:
+        pass
 
     elapsed = round(time.monotonic() - t0, 2)
     return {

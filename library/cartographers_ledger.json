@@ -24,6 +24,23 @@
       "current_detail": "stamped brass surveyor brackets and customs transit chalk marks securing the orom's literal wish-stone slab directly onto the weathered stone and timber subfloor",
       "curation_edits": 0,
       "warrant_id": null
+    },
+    "cartographers/bridge-r6-ship-crate-standard-default-zone": {
+      "fragment_id": "cartographers/bridge-r6-ship-crate-standard-default-zone",
+      "conflict_id": "border-march:default-zone:r6_ship_crate_standard:cross_domain_anomaly",
+      "conflict_kind": "cross_domain_anomaly",
+      "asset_id": "r6_ship_crate_standard",
+      "recipe_archetype": "crate_freight",
+      "scene_id": "border-march",
+      "zone_id": "default-zone",
+      "origin": "cartographer_llm",
+      "maturity": "field_note",
+      "initial_sha256": "818356c569b778e1da9467a3bc3ac726c8ebab8b865f9758cc530ac943b3e3d9",
+      "current_sha256": "818356c569b778e1da9467a3bc3ac726c8ebab8b865f9758cc530ac943b3e3d9",
+      "initial_detail": "stamped brass surveyor brackets and customs transit chalk marks securing the r6-ship standardized bounding crate directly onto the weathered stone and timber subfloor",
+      "current_detail": "stamped brass surveyor brackets and customs transit chalk marks securing the r6-ship standardized bounding crate directly onto the weathered stone and timber subfloor",
+      "curation_edits": 0,
+      "warrant_id": null
     }
   }
 }

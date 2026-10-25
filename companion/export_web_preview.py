@@ -89,22 +89,22 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
         if s_img.size != (600, 700):
             s_img = s_img.resize((600, 700), Image.Resampling.BILINEAR)
         s_buf = io.BytesIO()
-        s_img.save(s_buf, format="PNG", optimize=True)
+        s_img.save(s_buf, format="PNG")
         strata_b64.append(base64.b64encode(s_buf.getvalue()).decode("ascii"))
 
     depth_preview = depth_img.resize((600, 700), Image.Resampling.BILINEAR) if depth_img.size != (600, 700) else depth_img
     depth_buf = io.BytesIO()
-    depth_preview.save(depth_buf, format="PNG", optimize=True)
+    depth_preview.save(depth_buf, format="PNG")
     depth_b64 = base64.b64encode(depth_buf.getvalue()).decode("ascii")
 
     relief_preview = relief_img.resize((600, 700), Image.Resampling.BILINEAR) if relief_img.size != (600, 700) else relief_img
     relief_buf = io.BytesIO()
-    relief_preview.save(relief_buf, format="PNG", optimize=True)
+    relief_preview.save(relief_buf, format="PNG")
     relief_b64 = base64.b64encode(relief_buf.getvalue()).decode("ascii")
 
     stylized_preview = stylized_img.resize((600, 700), Image.Resampling.BILINEAR) if stylized_img.size != (600, 700) else stylized_img
     stylized_buf = io.BytesIO()
-    stylized_preview.save(stylized_buf, format="PNG", optimize=True)
+    stylized_preview.save(stylized_buf, format="PNG")
     stylized_b64 = base64.b64encode(stylized_buf.getvalue()).decode("ascii")
 
     strata_json = json.dumps([
@@ -129,6 +129,7 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
 <head>
   <meta charset="utf-8">
   <title>{map_data.get('name', 'Outdoor Map')} - SpriteQuest 2.5D Parallax Engine</title>
+  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
   <style>
     :root {{
       --bg: #141210;
@@ -1873,7 +1874,7 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
     }}
     .sidebar-facet-tabs {{
       display: flex;
-      gap: 3px;
+      gap: 2px;
       background: #13100e;
       padding: 3px;
       border-radius: 5px;
@@ -1886,9 +1887,9 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
       background: transparent;
       border: none;
       color: #9c8e80;
-      font-size: 8.5px;
+      font-size: 8px;
       font-weight: 600;
-      padding: 4px 2px;
+      padding: 3px 2px;
       border-radius: 3px;
       cursor: pointer;
       font-family: inherit;
@@ -1929,6 +1930,60 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
       height: 100%;
       object-fit: contain;
       display: block;
+    }}
+    .sidebar-3d-wrap {{
+      width: 100%;
+      height: 100%;
+      position: relative;
+      background: #0a0908;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }}
+    .lightbox-3d-wrap {{
+      width: 100%;
+      height: 420px;
+      position: relative;
+      background: #0c0a09;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }}
+    .mesh-loading-indicator {{
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #2dd4bf;
+      font-size: 10px;
+      font-weight: 600;
+      pointer-events: none;
+      background: rgba(13, 11, 10, 0.85);
+      padding: 4px 8px;
+      border-radius: 4px;
+      border: 1px solid #2dd4bf;
+      z-index: 10;
+    }}
+    .mesh-controls-overlay {{
+      position: absolute;
+      bottom: 5px;
+      left: 6px;
+      display: flex;
+      gap: 4px;
+      z-index: 5;
+    }}
+    .mesh-ctrl-btn {{
+      background: rgba(20, 18, 16, 0.85);
+      color: #d1c7bc;
+      border: 1px solid #3d352d;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 8.5px;
+      cursor: pointer;
+    }}
+    .mesh-ctrl-btn:hover {{
+      color: #2dd4bf;
+      border-color: #2dd4bf;
     }}
     .sidebar-preview-zoom-hint {{
       position: absolute;
@@ -2316,6 +2371,7 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
           <!-- Multi-Representation Facet Tabs -->
           <div class="sidebar-facet-tabs" id="sidebar-facet-tabs">
             <button class="facet-tab active" id="facet-tab-sprite" data-facet="sprite" onclick="window.viewer && window.viewer.setPreviewFacet && window.viewer.setPreviewFacet('sprite')">🖼️ Sprite</button>
+            <button class="facet-tab" id="facet-tab-mesh" data-facet="mesh" onclick="window.viewer && window.viewer.setPreviewFacet && window.viewer.setPreviewFacet('mesh')">🧊 3D Mesh</button>
             <button class="facet-tab" id="facet-tab-depth" data-facet="depth" onclick="window.viewer && window.viewer.setPreviewFacet && window.viewer.setPreviewFacet('depth')">⛰️ 3D Depth</button>
             <button class="facet-tab" id="facet-tab-collage" data-facet="collage" onclick="window.viewer && window.viewer.setPreviewFacet && window.viewer.setPreviewFacet('collage')">🔬 5-Cell</button>
             <button class="facet-tab" id="facet-tab-collider" data-facet="collider" onclick="window.viewer && window.viewer.setPreviewFacet && window.viewer.setPreviewFacet('collider')">📦 Collider</button>
@@ -2323,6 +2379,14 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
 
           <div class="sidebar-preview-img-wrap" onclick="window.viewer && window.viewer.openPrimitiveLightbox && window.viewer.openPrimitiveLightbox()">
             <img id="sidebar-preview-img" class="sidebar-preview-img" src="" alt="Selected Asset 2D Preview" />
+            <div id="sidebar-3d-wrap" class="sidebar-3d-wrap" style="display: none; width: 100%; height: 100%; position: relative;">
+              <model-viewer id="sidebar-model-viewer" camera-controls auto-rotate shadow-intensity="1" exposure="1.1" style="width: 100%; height: 100%; background: #0a0908; outline: none;"></model-viewer>
+              <canvas id="sidebar-3d-canvas" style="display: none; width: 100%; height: 100%;"></canvas>
+              <div id="sidebar-3d-loading" class="mesh-loading-indicator" style="display: none;">⏳ Loading 3D Mesh...</div>
+              <div class="mesh-controls-overlay">
+                <button class="mesh-ctrl-btn" onclick="event.stopPropagation(); window.viewer && window.viewer.reset3DCamera && window.viewer.reset3DCamera('sidebar')" title="Reset 3D camera">🔄 Reset</button>
+              </div>
+            </div>
             <div class="sidebar-preview-zoom-hint" id="sidebar-preview-zoom-hint">🔍 Click to Enlarge</div>
           </div>
           <div class="sidebar-preview-title" id="sidebar-preview-title">Select an asset</div>
@@ -2359,6 +2423,14 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
         <button class="lightbox-close" onclick="closePrimitiveLightbox()">✕</button>
         <div class="lightbox-img-wrap">
           <img id="lightbox-img" src="" alt="Primitive 2D Inspection" />
+          <div id="lightbox-3d-wrap" class="lightbox-3d-wrap" style="display: none; width: 100%; height: 420px; position: relative;">
+            <model-viewer id="lightbox-model-viewer" camera-controls auto-rotate shadow-intensity="1.2" exposure="1.1" style="width: 100%; height: 420px; background: #0c0a09; outline: none;"></model-viewer>
+            <canvas id="lightbox-3d-canvas" style="display: none; width: 100%; height: 420px;"></canvas>
+            <div id="lightbox-3d-loading" class="mesh-loading-indicator" style="display: none;">⏳ Loading 3D Mesh...</div>
+            <div class="mesh-controls-overlay">
+              <button class="mesh-ctrl-btn" onclick="event.stopPropagation(); window.viewer && window.viewer.reset3DCamera && window.viewer.reset3DCamera('lightbox')" title="Reset 3D camera">🔄 Reset</button>
+            </div>
+          </div>
         </div>
         <div class="lightbox-details" id="lightbox-details">
           <!-- Populated dynamically -->
