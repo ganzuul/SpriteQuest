@@ -46,6 +46,8 @@ import numpy as np
 from PIL import Image, ImageDraw
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 
 # Traversability slope angle thresholds (degrees)
@@ -1176,7 +1178,33 @@ def compile_outdoor_map_bundle(map_path: Path, out_dir: Path) -> dict:
                     id=item.get("id", pid),
                 ))
 
-        # 2. Floorplan props matching catalog primitives
+        # 2. Extrude architectural floorplan walls for build plates (no ceiling, doorways cut out)
+        for plate in map_data.get("build_plates", []):
+            fp_rel = plate.get("scene_floorplan")
+            if fp_rel:
+                fp_path = REPO_ROOT / fp_rel
+                if fp_path.is_file():
+                    anchor = plate.get("anchor", {})
+                    anc_x = float(anchor.get("center_x", 0.0))
+                    anc_y = float(anchor.get("center_y", 0.0))
+                    anc_z = float(anchor.get("elevation", 0.0))
+                    from companion.stl_primitives import extrude_floorplan_walls
+                    wall_prim = extrude_floorplan_walls(
+                        fp_path,
+                        anchor_x=0.0,
+                        anchor_y=0.0,
+                        base_z=0.0,
+                        primitive_id=f"{Path(fp_rel).stem}-walls",
+                    )
+                    placed_prims.append(PlacedSTLPrimitive(
+                        primitive=wall_prim,
+                        world_x=anc_x,
+                        world_y=anc_y,
+                        world_z=anc_z,
+                        id=f"{plate.get('id', 'plate')}-walls",
+                    ))
+
+        # 3. Floorplan props matching catalog primitives
         from companion.scene_placement import ScenePlacementEngine
         scene_engine = ScenePlacementEngine(tm, map_data)
         for prop in scene_engine.props:
@@ -1202,20 +1230,33 @@ def compile_outdoor_map_bundle(map_path: Path, out_dir: Path) -> dict:
                     id=prop.id,
                 ))
 
+        glb_path = out_dir / f"{map_path.stem}.glb"
         if placed_prims:
             tri_count = composite_terrain_and_primitives_stl(tm, placed_prims, stl_path, solid_base=True)
+            from companion.stl_primitives import composite_terrain_and_primitives_glb
+            composite_terrain_and_primitives_glb(tm, placed_prims, glb_path, solid_base=True)
         else:
             tri_count = tm.export_stl(stl_path, solid_base=True)
     except Exception as exc:
         print(f"Notice: STL primitive placement skipped ({exc}), exporting base terrain mesh.", file=sys.stderr)
         tri_count = tm.export_stl(stl_path, solid_base=True)
         placed_prims = []
+        glb_path = out_dir / f"{map_path.stem}.glb"
 
     relief_img = tm.render_topdown_relief(contour_step_m=2.0)
     # Resize relief cleanly to 1024x1024 for crisp visual display
     relief_highres = relief_img.resize((1024, 1024), Image.Resampling.LANCZOS)
     img_path = out_dir / "topdown_relief.png"
     relief_highres.save(img_path)
+
+    # Top-down Z-depth map from composite 3D mesh
+    try:
+        depth_img = rasterize_stl_depth(stl_path, width=1024, height=1024, pad_ratio=0.0)
+        depth_path = out_dir / "depth_map.png"
+        depth_img.save(depth_path)
+    except Exception as exc:
+        print(f"Notice: depth map rasterization skipped ({exc})", file=sys.stderr)
+        depth_path = None
 
     stats = tm.analyze_traversability()
     strata = tm.slice_strata(num_strata=len(map_data.get("strata", [])) or 4)
@@ -1246,6 +1287,9 @@ def compile_outdoor_map_bundle(map_path: Path, out_dir: Path) -> dict:
         "grid_resolution": [tm.cols, tm.rows],
         "triangles": tri_count,
         "stl_file": str(stl_path.relative_to(REPO_ROOT) if stl_path.is_relative_to(REPO_ROOT) else stl_path),
+        "glb_file": str(glb_path.relative_to(REPO_ROOT) if glb_path.exists() and glb_path.is_relative_to(REPO_ROOT) else glb_path) if glb_path.exists() else None,
+        "depth_map": str(depth_path.relative_to(REPO_ROOT) if depth_path and depth_path.is_relative_to(REPO_ROOT) else depth_path) if depth_path else None,
+        "topdown_relief": str(img_path.relative_to(REPO_ROOT) if img_path.is_relative_to(REPO_ROOT) else img_path),
         "stl_primitives_placed": len(placed_prims),
         "traversability": stats,
         "strata": strata_records,
@@ -1259,9 +1303,68 @@ def compile_outdoor_map_bundle(map_path: Path, out_dir: Path) -> dict:
     return report
 
 
+def build_terrain_with_scene(
+    map_path: Path | str,
+    floorplan_path: Path | str | None = None,
+    primitive_ids: Sequence[str] | None = None,
+    out_dir: Path | str | None = None,
+) -> dict[str, Any]:
+    """
+    Produce continuous 2.5D terrain, place decorative terrain primitive(s),
+    and extrude floorplan walls upward with no ceiling (e.g. Customs House).
+    Exports composite .stl and .glb meshes, depth map, and topographic relief.
+    """
+    m_path = Path(map_path)
+    if not m_path.is_file():
+        raise FileNotFoundError(f"Outdoor map declaration not found: {m_path}")
+
+    target_dir = Path(out_dir) if out_dir else REPO_ROOT / "renders" / "maps" / m_path.stem
+    target_dir.mkdir(parents=True, exist_ok=True)
+
+    map_data = json.loads(m_path.read_text(encoding="utf-8"))
+    modified = False
+
+    if floorplan_path:
+        fp_p = Path(floorplan_path)
+        rel_fp = str(fp_p.relative_to(REPO_ROOT)) if fp_p.is_relative_to(REPO_ROOT) else str(fp_p)
+        plates = map_data.setdefault("build_plates", [])
+        if not any(p.get("scene_floorplan") == rel_fp for p in plates):
+            plates.append({
+                "id": f"plate-{fp_p.stem}",
+                "name": f"{fp_p.stem.title()} Ground Foundation",
+                "scene_floorplan": rel_fp,
+                "anchor": {"center_x": 55.0, "center_y": 65.0, "elevation": 6.0},
+                "footprint": {"width": 42.0, "length": 68.0, "blend_margin": 4.0},
+            })
+            modified = True
+
+    if primitive_ids:
+        stl_prims = map_data.setdefault("stl_primitives", [])
+        for pid in primitive_ids:
+            if not any((p.get("primitive") == pid or p.get("id") == pid) for p in stl_prims):
+                stl_prims.append({
+                    "id": pid,
+                    "primitive": pid,
+                    "at": [24.0, 24.0],
+                    "elevation_mode": "surface",
+                    "yaw_deg": 0.0,
+                    "scale": 1.0,
+                })
+                modified = True
+
+    if modified:
+        temp_map_p = target_dir / f"{m_path.stem}_composed.json"
+        temp_map_p.write_text(json.dumps(map_data, indent=2) + "\n", encoding="utf-8")
+        m_path = temp_map_p
+
+    return compile_outdoor_map_bundle(m_path, target_dir)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Create, analyze, and export 2.5D terrain heightfields to binary STL.")
     parser.add_argument("map", nargs="?", help="Path to outdoor map declaration JSON (library/maps/*.json)")
+    parser.add_argument("--floorplan", help="Floorplan to extrude onto build plate (e.g. library/floorplans/customs-house.json)")
+    parser.add_argument("--primitive", action="append", help="Primitive ID(s) to place on terrain (e.g. relic-cairn)")
     parser.add_argument("--demo", action="store_true", help="Build and export a demo outdoor terrain map")
     parser.add_argument("--out", type=Path, default=None, help="Output directory")
     args = parser.parse_args()
@@ -1270,7 +1373,10 @@ def main() -> int:
         map_path = Path(args.map)
         out_dir = args.out or (REPO_ROOT / "renders" / "maps" / map_path.stem)
         print(f"Compiling outdoor map bundle from {map_path} -> {out_dir} ...")
-        report = compile_outdoor_map_bundle(map_path, out_dir)
+        if args.floorplan or args.primitive:
+            report = build_terrain_with_scene(map_path, floorplan_path=args.floorplan, primitive_ids=args.primitive, out_dir=out_dir)
+        else:
+            report = compile_outdoor_map_bundle(map_path, out_dir)
         print(f"Compiled map: {report['name']} ({report['dimensions_m']['width']}m x {report['dimensions_m']['length']}m)")
         print(f"  - Triangles:    {report['triangles']:,} in {report['stl_file']}")
         print(f"  - Walkable:     {report['traversability']['walkable_pct']}%")

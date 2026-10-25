@@ -28,6 +28,8 @@ from companion.stl_primitives import (
     STLPrimitive,
     composite_terrain_and_primitives_stl,
     ensure_default_stl_primitives,
+    extrude_floorplan_walls,
+    extrude_wall_box,
     generate_ancient_bastion_primitive,
     generate_brazier_primitive,
     generate_crate_primitive,
@@ -40,7 +42,7 @@ from companion.stl_primitives import (
     generate_stasis_coffin_primitive,
     generate_wish_stone_primitive,
 )
-from companion.terrain_mesh import TerrainMesh, rasterize_stl_depth
+from companion.terrain_mesh import TerrainMesh, build_terrain_with_scene, rasterize_stl_depth
 
 
 class TestSTLPrimitives(unittest.TestCase):
@@ -201,6 +203,102 @@ class TestSTLPrimitives(unittest.TestCase):
             # Must sit flush at z=0.0
             self.assertAlmostEqual(float(v[:, 2].min()), 0.0, places=3, msg=f"{prim.id} min Z")
             self.assertGreater(float(v[:, 2].max()), 0.5, msg=f"{prim.id} max Z")
+
+    def test_extrude_wall_box_geometry_and_normals(self):
+        """Verify extrude_wall_box produces exactly 12 triangles with correct normals."""
+        # 10m long wall segment from (0, 0) to (10, 0), thickness 0.5m, height 3.5m, base at z=2.0
+        tris = extrude_wall_box(0.0, 0.0, 10.0, 0.0, z_bottom=2.0, z_top=5.5, thickness=0.5)
+        self.assertEqual(len(tris), 12)
+
+        arr = np.array(tris, dtype=np.float32)
+        v = arr.reshape(-1, 3)
+
+        self.assertAlmostEqual(float(v[:, 2].min()), 2.0)
+        self.assertAlmostEqual(float(v[:, 2].max()), 5.5)
+
+        # Top rim face normal (triangles 2 and 3) must point straight up +Z
+        top_tri = arr[2]
+        ab = top_tri[1] - top_tri[0]
+        ac = top_tri[2] - top_tri[0]
+        normal_top = np.cross(ab, ac)
+        normal_top = normal_top / np.linalg.norm(normal_top)
+        self.assertAlmostEqual(float(normal_top[0]), 0.0, places=4)
+        self.assertAlmostEqual(float(normal_top[1]), 0.0, places=4)
+        self.assertAlmostEqual(float(normal_top[2]), 1.0, places=4)
+
+        # Bottom face normal (triangles 0 and 1) must point straight down -Z
+        bot_tri = arr[0]
+        ab_b = bot_tri[1] - bot_tri[0]
+        ac_b = bot_tri[2] - bot_tri[0]
+        normal_bot = np.cross(ab_b, ac_b)
+        normal_bot = normal_bot / np.linalg.norm(normal_bot)
+        self.assertAlmostEqual(float(normal_bot[2]), -1.0, places=4)
+
+    def test_extrude_floorplan_walls_customs_house_open_roof(self):
+        """Verify Customs House floorplan extrudes into 3D walls with open roof and doorway openings."""
+        customs_fp = REPO_ROOT / "library" / "floorplans" / "customs-house.json"
+        wall_prim = extrude_floorplan_walls(
+            customs_fp,
+            anchor_x=0.0,
+            anchor_y=0.0,
+            base_z=0.0,
+            default_wall_height=4.0,
+            cut_portals=True,
+            primitive_id="customs-house-test-walls",
+        )
+
+        self.assertEqual(wall_prim.id, "customs-house-test-walls")
+        self.assertGreater(wall_prim.triangle_count, 100)
+        self.assertIn("No Ceiling", wall_prim.name)
+
+        v = wall_prim.triangles.reshape(-1, 3)
+        self.assertAlmostEqual(float(v[:, 2].min()), 0.0, places=2)
+        # Wall height up to 4.0m
+        self.assertAlmostEqual(float(v[:, 2].max()), 4.0, places=2)
+
+        # Verify doorway portal cut: intake outer gate is at local x=-8, z=0 (rel x=-8.0, rel y=-30.0)
+        # At exactly the door centerline, there should NOT be a solid wall blocking the passage at z=1.0
+        # Check that no vertex sits at the blocked center of the doorway [x=-8, y=-30, z=1.0]
+        door_x, door_y = -8.0, -30.0
+        dists = np.hypot(v[:, 0] - door_x, v[:, 1] - door_y)
+        # Mid-height vertices (z between 0.5 and 2.5) should be cleared away from door center
+        mid_mask = (v[:, 2] > 0.5) & (v[:, 2] < 2.5)
+        if np.any(mid_mask):
+            self.assertGreater(float(dists[mid_mask].min()), 0.2, "Doorway center at mid-height must be clear")
+
+    def test_build_terrain_with_scene_pipeline(self):
+        """Verify end-to-end composite build of terrain + decorative cairn primitive + customs house walls."""
+        map_path = REPO_ROOT / "library" / "maps" / "border-march.json"
+        customs_fp = REPO_ROOT / "library" / "floorplans" / "customs-house.json"
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            out_dir = Path(tmp_dir) / "test_scene_build"
+            report = build_terrain_with_scene(
+                map_path=map_path,
+                floorplan_path=customs_fp,
+                primitive_ids=["relic-cairn"],
+                out_dir=out_dir,
+            )
+
+            self.assertEqual(report["map_id"], "border-march")
+            self.assertGreater(report["triangles"], 140000)
+            self.assertGreater(report["stl_primitives_placed"], 5)
+
+            # Check output files exist
+            stl_p = out_dir / "border-march.stl"
+            self.assertTrue(stl_p.is_file())
+            self.assertGreater(stl_p.stat().st_size, 5_000_000)
+
+            relief_p = out_dir / "topdown_relief.png"
+            self.assertTrue(relief_p.is_file())
+
+            depth_p = out_dir / "depth_map.png"
+            self.assertTrue(depth_p.is_file())
+
+            # Check GLB export
+            glb_p = out_dir / "border-march.glb"
+            if glb_p.is_file():
+                self.assertGreater(glb_p.stat().st_size, 1_000_000)
 
 
 if __name__ == "__main__":

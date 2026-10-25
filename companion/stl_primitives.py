@@ -1063,6 +1063,222 @@ def generate_solar_focus_primitive(
     return prim
 
 
+def extrude_wall_box(
+    x1: float,
+    y1: float,
+    x2: float,
+    y2: float,
+    z_bottom: float,
+    z_top: float,
+    thickness: float,
+) -> list[list[list[float]]]:
+    """
+    Extrude a 2D wall segment centerline (x1, y1) -> (x2, y2) into a 3D rectangular box
+    between elevations z_bottom and z_top with specified thickness.
+    Normals face outwards with counter-clockwise winding.
+    NO CEILING: the wall top rim at z_top is capped, but the interior room is open.
+    Returns list of 12 triangles [[p0, p1, p2], ...].
+    """
+    dx = float(x2 - x1)
+    dy = float(y2 - y1)
+    length = math.hypot(dx, dy)
+    if length < 1e-5:
+        return []
+
+    ux, uy = dx / length, dy / length
+    # Normal pointing perpendicular to wall in XY plane
+    nx, ny = -uy, ux
+    hw = float(thickness) / 2.0
+    wx, wy = nx * hw, ny * hw
+
+    zb = float(z_bottom)
+    zt = float(z_top)
+
+    # 4 bottom vertices at z_bottom
+    p0 = [float(x1 - wx), float(y1 - wy), zb]
+    p1 = [float(x2 - wx), float(y2 - wy), zb]
+    p2 = [float(x2 + wx), float(y2 + wy), zb]
+    p3 = [float(x1 + wx), float(y1 + wy), zb]
+
+    # 4 top rim vertices at z_top
+    p4 = [float(x1 - wx), float(y1 - wy), zt]
+    p5 = [float(x2 - wx), float(y2 - wy), zt]
+    p6 = [float(x2 + wx), float(y2 + wy), zt]
+    p7 = [float(x1 + wx), float(y1 + wy), zt]
+
+    return [
+        # Bottom face (normal points -Z)
+        [p0, p2, p1],
+        [p0, p3, p2],
+        # Top rim face (normal points +Z)
+        [p4, p5, p6],
+        [p4, p6, p7],
+        # Side face 1 (left side, normal outward towards -w)
+        [p0, p1, p5],
+        [p0, p5, p4],
+        # Side face 2 (right side, normal outward towards +w)
+        [p2, p3, p7],
+        [p2, p7, p6],
+        # Start cap (back end, normal towards -u)
+        [p3, p0, p4],
+        [p3, p4, p7],
+        # End cap (front end, normal towards +u)
+        [p1, p2, p6],
+        [p1, p6, p5],
+    ]
+
+
+def extrude_floorplan_walls(
+    floorplan: dict[str, Any] | Path | str,
+    anchor_x: float = 0.0,
+    anchor_y: float = 0.0,
+    base_z: float = 0.0,
+    default_wall_height: float = 3.5,
+    default_thickness: float = 0.45,
+    cut_portals: bool = True,
+    primitive_id: str = "customs-house-walls",
+    output_path: Path | str | None = None,
+) -> STLPrimitive:
+    """
+    Extrude all walls from a SillyTavern / SpriteQuest floorplan JSON declaration
+    into an open-topped (no ceiling) 3D architectural wall mesh.
+    
+    Portals are cut through walls leaving doorway openings (and optional lintels above).
+    Coordinates are normalized relative to scale.center_xz + anchor.
+    """
+    if isinstance(floorplan, (str, Path)):
+        fp_path = Path(floorplan)
+        fp_data = json.loads(fp_path.read_text(encoding="utf-8"))
+    else:
+        fp_data = floorplan
+
+    scale_info = fp_data.get("scale", {})
+    center_xz = scale_info.get("center_xz", [0.0, 0.0])
+    cx, cz = float(center_xz[0]), float(center_xz[1])
+
+    # 1. Resolve portals
+    portals = list(fp_data.get("portals", []))
+    for elem in fp_data.get("architectural_elements", []):
+        if elem.get("type") == "portal" and elem not in portals:
+            portals.append(elem)
+
+    resolved_portals = []
+    for p in portals:
+        pos = p.get("position", [0.0, 0.0, 0.0])
+        # local floorplan has (x, y, z) where x=X, y=elev, z=Y
+        px = float(pos[0]) - cx + anchor_x
+        py = float(pos[2]) - cz + anchor_y
+        pz = float(pos[1]) + base_z
+        resolved_portals.append({
+            "id": p.get("id", "portal"),
+            "pos": (px, py, pz),
+            "width": float(p.get("width", 2.0)),
+            "height": float(p.get("height", 3.0)),
+        })
+
+    # 2. Extrude walls
+    all_triangles: list[list[list[float]]] = []
+
+    for w in fp_data.get("walls", []):
+        s = w.get("start", [0.0, 0.0])
+        e = w.get("end", [0.0, 0.0])
+        wx1 = float(s[0]) - cx + anchor_x
+        wy1 = float(s[1]) - cz + anchor_y
+        wx2 = float(e[0]) - cx + anchor_x
+        wy2 = float(e[1]) - cz + anchor_y
+        thickness = float(w.get("thickness", default_thickness))
+        wall_h = float(w.get("height", default_wall_height))
+
+        dx = wx2 - wx1
+        dy = wy2 - wy1
+        seg_len = math.hypot(dx, dy)
+        if seg_len < 1e-4:
+            continue
+
+        # Check for intersecting portals along this wall segment
+        portal_spans = []
+        if cut_portals:
+            for p in resolved_portals:
+                ppx, ppy, ppz = p["pos"]
+                pw = p["width"]
+                ph = p["height"]
+                # Vector from segment start to portal
+                vpx = ppx - wx1
+                vpy = ppy - wy1
+                # Project onto wall centerline
+                proj = (vpx * dx + vpy * dy) / (seg_len * seg_len)
+                # Perpendicular distance
+                closest_x = wx1 + proj * dx
+                closest_y = wy1 + proj * dy
+                dist_perp = math.hypot(ppx - closest_x, ppy - closest_y)
+
+                if dist_perp <= (thickness / 2.0 + 0.35) and (-0.05 <= proj <= 1.05):
+                    half_span = (pw / 2.0) / seg_len
+                    t0 = max(0.0, proj - half_span)
+                    t1 = min(1.0, proj + half_span)
+                    if t1 > t0:
+                        portal_spans.append((t0, t1, ph))
+
+        if not portal_spans:
+            # Solid wall segment without portals
+            tris = extrude_wall_box(wx1, wy1, wx2, wy2, base_z, base_z + wall_h, thickness)
+            all_triangles.extend(tris)
+        else:
+            # Sort portal intervals along the wall
+            portal_spans.sort(key=lambda s: s[0])
+            prev_t = 0.0
+            for t0, t1, ph in portal_spans:
+                if t0 - prev_t > 0.01:
+                    # Solid segment before portal
+                    sx1 = wx1 + prev_t * dx
+                    sy1 = wy1 + prev_t * dy
+                    sx2 = wx1 + t0 * dx
+                    sy2 = wy1 + t0 * dy
+                    all_triangles.extend(extrude_wall_box(sx1, sy1, sx2, sy2, base_z, base_z + wall_h, thickness))
+
+                # Lintel over the portal doorway (if wall is taller than door opening)
+                lintel_h = min(wall_h, ph)
+                if lintel_h < wall_h:
+                    lx1 = wx1 + t0 * dx
+                    ly1 = wy1 + t0 * dy
+                    lx2 = wx1 + t1 * dx
+                    ly2 = wy1 + t1 * dy
+                    all_triangles.extend(extrude_wall_box(lx1, ly1, lx2, ly2, base_z + lintel_h, base_z + wall_h, thickness))
+
+                prev_t = max(prev_t, t1)
+
+            if 1.0 - prev_t > 0.01:
+                # Solid segment after last portal
+                sx1 = wx1 + prev_t * dx
+                sy1 = wy1 + prev_t * dy
+                sx2 = wx2
+                sy2 = wy2
+                all_triangles.extend(extrude_wall_box(sx1, sy1, sx2, sy2, base_z, base_z + wall_h, thickness))
+
+    tris_arr = np.array(all_triangles, dtype=np.float32) if all_triangles else np.zeros((0, 3, 3), dtype=np.float32)
+
+    # Compute bounding box
+    if len(tris_arr) > 0:
+        v = tris_arr.reshape(-1, 3)
+        min_v = v.min(axis=0)
+        max_v = v.max(axis=0)
+        dims = (round(float(max_v[0] - min_v[0]), 3), round(float(max_v[1] - min_v[1]), 3), round(float(max_v[2] - min_v[2]), 3))
+    else:
+        dims = (0.0, 0.0, 0.0)
+
+    prim = STLPrimitive(
+        id=primitive_id,
+        name=f"Extruded Architectural Walls ({fp_data.get('name', 'Floorplan')}) [No Ceiling]",
+        fragment_id=fp_data.get("id", "floorplan"),
+        stl_path=Path(output_path) if output_path else None,
+        dimensions=dims,
+        triangles=tris_arr,
+    )
+    if output_path:
+        prim.save(output_path)
+    return prim
+
+
 # ---------------------------------------------------------------------------
 # Composite Terrain Mesh + Placed 3D STL Primitives
 # ---------------------------------------------------------------------------
@@ -1168,6 +1384,92 @@ def composite_terrain_and_primitives_stl(
             ))
 
     return num_tri
+
+
+def composite_terrain_and_primitives_glb(
+    terrain_mesh: Any,
+    placed_primitives: Sequence[PlacedSTLPrimitive],
+    output_glb_path: Path | str,
+    solid_base: bool = True,
+) -> Path | None:
+    """
+    Export the composite terrain and placed primitives to standard binary GLB format
+    if trimesh is available. Returns path on success, or None if trimesh unavailable.
+    """
+    try:
+        import trimesh
+    except ImportError:
+        return None
+
+    out_p = Path(output_glb_path)
+    out_p.parent.mkdir(parents=True, exist_ok=True)
+
+    triangles: list[tuple[tuple[float, float, float], tuple[float, float, float], tuple[float, float, float]]] = []
+
+    # 1. Heightfield top surface
+    tm = terrain_mesh
+    for r in range(tm.rows - 1):
+        y0 = float(r * tm.grid_step_m)
+        y1 = float((r + 1) * tm.grid_step_m)
+        for c in range(tm.cols - 1):
+            x0 = float(c * tm.grid_step_m)
+            x1 = float((c + 1) * tm.grid_step_m)
+            z00 = float(tm.heights[r, c])
+            z01 = float(tm.heights[r, c + 1])
+            z10 = float(tm.heights[r + 1, c])
+            z11 = float(tm.heights[r + 1, c + 1])
+            triangles.append(((x0, y0, z00), (x0, y1, z10), (x1, y0, z01)))
+            triangles.append(((x1, y0, z01), (x0, y1, z10), (x1, y1, z11)))
+
+    # 2. Solid base skirt
+    if solid_base:
+        base_z = float(tm.heights.min() - 1.0)
+        for c in range(tm.cols - 1):
+            x0 = float(c * tm.grid_step_m)
+            x1 = float((c + 1) * tm.grid_step_m)
+            z0, z1 = float(tm.heights[0, c]), float(tm.heights[0, c + 1])
+            triangles.append(((x0, 0.0, z0), (x1, 0.0, z1), (x0, 0.0, base_z)))
+            triangles.append(((x1, 0.0, z1), (x1, 0.0, base_z), (x0, 0.0, base_z)))
+
+            y_s = float((tm.rows - 1) * tm.grid_step_m)
+            zs0, zs1 = float(tm.heights[-1, c]), float(tm.heights[-1, c + 1])
+            triangles.append(((x0, y_s, zs0), (x0, y_s, base_z), (x1, y_s, zs1)))
+            triangles.append(((x1, y_s, zs1), (x0, y_s, base_z), (x1, y_s, base_z)))
+
+        for r in range(tm.rows - 1):
+            y0 = float(r * tm.grid_step_m)
+            y1 = float((r + 1) * tm.grid_step_m)
+            zw0, zw1 = float(tm.heights[r, 0]), float(tm.heights[r + 1, 0])
+            triangles.append(((0.0, y0, zw0), (0.0, y0, base_z), (0.0, y1, zw1)))
+            triangles.append(((0.0, y1, zw1), (0.0, y0, base_z), (0.0, y1, base_z)))
+
+            x_e = float((tm.cols - 1) * tm.grid_step_m)
+            ze0, ze1 = float(tm.heights[r, -1]), float(tm.heights[r + 1, -1])
+            triangles.append(((x_e, y0, ze0), (x_e, y1, ze1), (x_e, y0, base_z)))
+            triangles.append(((x_e, y1, ze1), (x_e, y1, base_z), (x_e, y0, base_z)))
+
+        x_max = float((tm.cols - 1) * tm.grid_step_m)
+        y_max = float((tm.rows - 1) * tm.grid_step_m)
+        triangles.append(((0.0, 0.0, base_z), (x_max, 0.0, base_z), (0.0, y_max, base_z)))
+        triangles.append(((x_max, 0.0, base_z), (x_max, y_max, base_z), (0.0, y_max, base_z)))
+
+    # 3. Add all placed 3D STL primitives
+    for placed in placed_primitives:
+        w_tris = placed.get_world_triangles()
+        for tri in w_tris:
+            p0 = (float(tri[0][0]), float(tri[0][1]), float(tri[0][2]))
+            p1 = (float(tri[1][0]), float(tri[1][1]), float(tri[1][2]))
+            p2 = (float(tri[2][0]), float(tri[2][1]), float(tri[2][2]))
+            triangles.append((p0, p1, p2))
+
+    tris_np = np.array(triangles, dtype=np.float32)
+    mesh = trimesh.Trimesh(
+        vertices=tris_np.reshape(-1, 3),
+        faces=np.arange(len(tris_np) * 3, dtype=np.int64).reshape(-1, 3),
+        process=False,
+    )
+    mesh.export(str(out_p))
+    return out_p
 
 
 # ---------------------------------------------------------------------------
@@ -1279,6 +1581,24 @@ def ensure_default_stl_primitives(target_dir: Path = STL_PRIMITIVES_DIR) -> dict
             out_stl = target_dir / f"{pid}.stl"
             if out_stl.is_file():
                 catalog[pid] = STLPrimitive.load_stl(out_stl, pid, fid)
+
+    # 3. Architectural floorplan walls (Customs House with open roof)
+    walls_path = target_dir / "customs-house-walls.stl"
+    customs_fp = REPO_ROOT / "library" / "floorplans" / "customs-house.json"
+    if customs_fp.is_file():
+        if not walls_path.is_file():
+            catalog["customs-house-walls"] = extrude_floorplan_walls(
+                customs_fp,
+                anchor_x=0.0,
+                anchor_y=0.0,
+                base_z=0.0,
+                output_path=walls_path,
+                primitive_id="customs-house-walls",
+            )
+        else:
+            catalog["customs-house-walls"] = STLPrimitive.load_stl(
+                walls_path, "customs-house-walls", "customs-house/floorplan"
+            )
 
     return catalog
 

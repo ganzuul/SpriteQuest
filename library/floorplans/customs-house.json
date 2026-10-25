@@ -228,10 +228,20 @@
     }
   ],
   "walls": [
-    {"id": "wall-inspection-counter", "start": [-16.0, 28.0], "end": [0.0, 28.0], "thickness": 0.45},
-    {"id": "wall-office-grille-west", "start": [2.0, 26.0], "end": [2.0, 42.0], "thickness": 0.30},
-    {"id": "wall-forfeit-divider", "start": [-6.0, 44.0], "end": [-6.0, 60.0], "thickness": 0.45},
-    {"id": "wall-north-hall-split", "start": [-16.0, 44.0], "end": [16.0, 44.0], "thickness": 0.40}
+    {"id": "wall-inspection-counter", "start": [-16.0, 28.0], "end": [0.0, 28.0], "thickness": 0.45, "height": 1.1},
+    {"id": "wall-office-grille-west", "start": [2.0, 26.0], "end": [2.0, 42.0], "thickness": 0.30, "height": 3.0},
+    {"id": "wall-office-south", "start": [2.0, 26.0], "end": [16.0, 26.0], "thickness": 0.30, "height": 3.0},
+    {"id": "wall-office-north", "start": [2.0, 42.0], "end": [16.0, 42.0], "thickness": 0.30, "height": 3.0},
+    {"id": "wall-forfeit-divider", "start": [-6.0, 44.0], "end": [-6.0, 60.0], "thickness": 0.45, "height": 3.5},
+    {"id": "wall-cleared-divider", "start": [-4.0, 44.0], "end": [-4.0, 60.0], "thickness": 0.45, "height": 3.5},
+    {"id": "wall-north-hall-split", "start": [-16.0, 44.0], "end": [16.0, 44.0], "thickness": 0.40, "height": 3.5},
+    {"id": "wall-west-exterior", "start": [-16.0, 0.0], "end": [-16.0, 60.0], "thickness": 0.50, "height": 4.0},
+    {"id": "wall-south-foyer", "start": [-16.0, 0.0], "end": [0.0, 0.0], "thickness": 0.50, "height": 4.0},
+    {"id": "wall-foyer-east", "start": [0.0, 0.0], "end": [0.0, 24.0], "thickness": 0.45, "height": 4.0},
+    {"id": "wall-hall-south", "start": [0.0, 24.0], "end": [16.0, 24.0], "thickness": 0.50, "height": 4.0},
+    {"id": "wall-east-exterior", "start": [16.0, 24.0], "end": [16.0, 60.0], "thickness": 0.50, "height": 4.0},
+    {"id": "wall-north-forfeit-end", "start": [-16.0, 60.0], "end": [-13.0, 60.0], "thickness": 0.45, "height": 4.0},
+    {"id": "wall-north-egress-end", "start": [10.0, 60.0], "end": [16.0, 60.0], "thickness": 0.45, "height": 4.0}
   ],
   "portals": [
     {"id": "intake-outer-gate", "kind": "door", "position": [-8.0, 0.0, 0.0], "width": 5.0, "orientation": "horizontal"},
