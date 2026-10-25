@@ -1249,9 +1249,12 @@ def compile_asset_brief(
                 "can_mint": can_mint,
             })
 
-    # Also gather any other ledger entries targeting this asset_id directly
+    # Also gather any other ledger entries targeting this asset_id directly in this scene
     for fid, entry in ledger.entries.items():
         if entry.get("asset_id") == asset_id:
+            entry_scene = entry.get("scene_id")
+            if entry_scene and entry_scene != scene_id:
+                continue
             mat = entry.get("maturity")
             if mat == "criticized":
                 crit = entry.get("criticism_constraint", "")

@@ -425,6 +425,7 @@ class TestForgeCompilerPipelineBridge(ForgeCase):
             "scene_id": "border-march",
             "width": 512,
             "height": 512,
+            "use_hunyuan": False,
         })
         self.assertEqual(code_post, 200)
         self.assertTrue(body_post["ok"])
@@ -446,7 +447,7 @@ class TestForgeCompilerPipelineBridge(ForgeCase):
         """3D pipeline ingests 2D asset payload and outputs depth and reconstructed metadata."""
         import base64
         # Tiny 4x4 red square PNG as base64 data URL
-        fake_png_b64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAYdEVYdFNvZnR3YXJlAHBhaW50Lm5ldCA0LjAuNWWFMegAAAAWSURBVBhXY/jPwIAETDAGMRh4//8DAATxAwXj8hUeAAAAAElFTkSuQmCC"
+        fake_png_b64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAFUlEQVR4nGP8z8DwnwEJMDGgAcICAIPRAgYCkO9YAAAAAElFTkSuQmCC"
 
         code_post, body_post = self.post("/forge/pipeline/3d", {
             "primitive_id": "ancient-bastion",
@@ -454,6 +455,7 @@ class TestForgeCompilerPipelineBridge(ForgeCase):
             "width": 256,
             "height": 256,
             "image_data": fake_png_b64,
+            "use_hunyuan": False,
         })
         self.assertEqual(code_post, 200)
         self.assertTrue(body_post["ok"])
