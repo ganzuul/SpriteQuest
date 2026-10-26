@@ -37,13 +37,13 @@
     "collider_blocks": 32,
     "depth_hash": "607d6b036ad8bc81",
     "sheet_hash": "74a1c41fbdd09c70",
-    "updated_at": "2026-10-26T15:27:15Z",
+    "updated_at": "2026-10-26T15:51:17Z",
     "dimensions": [
       1.8,
       1.8,
       1.6
     ],
-    "lattice_run_id": "waterfall-1a2106ef3e"
+    "lattice_run_id": "waterfall-daf973ccfb"
   },
   "unmodelled_placeholder_slab": {
     "prompt_hash": "0b7097dc234cd381",
@@ -60,13 +60,13 @@
     "collider_blocks": 32,
     "depth_hash": "62cecfe438da444b",
     "sheet_hash": "83a94691f9e0380b",
-    "updated_at": "2026-10-26T15:27:09Z",
+    "updated_at": "2026-10-26T15:51:07Z",
     "dimensions": [
       4.0,
       4.0,
       6.0
     ],
-    "lattice_run_id": "waterfall-5d8d2f666d"
+    "lattice_run_id": "waterfall-6c29848cb4"
   },
   "prop-checkpoint-brazier": {
     "prompt_hash": "0b7097dc234cd381",
