@@ -295,7 +295,7 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
         "/health", "/roster", "/guidance", "/ledger", "/events",
         "/cartographers/status", "/cartographers/ledger",
         "/cartographers/survey", "/cartographers/curate", "/cartographers/criticize",
-        "/forge/pipeline", "/forge/pipeline/3d", "/forge/compile", "/forge/workflow/snapshot",
+        "/forge/pipeline", "/forge/pipeline/3d", "/forge/waterfall", "/forge/compile", "/forge/workflow/snapshot",
     ]
 
     class Handler(BaseHTTPRequestHandler):
@@ -792,6 +792,8 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
                     collage_url = None
                     collider_url = None
                     mesh_glb_url = None
+                    sheet_url = None
+                    reconstructed_from_2d = False
                     stl_path = None
                     model_used = "stored_stl_template"
 
@@ -813,12 +815,13 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
                                 sprite_path=sprite_source_path,
                                 target_extents=tuple(extents),
                                 style=style,
-                                target_faces=ruin_spec.get("target_faces", 350),
-                                coacd_cap=ruin_spec.get("coacd_cap", 8),
+                                target_faces=ruin_spec.get("target_faces", 4800),
+                                coacd_cap=ruin_spec.get("coacd_cap", 48),
                                 fast=True,
                                 use_hunyuan=payload.get("use_hunyuan", True),
                             )
                             stl_path = REPO_ROOT / recon_res["stl_path"]
+                            sheet_url = recon_res.get("sheet_path")
                             collage_url = recon_res.get("collage_path")
                             collider_url = recon_res.get("collider_glb")
                             mesh_glb_url = recon_res.get("lowpoly_glb")
@@ -841,7 +844,8 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
                         return
 
                     out_depth_path = REPO_ROOT / "renders" / "primitives" / f"{primitive_id}-depth.png"
-                    depth_img = rasterize_stl_depth(stl_path, width=width, height=height, prefer_source_mesh=True)
+                    depth_h = height if height != 1024 else 512
+                    depth_img = rasterize_stl_depth(stl_path, width=width, height=depth_h, prefer_source_mesh=True, side_by_side=True)
                     depth_img.save(out_depth_path)
 
                     # Mirror to alias (prop- prefix)
@@ -911,6 +915,7 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
                         "reconstructed_from_2d": reconstructed_from_2d,
                         "model": model_used,
                         "source_image": str(sprite_source_path.relative_to(REPO_ROOT)) if sprite_source_path else None,
+                        "sheet_url": sheet_url or f"renders/primitives/{primitive_id}-sheet.png",
                         "collage_url": collage_url or f"renders/primitives/{primitive_id}-collage.png",
                         "collider_url": collider_url or f"library/mesh/{primitive_id}-collider.glb",
                         "mesh_glb": mesh_glb_url or f"library/mesh/{primitive_id}-lowpoly.glb",
@@ -919,11 +924,55 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
                         "target_node": "rasterize-depth-template",
                         "lattice_run_id": lattice_run_id,
                         "lattice_status": "settled",
-                        "status": "ready_for_flux3_conditioning",
-                        "message": f"Successfully rasterized 1024x1024 high-detail depth template from {'2D-reconstructed' if reconstructed_from_2d else 'solid'} STL for {primitive_id}.",
+                        "status": "ready_for_diffusion_conditioning",
+                        "message": f"Successfully rasterized side-by-side Top-Down & 3/4th Ortho depth template from {'2D-reconstructed' if reconstructed_from_2d else 'solid'} STL for {primitive_id}.",
                     })
                 except Exception as exc:
                     self._send(400, {"error": "3d_pipeline_failure", "reason": str(exc)})
+            elif route == "/forge/waterfall":
+                try:
+                    length = int(self.headers.get("Content-Length") or 0)
+                    payload = json.loads(self.rfile.read(length) or b"{}")
+                    primitive_id = payload.get("primitive_id") or payload.get("id") or "ancient-bastion"
+                    scene_id = payload.get("scene_id", "border-march")
+                    force = bool(payload.get("force", False))
+
+                    from companion.waterfall_pipeline import sync_asset_waterfall
+                    res = sync_asset_waterfall(
+                        primitive_id=primitive_id,
+                        scene_id=scene_id,
+                        force=force,
+                        comfy_server=payload.get("comfy_server"),
+                    )
+
+                    ledger.append({
+                        "kind": "standing.granted",
+                        "entity": f"prop/{primitive_id}",
+                        "actor": "game",
+                        "data": {
+                            "primitive_id": primitive_id,
+                            "stl_path": res["artifacts"]["stl_url"],
+                            "depth_url": res["artifacts"]["depth_url"],
+                            "sheet_url": res["artifacts"]["sheet_url"],
+                            "triangle_count": res["triangle_count"],
+                            "dimensions": list(res["measurements"].values()),
+                            "checksums": res["checksums"],
+                            "stages_executed": res["stages_executed"],
+                        },
+                        "gate": {"rule": "waterfall_epistemic_consensus", "verdict": "pass"},
+                        "provenance": {
+                            "workflow": "asset-forge.lattice.json",
+                            "target_node": "waterfall-synchronize",
+                            "lattice_run_id": res["lattice_run_id"],
+                            "scene_id": scene_id,
+                        },
+                    })
+
+                    self._send(200, res)
+                except Exception as exc:
+                    import traceback
+                    traceback.print_exc()
+                    self._send(400, {"error": "waterfall_pipeline_failure", "reason": str(exc)})
             elif route == "/forge/compile":
                 try:
                     length = int(self.headers.get("Content-Length") or 0)

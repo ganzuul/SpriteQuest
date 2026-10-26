@@ -997,21 +997,74 @@ def rasterize_mesh_depth(
     height: int = 1024,
     invert: bool = False,
     pad_ratio: float = 0.08,
+    side_by_side: bool = False,
+    yaw_deg: float = 45.0,
+    pitch_deg: float = 30.0,
 ) -> Image.Image:
     """
-    Rasterize an authentic, solid, orthographic top-down Z-depth map
+    Rasterize an authentic, solid, orthographic Z-depth map
     directly from full-resolution 3D mesh geometry (GLB, STL, or Trimesh).
+
+    When side_by_side=True:
+      Returns a composite image with Top-Down Ortho on the left
+      and 3/4th Ortho on the right.
 
     Uses hardware-accelerated vectorized rasterization (PyTorch / CUDA when available)
     with seamless CPU NumPy fallback.
     """
     tris = load_mesh_triangles(mesh_or_path)
+    if not side_by_side:
+        if HAVE_TORCH:
+            try:
+                return _rasterize_triangles_torch(tris, width=width, height=height, invert=invert, pad_ratio=pad_ratio)
+            except Exception:
+                pass
+        return _rasterize_triangles_numpy(tris, width=width, height=height, invert=invert, pad_ratio=pad_ratio)
+
+    # Side-by-side composite: Top-Down Ortho (left) + 3/4th Ortho (right)
+    out_w = width
+    out_h = height if height != width else width // 2
+    sub_w = out_w // 2
+    sub_h = out_h
+
+    # 1. Top-Down Ortho
     if HAVE_TORCH:
         try:
-            return _rasterize_triangles_torch(tris, width=width, height=height, invert=invert, pad_ratio=pad_ratio)
+            top_img = _rasterize_triangles_torch(tris, width=sub_w, height=sub_h, invert=invert, pad_ratio=pad_ratio)
         except Exception:
-            pass
-    return _rasterize_triangles_numpy(tris, width=width, height=height, invert=invert, pad_ratio=pad_ratio)
+            top_img = _rasterize_triangles_numpy(tris, width=sub_w, height=sub_h, invert=invert, pad_ratio=pad_ratio)
+    else:
+        top_img = _rasterize_triangles_numpy(tris, width=sub_w, height=sub_h, invert=invert, pad_ratio=pad_ratio)
+
+    # 2. 3/4th Ortho projection
+    all_v = tris.reshape(-1, 3)
+    center = (all_v.min(axis=0) + all_v.max(axis=0)) * 0.5
+    tris_centered = tris - center
+
+    alpha = math.radians(yaw_deg)
+    beta = math.radians(pitch_deg)
+    ca, sa = math.cos(alpha), math.sin(alpha)
+    cb, sb = math.cos(beta), math.sin(beta)
+    R = np.array([
+        [ca, sa, 0.0],
+        [-sb * sa, sb * ca, cb],
+        [cb * sa, -cb * ca, sb],
+    ], dtype=np.float32)
+
+    tris_rot = tris_centered @ R.T
+
+    if HAVE_TORCH:
+        try:
+            ortho_img = _rasterize_triangles_torch(tris_rot, width=sub_w, height=sub_h, invert=invert, pad_ratio=pad_ratio)
+        except Exception:
+            ortho_img = _rasterize_triangles_numpy(tris_rot, width=sub_w, height=sub_h, invert=invert, pad_ratio=pad_ratio)
+    else:
+        ortho_img = _rasterize_triangles_numpy(tris_rot, width=sub_w, height=sub_h, invert=invert, pad_ratio=pad_ratio)
+
+    composite = Image.new("L", (out_w, out_h), 255 if invert else 0)
+    composite.paste(top_img, (0, 0))
+    composite.paste(ortho_img, (sub_w, 0))
+    return composite
 
 
 def rasterize_stl_depth(
@@ -1021,10 +1074,13 @@ def rasterize_stl_depth(
     invert: bool = False,
     pad_ratio: float = 0.08,
     prefer_source_mesh: bool = True,
+    side_by_side: bool = False,
+    yaw_deg: float = 45.0,
+    pitch_deg: float = 30.0,
 ) -> Image.Image:
     """
     Directly parse a binary STL file (or its high-resolution companion source GLB)
-    and rasterize an authentic, solid, orthographic top-down Z-depth map using
+    and rasterize an authentic, solid, orthographic Z-depth map using
     vectorized triangle scan conversion and barycentric interpolation.
 
     When prefer_source_mesh=True, checks for a full-resolution source mesh
@@ -1043,9 +1099,27 @@ def rasterize_stl_depth(
 
         for cand in candidates:
             if cand.is_file() and cand.stat().st_size > 1000:
-                return rasterize_mesh_depth(cand, width=width, height=height, invert=invert, pad_ratio=pad_ratio)
+                return rasterize_mesh_depth(
+                    cand,
+                    width=width,
+                    height=height,
+                    invert=invert,
+                    pad_ratio=pad_ratio,
+                    side_by_side=side_by_side,
+                    yaw_deg=yaw_deg,
+                    pitch_deg=pitch_deg,
+                )
 
-    return rasterize_mesh_depth(stl_p, width=width, height=height, invert=invert, pad_ratio=pad_ratio)
+    return rasterize_mesh_depth(
+        stl_p,
+        width=width,
+        height=height,
+        invert=invert,
+        pad_ratio=pad_ratio,
+        side_by_side=side_by_side,
+        yaw_deg=yaw_deg,
+        pitch_deg=pitch_deg,
+    )
 
 
 def load_outdoor_map_scene(map_path: Path) -> tuple[TerrainMesh, dict]:

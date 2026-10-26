@@ -109,13 +109,16 @@ class TestImageTo3DRuinPipeline(unittest.TestCase):
         mesh = reconstruct_3d_from_image(rgba, mask, target_extents=(1.8, 1.8, 1.6), style="relic_cairn", resolution=48)
         lod = decimate_to_lowpoly(mesh, target_faces=250)
 
-        pieces = decompose_coacd_colliders(lod, threshold=0.06, cap=8)
-        self.assertGreaterEqual(len(pieces), 1)
-        self.assertLessEqual(len(pieces), 8)
-        for p in pieces:
-            # Each piece is an oriented bounding box or convex hull
-            self.assertGreater(len(p.faces), 0)
-            self.assertTrue(np.isfinite(p.vertices).all())
+        obbs, hulls = decompose_coacd_colliders(lod, threshold=0.06, cap=8)
+        self.assertGreaterEqual(len(obbs), 1)
+        self.assertLessEqual(len(obbs), 8)
+        self.assertEqual(len(obbs), len(hulls))
+        for obb, hull in zip(obbs, hulls):
+            # Each piece is an oriented bounding box (A) or convex hull (B)
+            self.assertGreater(len(obb.faces), 0)
+            self.assertGreater(len(hull.faces), 0)
+            self.assertTrue(np.isfinite(obb.vertices).all())
+            self.assertTrue(np.isfinite(hull.vertices).all())
 
     def test_all_five_outdoor_ruins_exist_in_stl_and_mesh(self):
         """Verifies that all 5 outdoor ruin STLs, GLBs, and Collages exist on disk."""

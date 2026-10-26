@@ -33,7 +33,8 @@ def rasterize_all_primitive_depths(
     mesh_dir: Path = MESH_DIR,
     out_dir: Path = OUT_DIR,
     width: int = 1024,
-    height: int = 1024,
+    height: int = 512,
+    side_by_side: bool = True,
     target_ids: list[str] | None = None,
 ) -> list[tuple[str, Path]]:
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -45,7 +46,7 @@ def rasterize_all_primitive_depths(
         if target_ids and pid not in target_ids:
             continue
         out_png = out_dir / f"{pid}-depth.png"
-        img = rasterize_stl_depth(stl_path, width=width, height=height, prefer_source_mesh=True)
+        img = rasterize_stl_depth(stl_path, width=width, height=height, prefer_source_mesh=True, side_by_side=side_by_side)
         img.save(out_png)
         results.append((pid, out_png))
         print(f"[3D Depth] Rasterized '{pid}' -> {out_png.relative_to(REPO_ROOT)} ({img.width}x{img.height})")
@@ -56,7 +57,7 @@ def rasterize_all_primitive_depths(
         if target_ids and pid not in target_ids:
             continue
         out_png = out_dir / f"{pid}-depth.png"
-        img = rasterize_stl_depth(source_glb, width=width, height=height, prefer_source_mesh=True)
+        img = rasterize_stl_depth(source_glb, width=width, height=height, prefer_source_mesh=True, side_by_side=side_by_side)
         img.save(out_png)
         if (pid, out_png) not in results:
             results.append((pid, out_png))
@@ -66,14 +67,20 @@ def rasterize_all_primitive_depths(
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Rasterize STL primitives to high-detail top-down depth maps")
+    parser = argparse.ArgumentParser(description="Rasterize STL primitives to high-detail top-down & 3/4th depth maps")
     parser.add_argument("--width", type=int, default=1024, help="Output image width")
-    parser.add_argument("--height", type=int, default=1024, help="Output image height")
+    parser.add_argument("--height", type=int, default=512, help="Output image height")
     parser.add_argument("--primitive", type=str, default="", help="Specific primitive ID to rasterize")
+    parser.add_argument("--single-view", action="store_true", help="Rasterize single top-down view instead of side-by-side")
     args = parser.parse_args()
 
     target_ids = [args.primitive] if args.primitive else None
-    results = rasterize_all_primitive_depths(width=args.width, height=args.height, target_ids=target_ids)
+    results = rasterize_all_primitive_depths(
+        width=args.width,
+        height=args.height,
+        side_by_side=not args.single_view,
+        target_ids=target_ids,
+    )
     print(f"Completed rasterization of {len(results)} high-detail depth templates.")
     return 0
 

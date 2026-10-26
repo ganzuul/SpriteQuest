@@ -2624,6 +2624,146 @@ export function initViewer(config) {
     return compileAssetBrief(active.id || active.asset_id);
   }
 
+  function syncWaterfallPipeline(primitiveId, options = {}) {
+    const sc = getCurrentScene();
+    const pid = primitiveId || (selectedAsset ? (selectedAsset.id || selectedAsset.asset_id) : (selectedPrimitiveId || getSelectedScenePrimitive()?.id || 'ancient-bastion'));
+    const itemInScene = _findItemInScene(sc, pid) || (selectedAsset?.id === pid ? selectedAsset : null);
+
+    const btnSidebar = typeof document !== 'undefined' ? document.getElementById('btn-sidebar-sync-waterfall') : null;
+    const btnViewer = typeof document !== 'undefined' ? document.getElementById('btn-forge-sync-waterfall') : null;
+    const pipeStatusEl = typeof document !== 'undefined' ? document.getElementById('asset-viewer-pipeline-status') : null;
+    const imgContainer = typeof document !== 'undefined' ? document.getElementById('asset-viewer-image-container') : null;
+
+    if (btnSidebar) {
+      btnSidebar.disabled = true;
+      btnSidebar.innerText = '⏳ Checking Checksums...';
+    }
+    if (btnViewer) {
+      btnViewer.disabled = true;
+      btnViewer.innerText = '⏳ Syncing Waterfall...';
+    }
+    if (pipeStatusEl) {
+      pipeStatusEl.textContent = '⏳ Checking Checksums (1–9)...';
+      pipeStatusEl.style.color = '#38bdf8';
+    }
+    if (imgContainer) {
+      imgContainer.innerHTML = `
+        <div class="asset-no-img-box" style="padding: 16px;">
+          <div style="font-size: 20px;">⚒️</div>
+          <div id="waterfall-status-label" class="asset-no-img-text" style="color: #34d399;">Synchronizing Waterfall Pipeline...</div>
+          <div id="waterfall-status-sub" style="font-size: 9px; color: #a8947f; margin-top: 4px;">Evaluating checksums across Stages 1–9 for '${escapeHtml(pid)}'...</div>
+          <div class="forge-progress-bar"><div id="waterfall-progress-fill" class="forge-progress-fill" style="width: 45%; background: linear-gradient(90deg, #10b981, #06b6d4);"></div></div>
+        </div>
+      `;
+    }
+
+    function resetWaterfallButtons() {
+      if (btnSidebar) {
+        btnSidebar.disabled = false;
+        btnSidebar.innerText = '⚒️ Synchronize Pipeline';
+      }
+      if (btnViewer) {
+        btnViewer.disabled = false;
+        btnViewer.innerText = '⚒️ Synchronize Waterfall Pipeline';
+      }
+    }
+
+    log('LATTICE', `[Waterfall] Synchronizing end-to-end pipeline for '${pid}' from fragments...`);
+    log('LATTICE', `[Waterfall] Evaluating checksums across Stages 1–9...`);
+
+    if (typeof fetch === 'function' && options.remote !== false) {
+      postForgeJson('/forge/waterfall', {
+        primitive_id: pid,
+        scene_id: currentSceneId || 'border-march',
+        force: options.force || false,
+      }, 300000).then((res) => {
+        resetWaterfallButtons();
+        if (res && res.ok) {
+          const bust = `?t=${Date.now()}`;
+          const finalSprite = (res.artifacts?.sprite_url ? res.artifacts.sprite_url + bust : null);
+          const finalDepth = (res.artifacts?.depth_url ? res.artifacts.depth_url + bust : null);
+          const finalSheet = (res.artifacts?.sheet_url ? res.artifacts.sheet_url + bust : null);
+          const finalCollage = (res.artifacts?.collage_url ? res.artifacts.collage_url + bust : null);
+          const meshGlb = (res.artifacts?.lowpoly_glb ? res.artifacts.lowpoly_glb + bust : null);
+          const sourceGlb = (res.artifacts?.source_glb ? res.artifacts.source_glb + bust : null);
+          const colliderGlb = (res.artifacts?.collider_url ? res.artifacts.collider_url + bust : null);
+          const stlUrl = (res.artifacts?.stl_url ? res.artifacts.stl_url + bust : null);
+
+          const updates = {
+            depth_url: finalDepth,
+            sheet_url: finalSheet,
+            collage_url: finalCollage,
+            mesh_glb: meshGlb,
+            source_glb: sourceGlb,
+            lowpoly_glb: meshGlb,
+            collider_url: colliderGlb,
+            stl_url: stlUrl,
+            triangle_count: res.triangle_count,
+            coacd_pieces: res.collider_blocks ? `${res.collider_blocks} CoACD Blocks` : undefined,
+          };
+
+          if (finalSprite) {
+            updates.image_url = finalSprite;
+            updates.sprite_url = finalSprite;
+            updates.image_2d = finalSprite;
+            assetImages.set(pid, finalSprite);
+            assetImages.set(pid.replace('prop-', ''), finalSprite);
+          }
+
+          updatePrimitiveRecord(pid, updates);
+
+          if (itemInScene) {
+            Object.assign(itemInScene, updates);
+          }
+          if (selectedAsset && (selectedAsset.id === pid || selectedAsset.asset_id === pid)) {
+            Object.assign(selectedAsset, updates);
+          }
+
+          const execCount = res.stages_executed ? res.stages_executed.length : 0;
+          const skipCount = res.stages_skipped ? res.stages_skipped.length : 0;
+
+          if (pipeStatusEl) {
+            pipeStatusEl.textContent = execCount > 0 ? `✓ ${execCount} Stages Updated` : '✓ All Stages Cached (Settled)';
+            pipeStatusEl.style.color = '#34d399';
+          }
+
+          if (execCount > 0) {
+            log('LATTICE', `[Waterfall] Completed ${execCount} updated stages for '${pid}': ${res.stages_executed.join(', ')}.`);
+          } else {
+            log('LATTICE', `[Waterfall] All ${skipCount} stages verified up-to-date from checksums (cached).`);
+          }
+
+          setPreviewFacet('sheet');
+          renderSidebarPreviewDOM(itemInScene || getSelectedScenePrimitive());
+          renderAssetViewerDOM();
+          if (typeof document !== 'undefined') {
+            const modal = document.getElementById('primitive-lightbox');
+            if (modal && !modal.classList.contains('hidden')) {
+              openPrimitiveLightbox(pid, 'sheet');
+            }
+          }
+          playAudioCue('seal_stamp');
+        } else {
+          const errMsg = res?.error || res?.reason || 'Waterfall endpoint unreachable or failed';
+          if (pipeStatusEl) {
+            pipeStatusEl.textContent = `⚠️ Error: ${errMsg}`;
+            pipeStatusEl.style.color = '#ef4444';
+          }
+          log('LATTICE', `[Waterfall] Server returned error: ${errMsg}.`, 'warn');
+        }
+      }).catch((err) => {
+        resetWaterfallButtons();
+        if (pipeStatusEl) {
+          pipeStatusEl.textContent = `⚠️ Error: ${err?.message || 'offline'}`;
+          pipeStatusEl.style.color = '#ef4444';
+        }
+        log('LATTICE', `[Waterfall] Pipeline error: ${err?.message || 'offline'}.`, 'warn');
+      });
+    } else {
+      setTimeout(resetWaterfallButtons, 600);
+    }
+  }
+
   function runPrimitive3DPipeline(primitiveId, options = {}) {
     const sc = getCurrentScene();
     const pid = primitiveId || (selectedAsset ? selectedAsset.id : (selectedPrimitiveId || getSelectedScenePrimitive()?.id || 'ancient-bastion'));
@@ -2693,6 +2833,7 @@ export function initViewer(config) {
         if (res && res.ok) {
           const bust = `?t=${Date.now()}`;
           const finalDepth = (res.depth_url || depthUrl) + bust;
+          const finalSheet = (res.sheet_url || `renders/primitives/${pid}-sheet.png`) + bust;
           const finalCollage = (res.collage_url || `renders/primitives/${pid}-collage.png`) + bust;
           const meshGlb = (res.mesh_glb || `library/mesh/${pid}-lowpoly.glb`) + bust;
           const sourceGlb = (res.source_glb || `library/mesh/${pid}-source.glb`) + bust;
@@ -2702,6 +2843,7 @@ export function initViewer(config) {
 
           const updates = {
             depth_url: finalDepth,
+            sheet_url: finalSheet,
             collage_url: finalCollage,
             mesh_glb: meshGlb,
             source_glb: sourceGlb,
@@ -2710,8 +2852,16 @@ export function initViewer(config) {
             stl_url: stlUrl,
             triangle_count: res.triangle_count,
             source_triangles: res.source_triangles,
-            coacd_pieces: res.coacd_pieces ? `${res.coacd_pieces} CoACD Boxes` : undefined,
+            coacd_pieces: res.coacd_pieces ? `${res.coacd_pieces} CoACD Cuts` : undefined,
           };
+
+          if (res.source_image) {
+            updates.image_url = res.source_image;
+            updates.sprite_url = res.source_image;
+            updates.image_2d = res.source_image;
+            assetImages.set(pid, res.source_image);
+            assetImages.set(cleanId, res.source_image);
+          }
 
           updatePrimitiveRecord(pid, updates);
 
@@ -2722,7 +2872,7 @@ export function initViewer(config) {
             Object.assign(selectedAsset, updates);
           }
           if (res.reconstructed_from_2d) {
-            log('LATTICE', `[3D Pipeline] Verified watertight 3D solid reconstructed from 2D asset via ${res.model || 'Hunyuan3D-2.1'} (${res.triangle_count.toLocaleString()} triangles, CoACD colliders & 1024x1024 depth map).`);
+            log('LATTICE', `[3D Pipeline] Verified 8x lowpoly 3D solid reconstructed from 2D asset via ${res.model || 'Hunyuan3D-2.1'} (${res.triangle_count.toLocaleString()} triangles, CoACD cuts & side-by-side depth template).`);
           } else {
             log('LATTICE', `[3D Pipeline] Verified watertight STL via ${res.model || 'template'} (${res.triangle_count.toLocaleString()} triangles). Depth template: ${res.depth_url}.`);
           }
@@ -4275,19 +4425,21 @@ export function initViewer(config) {
 
   function getFacetImageForItem(item, facet) {
     if (!item) return '';
-    const pid = item.id;
+    const pid = item.id || item.asset_id || '';
     const cleanId = pid.replace(/^prop-/, '');
     if (facet === 'mesh') {
+      if (item.sheet_url) return item.sheet_url;
       if (item.collage_url) return item.collage_url;
       if (['ancient-bastion', 'relic-cairn', 'wish-stone-slab', 'ruined-watchtower', 'ancient-ruin-terrace'].includes(cleanId)) {
-        return `renders/primitives/${cleanId}-collage.png`;
+        return `renders/primitives/${cleanId}-sheet.png`;
       }
       return item.image_2d || item.image_url || '';
     }
-    if (facet === 'collage') {
+    if (facet === 'sheet' || facet === 'collage') {
+      if (item.sheet_url) return item.sheet_url;
       if (item.collage_url) return item.collage_url;
       if (['ancient-bastion', 'relic-cairn', 'wish-stone-slab', 'ruined-watchtower', 'ancient-ruin-terrace'].includes(cleanId)) {
-        return `renders/primitives/${cleanId}-collage.png`;
+        return `renders/primitives/${cleanId}-sheet.png`;
       }
       return item.image_2d || '';
     }
@@ -4296,22 +4448,27 @@ export function initViewer(config) {
       return `renders/primitives/${cleanId}-depth.png`;
     }
     if (facet === 'collider') {
-      if (item.collider_img) return item.collider_img;
+      // Fallback for legacy collider requests: route to consolidated sheet
+      if (item.sheet_url) return item.sheet_url;
       if (item.collage_url) return item.collage_url;
       if (['ancient-bastion', 'relic-cairn', 'wish-stone-slab', 'ruined-watchtower', 'ancient-ruin-terrace'].includes(cleanId)) {
-        return `renders/primitives/${cleanId}-collage.png`;
+        return `renders/primitives/${cleanId}-sheet.png`;
       }
       return item.image_2d || '';
     }
     // Default 'sprite':
+    // Prioritize authentic forged/diffusion sprite over wireframe placeholder
     const liveImg = assetImages.get(pid)
       || assetImages.get(cleanId)
       || (selectedAsset && (selectedAsset.id === pid || selectedAsset.asset_id === pid || selectedAsset.id === cleanId) ? selectedAsset.image_url : null)
       || item.image_url
-      || item.sprite_url
-      || item.image_2d;
+      || item.sprite_url;
     if (liveImg) return liveImg;
-    return item._kind === 'cast' ? synthesizeForgeRender({ id: item.id, kind: 'actor', label: item.name }) : '';
+
+    if (['ancient-bastion', 'relic-cairn', 'wish-stone-slab', 'ruined-watchtower', 'ancient-ruin-terrace'].includes(cleanId)) {
+      return `library/sprites/${cleanId}.png`;
+    }
+    return item.image_2d || (item._kind === 'cast' ? synthesizeForgeRender({ id: item.id, kind: 'actor', label: item.name }) : '');
   }
 
   function renderSidebarPreviewDOM(item) {
@@ -4353,13 +4510,11 @@ export function initViewer(config) {
 
     if (zoomHint) {
       if (currentPreviewFacet === 'mesh') {
-        zoomHint.textContent = '🧊 Interactive 3D Watertight Solid (Click to Enlarge)';
-      } else if (currentPreviewFacet === 'collage') {
-        zoomHint.textContent = '🔬 5-Cell Pipeline Review (Click to Enlarge)';
+        zoomHint.textContent = '🧊 Interactive 3D Watertight Solid (8x Low-poly Detail)';
+      } else if (currentPreviewFacet === 'sheet' || currentPreviewFacet === 'collage') {
+        zoomHint.textContent = '🔬 Consolidated Sprite Sheet (Click to Enlarge)';
       } else if (currentPreviewFacet === 'depth') {
-        zoomHint.textContent = '⛰️ 3D Depth Template (Click to Enlarge)';
-      } else if (currentPreviewFacet === 'collider') {
-        zoomHint.textContent = '📦 CoACD Convex Collider (Click to Enlarge)';
+        zoomHint.textContent = '⛰️ Side-by-Side Top-Down & 3/4th Depth (Click to Enlarge)';
       } else {
         zoomHint.textContent = '🖼️ 2D Sprite Cutout (Click to Enlarge)';
       }
@@ -4695,8 +4850,7 @@ export function initViewer(config) {
           <button class="facet-tab ${activeFacet === 'sprite' ? 'active' : ''}" onclick="window.viewer && window.viewer.openPrimitiveLightbox('${escapeHtml(prim.id)}', 'sprite')">🖼️ Sprite</button>
           <button class="facet-tab ${activeFacet === 'mesh' ? 'active' : ''}" onclick="window.viewer && window.viewer.openPrimitiveLightbox('${escapeHtml(prim.id)}', 'mesh')">🧊 3D Mesh</button>
           <button class="facet-tab ${activeFacet === 'depth' ? 'active' : ''}" onclick="window.viewer && window.viewer.openPrimitiveLightbox('${escapeHtml(prim.id)}', 'depth')">⛰️ 3D Depth</button>
-          <button class="facet-tab ${activeFacet === 'collage' ? 'active' : ''}" onclick="window.viewer && window.viewer.openPrimitiveLightbox('${escapeHtml(prim.id)}', 'collage')">🔬 5-Cell Collage</button>
-          <button class="facet-tab ${activeFacet === 'collider' ? 'active' : ''}" onclick="window.viewer && window.viewer.openPrimitiveLightbox('${escapeHtml(prim.id)}', 'collider')">📦 Collider</button>
+          <button class="facet-tab ${(activeFacet === 'sheet' || activeFacet === 'collage') ? 'active' : ''}" onclick="window.viewer && window.viewer.openPrimitiveLightbox('${escapeHtml(prim.id)}', 'sheet')">🔬 Sprite Sheet</button>
         </div>
       </div>
       <div class="lightbox-meta" style="margin-top: 6px;">
@@ -4712,9 +4866,7 @@ export function initViewer(config) {
         <div class="prompt-box-content">${escapeHtml(prim.diffusion_prompt || (selectedAsset?.diffusion_prompt) || 'Awaiting compile...')}</div>
       </div>
       <div class="lightbox-actions" style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;">
-        <button class="header-btn" style="background: #1e1b4b; color: #a5b4fc; border: 1px solid #4338ca;" onclick="window.viewer && window.viewer.compileAssetBrief && window.viewer.compileAssetBrief('${escapeHtml(prim.id)}')">⚡ Compile (Gemma4-Orion)</button>
-        <button class="header-btn" style="background: #0f172a; color: #38bdf8; border: 1px solid #0284c7;" onclick="window.viewer && window.viewer.runPrimitive3DPipeline && window.viewer.runPrimitive3DPipeline('${escapeHtml(prim.id)}')">📐 3D Pipeline</button>
-        <button class="header-btn" onclick="window.viewer && window.viewer.forgeScenePrimitive && window.viewer.forgeScenePrimitive('${escapeHtml(prim.id)}')">✨ Dispatch to Asset Forge (Image Diffusion)</button>
+        <button class="header-btn" style="background: linear-gradient(135deg, #1e1b4b 0%, #064e3b 100%); color: #ecfdf5; border: 1px solid #34d399; font-weight: 700;" onclick="(window.syncWaterfallPipeline ? window.syncWaterfallPipeline('${escapeHtml(prim.id)}') : (window.viewer && window.viewer.syncWaterfallPipeline && window.viewer.syncWaterfallPipeline('${escapeHtml(prim.id)}')))">⚒️ Synchronize Waterfall Pipeline</button>
         <button class="header-btn" style="background: #2a241e; color: #e6dfd5;" onclick="window.viewer && window.viewer.closePrimitiveLightbox && window.viewer.closePrimitiveLightbox()">✕ Close Inspection</button>
       </div>
     `;
@@ -5558,6 +5710,25 @@ export function initViewer(config) {
   setupSidebarResizer();
   log('STAGE', 'SpriteQuest 2.5D Viewport Engine initialized.');
   log('STAGE', `Loaded scene with ${physicalPropsMap.size} physical props and ${cueMarks.length} cue marks.`);
+
+  // Explicitly wire waterfall sync buttons in DOM
+  if (typeof document !== 'undefined') {
+    const btnSyncWaterfall = document.getElementById('btn-forge-sync-waterfall');
+    if (btnSyncWaterfall) {
+      btnSyncWaterfall.addEventListener('click', (e) => {
+        if (e && e.preventDefault) e.preventDefault();
+        syncWaterfallPipeline();
+      });
+    }
+    const btnSidebarSync = document.getElementById('btn-sidebar-sync-waterfall');
+    if (btnSidebarSync) {
+      btnSidebarSync.addEventListener('click', (e) => {
+        if (e && e.preventDefault) e.preventDefault();
+        syncWaterfallPipeline();
+      });
+    }
+  }
+
   if (typeof fetch !== 'undefined') {
     checkComfyServer().catch(() => {});
     checkForgeServer().catch(() => {});
@@ -5667,6 +5838,7 @@ export function initViewer(config) {
     openPrimitiveLightbox,
     closePrimitiveLightbox,
     forgeScenePrimitive,
+    syncWaterfallPipeline,
     runPrimitive3DPipeline,
     reset3DCamera,
     render3DModel,
@@ -5773,6 +5945,7 @@ export function initViewer(config) {
     globalRoot.openPrimitiveLightbox = openPrimitiveLightbox;
     globalRoot.closePrimitiveLightbox = closePrimitiveLightbox;
     globalRoot.forgeScenePrimitive = forgeScenePrimitive;
+    globalRoot.syncWaterfallPipeline = syncWaterfallPipeline;
     globalRoot.runPrimitive3DPipeline = runPrimitive3DPipeline;
     globalRoot.reset3DCamera = reset3DCamera;
     globalRoot.render3DModel = render3DModel;

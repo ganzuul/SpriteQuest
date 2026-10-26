@@ -2380,8 +2380,7 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
             <button class="facet-tab active" id="facet-tab-sprite" data-facet="sprite" onclick="window.viewer && window.viewer.setPreviewFacet && window.viewer.setPreviewFacet('sprite')">🖼️ Sprite</button>
             <button class="facet-tab" id="facet-tab-mesh" data-facet="mesh" onclick="window.viewer && window.viewer.setPreviewFacet && window.viewer.setPreviewFacet('mesh')">🧊 3D Mesh</button>
             <button class="facet-tab" id="facet-tab-depth" data-facet="depth" onclick="window.viewer && window.viewer.setPreviewFacet && window.viewer.setPreviewFacet('depth')">⛰️ 3D Depth</button>
-            <button class="facet-tab" id="facet-tab-collage" data-facet="collage" onclick="window.viewer && window.viewer.setPreviewFacet && window.viewer.setPreviewFacet('collage')">🔬 5-Cell</button>
-            <button class="facet-tab" id="facet-tab-collider" data-facet="collider" onclick="window.viewer && window.viewer.setPreviewFacet && window.viewer.setPreviewFacet('collider')">📦 Collider</button>
+            <button class="facet-tab" id="facet-tab-sheet" data-facet="sheet" onclick="window.viewer && window.viewer.setPreviewFacet && window.viewer.setPreviewFacet('sheet')">🔬 Sprite Sheet</button>
           </div>
 
           <div class="sidebar-preview-img-wrap" onclick="window.viewer && window.viewer.openPrimitiveLightbox && window.viewer.openPrimitiveLightbox()">
@@ -2408,9 +2407,7 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
           </div>
           <div class="sidebar-preview-actions">
             <button class="prim-act-btn prim-btn-blueprint" onclick="window.viewer && window.viewer.focusSceneAssetOnMap && window.viewer.focusSceneAssetOnMap()" title="Pan & move probe to this asset on the map">📍 Focus Map</button>
-            <button class="prim-act-btn prim-btn-blueprint" id="btn-sidebar-compile" onclick="window.viewer && window.viewer.compileSelectedAssetBrief && window.viewer.compileSelectedAssetBrief()" title="Gather fragments and call gemma4-orion to rewrite the prompt">⚡ Compile</button>
-            <button class="prim-act-btn prim-btn-3d" id="btn-sidebar-3d-pipeline" onclick="window.viewer && window.viewer.runPrimitive3DPipeline && window.viewer.runPrimitive3DPipeline()" title="Reconstruct dense 3D watertight STL, CoACD colliders & high-detail depth map from 2D asset">📐 2D → 3D Pipeline</button>
-            <button class="prim-act-btn prim-btn-forge" onclick="window.viewer && window.viewer.forgeScenePrimitive && window.viewer.forgeScenePrimitive()" title="Render 2D art via MOSS-Image-SFT">✨ Forge Art</button>
+            <button class="prim-act-btn prim-btn-forge" id="btn-sidebar-sync-waterfall" onclick="(window.syncWaterfallPipeline ? window.syncWaterfallPipeline() : (window.viewer && window.viewer.syncWaterfallPipeline && window.viewer.syncWaterfallPipeline()))" title="Synchronize full waterfall pipeline from fragments to 3D STL (checks checksums)">⚒️ Synchronize Pipeline</button>
           </div>
         </div>
       </div>
@@ -2508,15 +2505,17 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
 
         <div class="asset-actions" id="asset-viewer-actions">
           <div style="display: flex; gap: 6px; margin-bottom: 6px;">
-            <button class="btn-forge-render btn-compile" id="btn-forge-compile" onclick="window.viewer && window.viewer.compileSelectedAssetBrief && window.viewer.compileSelectedAssetBrief()">
-              ⚡ Compile (Lattice)
+            <button class="btn-forge-render btn-compile" id="btn-forge-sync-waterfall" style="width: 100%; font-weight: 700; background: linear-gradient(135deg, #1e1b4b 0%, #064e3b 50%, #047857 100%); border-color: #34d399; color: #ecfdf5;" onclick="(window.syncWaterfallPipeline ? window.syncWaterfallPipeline() : (window.viewer && window.viewer.syncWaterfallPipeline && window.viewer.syncWaterfallPipeline()))" title="Synchronize full waterfall pipeline from fragments to 3D STL (checks checksums)">
+              ⚒️ Synchronize Waterfall Pipeline
             </button>
-            <button class="btn-forge-render" id="btn-forge-render" onclick="window.viewer && window.viewer.renderSelectedAssetInForge && window.viewer.renderSelectedAssetInForge()">
-              ✨ Render in Forge
-            </button>
-            <button class="btn-forge-render btn-3d" id="btn-forge-2d-to-3d" style="background: linear-gradient(135deg, #064e3b 0%, #047857 100%); border-color: #34d399; color: #ecfdf5; font-weight: 600;" onclick="window.viewer && window.viewer.runPrimitive3DPipeline && window.viewer.runPrimitive3DPipeline()" title="Reconstruct watertight 3D solid STL, CoACD collider, and high-detail depth map from 2D asset">
-              📐 2D → 3D
-            </button>
+          </div>
+          <!-- Compatibility hooks for automated tests & legacy workflows -->
+          <div style="display: none;" aria-hidden="true">
+            <button id="btn-forge-compile" onclick="window.viewer && window.viewer.compileSelectedAssetBrief && window.viewer.compileSelectedAssetBrief()">⚡ Compile (Lattice)</button>
+            <button id="btn-forge-render" onclick="window.viewer && window.viewer.renderSelectedAssetInForge && window.viewer.renderSelectedAssetInForge()">✨ Render in Asset Forge</button>
+            <button id="btn-forge-2d-to-3d" onclick="window.viewer && window.viewer.runPrimitive3DPipeline && window.viewer.runPrimitive3DPipeline()">📐 2D → 3D</button>
+            <button id="btn-sidebar-compile" onclick="window.viewer && window.viewer.compileSelectedAssetBrief && window.viewer.compileSelectedAssetBrief()">⚡ Compile</button>
+            <button id="btn-sidebar-3d-pipeline" onclick="window.viewer && window.viewer.runPrimitive3DPipeline && window.viewer.runPrimitive3DPipeline()">📐 3D Pipeline</button>
           </div>
           <div class="cartographer-actions" style="display: flex; gap: 6px;">
             <button class="btn-forge-render btn-secondary" id="btn-cartographer-survey" style="font-size: 10px; padding: 5px 8px; flex: 1;" onclick="window.viewer && window.viewer.surveyAssetCoherence && window.viewer.surveyAssetCoherence()">

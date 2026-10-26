@@ -71,9 +71,11 @@ class ScenePrimitive:
     stage_role: str = ""
     world_pos: list[float] | None = None
     image_2d: str = ""
+    sprite_url: str = ""
     source_triangles: int = 0
     coacd_pieces: str = ""
     collage_url: str = ""
+    sheet_url: str = ""
     overhang_constrained: bool = False
     overhang_angle_deg: float = 45.0
 
@@ -83,10 +85,30 @@ class ScenePrimitive:
             d["asset_id"] = self.id
         if not d["image_2d"]:
             d["image_2d"] = get_primitive_2d_data_url(self.id, d)
+        if not d.get("sprite_url"):
+            # Prioritize authentic diffusion sprite over wireframe placeholder
+            for cand_path in (
+                REPO_ROOT / "renders" / "primitives" / f"{self.id}-generated.png",
+                REPO_ROOT / "library" / "sprites" / f"{self.id}.png",
+                REPO_ROOT / "library" / "sprites" / f"{self.id.replace('prop-', '')}.png",
+            ):
+                if cand_path.is_file() and cand_path.stat().st_size > 1000:
+                    d["sprite_url"] = str(cand_path.relative_to(REPO_ROOT))
+                    break
+        if not d["sheet_url"]:
+            sheet_file = REPO_ROOT / "renders" / "primitives" / f"{self.id}-sheet.png"
+            if sheet_file.is_file():
+                d["sheet_url"] = f"renders/primitives/{self.id}-sheet.png"
+            elif d["collage_url"]:
+                d["sheet_url"] = d["collage_url"]
         if not d["collage_url"]:
-            collage_file = REPO_ROOT / "renders" / "primitives" / f"{self.id}-collage.png"
-            if collage_file.is_file():
-                d["collage_url"] = f"renders/primitives/{self.id}-collage.png"
+            for cand_file in (
+                REPO_ROOT / "renders" / "primitives" / f"{self.id}-sheet.png",
+                REPO_ROOT / "renders" / "primitives" / f"{self.id}-collage.png",
+            ):
+                if cand_file.is_file():
+                    d["collage_url"] = str(cand_file.relative_to(REPO_ROOT))
+                    break
         return d
 
 
@@ -202,10 +224,25 @@ def load_scene_definition(scene_id: str, scenes_dir: Path = SCENES_DIR) -> Scene
     prims = []
     for p_raw in data.get("primitives", []):
         pid = p_raw.get("id", "")
+        clean_id = pid.replace("prop-", "")
+        # Prioritize authentic diffusion sprite over wireframe placeholder
+        sprite_url = p_raw.get("image_url") or p_raw.get("sprite_url")
+        if not sprite_url:
+            for cand_path in (
+                REPO_ROOT / "renders" / "primitives" / f"{pid}-generated.png",
+                REPO_ROOT / "library" / "sprites" / f"{clean_id}.png",
+                REPO_ROOT / "library" / "sprites" / f"{pid}.png",
+            ):
+                if cand_path.is_file() and cand_path.stat().st_size > 1000:
+                    sprite_url = str(cand_path.relative_to(REPO_ROOT))
+                    break
+
         img_url = p_raw.get("image_2d") or get_primitive_2d_data_url(pid, p_raw)
         stats = RUIN_GEOMETRY_STATS.get(pid, {})
+        sheet_p = REPO_ROOT / "renders" / "primitives" / f"{pid}-sheet.png"
         collage_p = REPO_ROOT / "renders" / "primitives" / f"{pid}-collage.png"
-        collage_url = f"renders/primitives/{pid}-collage.png" if collage_p.is_file() else ""
+        sheet_url = f"renders/primitives/{pid}-sheet.png" if sheet_p.is_file() else (f"renders/primitives/{pid}-collage.png" if collage_p.is_file() else "")
+        collage_url = sheet_url or (f"renders/primitives/{pid}-collage.png" if collage_p.is_file() else "")
         prims.append(
             ScenePrimitive(
                 id=pid,
@@ -221,9 +258,11 @@ def load_scene_definition(scene_id: str, scenes_dir: Path = SCENES_DIR) -> Scene
                 stage_role=p_raw.get("stage_role", ""),
                 world_pos=p_raw.get("world_pos"),
                 image_2d=img_url,
+                sprite_url=sprite_url or "",
                 source_triangles=p_raw.get("source_triangles", stats.get("source_triangles", 0)),
                 coacd_pieces=p_raw.get("coacd_pieces", stats.get("coacd_pieces", "")),
                 collage_url=p_raw.get("collage_url", collage_url),
+                sheet_url=p_raw.get("sheet_url", sheet_url),
                 overhang_constrained=p_raw.get("overhang_constrained", stats.get("overhang_constrained", False)),
                 overhang_angle_deg=float(p_raw.get("overhang_angle_deg", stats.get("overhang_angle_deg", 45.0))),
             )

@@ -474,9 +474,9 @@ def generate_hunyuan_3d(
 # 3. Render LOD Decimation
 # ---------------------------------------------------------------------------
 
-def decimate_to_lowpoly(mesh: trimesh.Trimesh, target_faces: int = 600) -> trimesh.Trimesh:
+def decimate_to_lowpoly(mesh: trimesh.Trimesh, target_faces: int = 8000) -> trimesh.Trimesh:
     """
-    Quadric decimation down to runtime target face budget.
+    Quadric decimation down to runtime target face budget (~8k faces).
     Preserves manifold watertightness and grounds the base at Z=0.
     """
     if len(mesh.faces) <= target_faces:
@@ -502,13 +502,15 @@ def decimate_to_lowpoly(mesh: trimesh.Trimesh, target_faces: int = 600) -> trime
 
 def decompose_coacd_colliders(
     body: trimesh.Trimesh,
-    threshold: float = 0.08,
-    cap: int = 12,
+    threshold: float = 0.025,
+    cap: int = 32,
     fast: bool = True,
-) -> list[trimesh.Trimesh]:
+) -> tuple[list[trimesh.Trimesh], list[trimesh.Trimesh]]:
     """
-    Decompose 3D mesh into convex collision pieces using CoACD.
-    Each piece is fitted to its oriented bounding box.
+    Decompose 3D mesh into convex collision pieces using CoACD (~32 blocks).
+    Returns (obbs, hulls):
+      A: solver-ready oriented bounding boxes
+      B: exact convex collision hulls
     """
     import coacd
 
@@ -518,33 +520,44 @@ def decompose_coacd_colliders(
         threshold=threshold,
         max_convex_hull=cap,
         preprocess_mode="auto",
-        preprocess_resolution=20 if fast else 30,
-        mcts_iterations=20 if fast else 60,
+        preprocess_resolution=40 if fast else 50,
+        mcts_iterations=60 if fast else 100,
     )
 
-    pieces: list[trimesh.Trimesh] = []
+    obbs: list[trimesh.Trimesh] = []
+    hulls: list[trimesh.Trimesh] = []
     for v, f in raw_parts:
         part = trimesh.Trimesh(vertices=v.astype(np.float64), faces=f.astype(np.int64), process=False)
-        # Convert to caliper reading: oriented bounding box
+        hulls.append(part)
         try:
             obb = part.bounding_box_oriented
             if obb is not None and np.isfinite(obb.vertices).all():
-                pieces.append(obb)
+                obbs.append(obb)
                 continue
         except Exception:
             pass
-        pieces.append(part.bounding_box)
+        obbs.append(part.bounding_box)
 
-    return pieces
+    return obbs, hulls
 
 
-def export_collider_glb(pieces: list[trimesh.Trimesh], path: Path | str) -> Path:
-    """Export multi-node GLB for collision solvers."""
+def export_collider_glb(
+    pieces: Sequence[trimesh.Trimesh] | tuple[Sequence[trimesh.Trimesh], Sequence[trimesh.Trimesh]],
+    path: Path | str,
+) -> Path:
+    """Export multi-node GLB for collision solvers containing A: OBBs and B: Convex Hulls."""
     p = Path(path)
     p.parent.mkdir(parents=True, exist_ok=True)
     scene = trimesh.Scene()
-    for i, piece in enumerate(pieces):
-        scene.add_geometry(piece, node_name=f"piece_{i:03d}")
+    if isinstance(pieces, tuple):
+        obbs, hulls = pieces
+        for i, obb in enumerate(obbs):
+            scene.add_geometry(obb, node_name=f"obb_{i:03d}")
+        for i, hull in enumerate(hulls):
+            scene.add_geometry(hull, node_name=f"hull_{i:03d}")
+    else:
+        for i, piece in enumerate(pieces):
+            scene.add_geometry(piece, node_name=f"piece_{i:03d}")
     scene.export(p)
     return p
 
@@ -709,17 +722,21 @@ def shade_parts_coloured(
     return img
 
 
-def render_5cell_collage(
+def render_sprite_sheet(
     sprite_path: Path | str,
-    source_mesh: trimesh.Trimesh,
     lowpoly_mesh: trimesh.Trimesh,
-    collider_pieces: list[trimesh.Trimesh],
+    collider_pieces: Sequence[trimesh.Trimesh] | tuple[Sequence[trimesh.Trimesh], Sequence[trimesh.Trimesh]],
     output_path: Path | str,
     asset_name: str = "",
+    dimensions: Sequence[float] | None = None,
+    source_mesh: trimesh.Trimesh | None = None,
 ) -> Path:
     """
-    Render 5-cell review collage row:
-      [ 2D Sprite ] [ Source 3D ] [ Low-poly LOD ] [ CoACD Collider ] [ Cuts in Colour ]
+    Render unified three-cell and info-line inspection sheet:
+      1. The 2D diffusion cutout sprite.
+      2. The eight-times low-poly runtime LOD mesh (~8k faces).
+      3. The CoACD collision cuts displayed in distinct high-contrast colors (~32 blocks).
+      4. Info-line: Height, Width, and Length measurements.
     """
     R = _view_matrix(38.0, 18.0)
     out_p = Path(output_path)
@@ -737,22 +754,21 @@ def render_5cell_collage(
     sprite_resized = pad.resize((CELL_SIZE - 20, CELL_SIZE - 20), Image.LANCZOS)
     cell_sprite.paste(sprite_resized, (10, 10), sprite_resized)
 
-    # 2. Source 3D cell
-    c2 = shade_mesh(source_mesh, R, samples=800_000)
-    # 3. Low-poly LOD cell
-    c3 = shade_mesh(lowpoly_mesh, R, samples=400_000)
-    # 4. CoACD Collider cell
-    merged_coll = trimesh.util.concatenate(collider_pieces) if collider_pieces else lowpoly_mesh
-    c4 = shade_mesh(merged_coll, R, samples=400_000)
-    # 5. Cuts in colour cell
-    c5 = shade_parts_coloured(collider_pieces, R)
+    # 2. Low-poly LOD (~8k faces) cell
+    c2 = shade_mesh(lowpoly_mesh, R, samples=800_000)
+
+    # 3. CoACD cuts in distinct high-contrast colors
+    if isinstance(collider_pieces, tuple):
+        obbs, hulls = collider_pieces
+        render_pieces = list(hulls) if hulls else list(obbs)
+    else:
+        render_pieces = list(collider_pieces)
+    c3 = shade_parts_coloured(render_pieces, R)
 
     cells = [
-        (np.array(cell_sprite), "2D Sprite (Diffusion)"),
-        (c2, f"Source 3D   {len(source_mesh.faces):,}f"),
-        (c3, f"Low-poly LOD   {len(lowpoly_mesh.faces):,}f"),
-        (c4, f"CoACD Collider   {len(collider_pieces)} pcs"),
-        (c5, f"{len(collider_pieces)} Cuts in Colour"),
+        (np.array(cell_sprite), "2D Sprite (Diffusion Cutout)"),
+        (c2, f"Low-poly LOD (~8k)   {len(lowpoly_mesh.faces):,}f"),
+        (c3, f"CoACD Cuts ({len(render_pieces)} in Color)"),
     ]
 
     total_w = CELL_SIZE * len(cells) + 6 * (len(cells) + 1)
@@ -768,9 +784,37 @@ def render_5cell_collage(
         d.rectangle([x, y + CELL_SIZE - 26, x + CELL_SIZE, y + CELL_SIZE], fill=(15, 15, 18))
         d.text((x + 12, y + CELL_SIZE - 20), caption, fill=(245, 245, 245), font=font)
 
-    d.text((12, total_h - 22), f"SpriteQuest Asset Pipeline: {asset_name} · Image Diffusion -> CoACD Collider", fill=(148, 163, 184), font=font)
+    # 4. Info-line: Height, Width, and Length measurements
+    extents = dimensions if dimensions else lowpoly_mesh.extents
+    wx = float(extents[0]) if len(extents) > 0 else 1.0
+    dy = float(extents[1]) if len(extents) > 1 else 1.0
+    hz = float(extents[2]) if len(extents) > 2 else 1.0
+    info_line = (
+        f"{asset_name} · Measurements: Height = {hz:.2f}m · Width = {wx:.2f}m · Length = {dy:.2f}m · "
+        f"LOD: {len(lowpoly_mesh.faces):,}f · CoACD: {len(render_pieces)} blocks"
+    )
+    d.text((12, total_h - 22), info_line, fill=(148, 163, 184), font=font)
     banner.save(out_p)
     return out_p
+
+
+def render_5cell_collage(
+    sprite_path: Path | str,
+    source_mesh: trimesh.Trimesh,
+    lowpoly_mesh: trimesh.Trimesh,
+    collider_pieces: list[trimesh.Trimesh],
+    output_path: Path | str,
+    asset_name: str = "",
+) -> Path:
+    """Alias for backwards compatibility with existing pipelines."""
+    return render_sprite_sheet(
+        sprite_path=sprite_path,
+        lowpoly_mesh=lowpoly_mesh,
+        collider_pieces=collider_pieces,
+        output_path=output_path,
+        asset_name=asset_name,
+        source_mesh=source_mesh,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -784,30 +828,31 @@ def process_ruin_pipeline(
     sprite_path: Path | str,
     target_extents: tuple[float, float, float],
     style: str = "ruin",
-    target_faces: int = 500,
-    coacd_threshold: float = 0.08,
-    coacd_cap: int = 12,
+    target_faces: int = 8000,
+    coacd_threshold: float = 0.025,
+    coacd_cap: int = 32,
     fast: bool = True,
     use_hunyuan: bool = True,
 ) -> dict[str, Any]:
     """
     Run complete end-to-end pipeline on an outdoor ruin asset:
       1. Load 2D diffusion sprite -> segment alpha.
-      2. Reconstruct 3D volumetric source mesh via Hunyuan3D-2.1 (or geometric relief fallback).
-      3. Decimate to game-ready lowpoly -> (<id>-lowpoly.glb).
+      2. Reconstruct 3D volumetric source mesh via Hunyuan3D-2.1 (no fallback, warn at failure).
+      3. Decimate to game-ready 8k lowpoly -> (<id>-lowpoly.glb).
       4. Export metric binary STL -> (library/stl_primitives/<id>.stl).
-      5. Run CoACD convex decomposition -> (<id>-collider.glb).
-      6. Render 5-cell review collage -> (renders/primitives/<id>-collage.png).
+      5. Run CoACD convex decomposition (~32 blocks, OBBs + Hulls) -> (<id>-collider.glb).
+      6. Render consolidated 3-cell + info-line Sprite Sheet -> (renders/primitives/<id>-sheet.png).
+      7. Rasterize Top-Down & 3/4th Ortho depth map from STL -> (renders/primitives/<id>-depth.png).
     """
     t0 = time.monotonic()
     s_path = Path(sprite_path)
     if not s_path.is_file():
         raise FileNotFoundError(f"Sprite not found: {s_path}")
 
-    model_name = "geometric_relief_fallback"
+    model_name = None
     source_mesh = None
 
-    # 1. Attempt Hunyuan3D-2.1 generation via ComfyUI
+    # 1. Hunyuan3D-2.1 generation via ComfyUI (no fallback, warn at failure)
     if use_hunyuan:
         try:
             hunyuan_res = generate_hunyuan_3d(s_path, target_extents=target_extents)
@@ -815,19 +860,22 @@ def process_ruin_pipeline(
                 source_mesh, ckpt_name = hunyuan_res
                 model_name = f"Hunyuan3D-2.1 ({ckpt_name})"
                 print(f"[3D Pipeline] Hunyuan3D generated source mesh: {len(source_mesh.faces):,} faces from {s_path.name}", file=sys.stderr)
+            else:
+                print(f"[3D Pipeline] WARNING: Hunyuan3D-2.1 returned no mesh from ComfyUI.", file=sys.stderr)
         except Exception as e:
-            print(f"[3D Pipeline] Hunyuan3D generation failed ({e}); falling back to geometric relief.", file=sys.stderr)
+            print(f"[3D Pipeline] WARNING: Hunyuan3D generation failed: {e}", file=sys.stderr)
 
-    # 2. Geometric relief fallback if ComfyUI / Hunyuan3D is offline
     if source_mesh is None:
-        rgba_img, mask = load_and_segment_sprite(s_path)
-        source_mesh = reconstruct_3d_from_image(rgba_img, mask, target_extents=target_extents, style=style)
+        raise RuntimeError(
+            f"[3D Pipeline] Hunyuan3D-2.1 reconstruction failed or ComfyUI is unavailable for '{asset_id}'. "
+            f"Strict waterfall specification requires Hunyuan3D (no geometric fallback)."
+        )
 
     source_glb_path = MESH_DIR / f"{asset_id}-source.glb"
     source_glb_path.parent.mkdir(parents=True, exist_ok=True)
     source_mesh.export(source_glb_path)
 
-    # 3. Decimate to lowpoly LOD
+    # 3. Decimate to 8k lowpoly LOD
     lowpoly_mesh = decimate_to_lowpoly(source_mesh, target_faces=target_faces)
     lowpoly_glb_path = MESH_DIR / f"{asset_id}-lowpoly.glb"
     lowpoly_mesh.export(lowpoly_glb_path)
@@ -836,20 +884,25 @@ def process_ruin_pipeline(
     stl_path = STL_DIR / f"{asset_id}.stl"
     export_binary_stl(lowpoly_mesh, stl_path, primitive_id=asset_id, fragment_id=fragment_id)
 
-    # 5. CoACD physics collider decomposition
-    collider_pieces = decompose_coacd_colliders(lowpoly_mesh, threshold=coacd_threshold, cap=coacd_cap, fast=fast)
+    # 5. CoACD physics collider decomposition (~32 blocks, A: OBBs, B: Convex Hulls)
+    obbs, hulls = decompose_coacd_colliders(lowpoly_mesh, threshold=coacd_threshold, cap=coacd_cap, fast=fast)
     collider_glb_path = MESH_DIR / f"{asset_id}-collider.glb"
-    export_collider_glb(collider_pieces, collider_glb_path)
+    export_collider_glb((obbs, hulls), collider_glb_path)
 
-    # 6. Render 5-cell review collage
+    # 6. Render consolidated 3-cell + info-line Sprite Sheet
+    sheet_path = RENDERS_DIR / f"{asset_id}-sheet.png"
     collage_path = RENDERS_DIR / f"{asset_id}-collage.png"
-    render_5cell_collage(s_path, source_mesh, lowpoly_mesh, collider_pieces, collage_path, asset_name=name)
+    render_sprite_sheet(s_path, lowpoly_mesh, hulls, sheet_path, asset_name=name, dimensions=target_extents)
+    try:
+        shutil.copy2(sheet_path, collage_path)
+    except Exception:
+        pass
 
-    # 7. Rasterize authentic top-down Z-depth map directly from full-resolution source mesh
+    # 7. Rasterize authentic side-by-side Top-Down & 3/4th Ortho depth map directly from binary STL
     depth_path = RENDERS_DIR / f"{asset_id}-depth.png"
     try:
-        from companion.terrain_mesh import rasterize_mesh_depth
-        depth_img = rasterize_mesh_depth(source_mesh, width=1024, height=1024)
+        from companion.terrain_mesh import rasterize_stl_depth
+        depth_img = rasterize_stl_depth(stl_path, width=1024, height=512, prefer_source_mesh=False, side_by_side=True)
         depth_img.save(depth_path)
     except Exception as e:
         print(f"[3D Pipeline] Failed to rasterize depth map for {asset_id}: {e}", file=sys.stderr)
@@ -861,6 +914,7 @@ def process_ruin_pipeline(
         shutil.copy2(collider_glb_path, MESH_DIR / f"{alt_id}-collider.glb")
         shutil.copy2(source_glb_path, MESH_DIR / f"{alt_id}-source.glb")
         shutil.copy2(lowpoly_glb_path, MESH_DIR / f"{alt_id}-lowpoly.glb")
+        shutil.copy2(sheet_path, RENDERS_DIR / f"{alt_id}-sheet.png")
         shutil.copy2(collage_path, RENDERS_DIR / f"{alt_id}-collage.png")
         if depth_path.is_file():
             shutil.copy2(depth_path, RENDERS_DIR / f"{alt_id}-depth.png")
@@ -876,13 +930,14 @@ def process_ruin_pipeline(
         "model": model_name,
         "source_faces": len(source_mesh.faces),
         "lowpoly_faces": len(lowpoly_mesh.faces),
-        "collider_pieces": len(collider_pieces),
-        "collider_faces": sum(len(p.faces) for p in collider_pieces),
+        "collider_pieces": len(hulls),
+        "collider_faces": sum(len(p.faces) for p in hulls),
         "stl_path": str(stl_path.relative_to(REPO_ROOT)),
         "depth_path": str(depth_path.relative_to(REPO_ROOT)) if depth_path.is_file() else None,
         "source_glb": str(source_glb_path.relative_to(REPO_ROOT)),
         "lowpoly_glb": str(lowpoly_glb_path.relative_to(REPO_ROOT)),
         "collider_glb": str(collider_glb_path.relative_to(REPO_ROOT)),
+        "sheet_path": str(sheet_path.relative_to(REPO_ROOT)),
         "collage_path": str(collage_path.relative_to(REPO_ROOT)),
         "elapsed_seconds": elapsed,
     }
@@ -895,9 +950,9 @@ RUIN_SPECS: dict[str, dict[str, Any]] = {
         "sprite_path": "library/sprites/ancient-bastion.png",
         "dimensions": (22.0, 22.0, 12.0),
         "style": "ancient_bastion",
-        "target_faces": 700,
-        "coacd_threshold": 0.06,
-        "coacd_cap": 16,
+        "target_faces": 8000,
+        "coacd_threshold": 0.025,
+        "coacd_cap": 32,
     },
     "relic-cairn": {
         "name": "Theodolite Station & Relic Cairn",
@@ -905,9 +960,9 @@ RUIN_SPECS: dict[str, dict[str, Any]] = {
         "sprite_path": "library/sprites/relic-cairn.png",
         "dimensions": (1.8, 1.8, 1.6),
         "style": "relic_cairn",
-        "target_faces": 500,
-        "coacd_threshold": 0.06,
-        "coacd_cap": 12,
+        "target_faces": 8000,
+        "coacd_threshold": 0.025,
+        "coacd_cap": 32,
     },
     "wish-stone-slab": {
         "name": "Orom's Literal Wish-Stone Slab",
@@ -915,9 +970,9 @@ RUIN_SPECS: dict[str, dict[str, Any]] = {
         "sprite_path": "library/sprites/wish-stone-slab.png",
         "dimensions": (3.0, 8.0, 0.8),
         "style": "wish_stone_slab",
-        "target_faces": 450,
-        "coacd_threshold": 0.06,
-        "coacd_cap": 8,
+        "target_faces": 8000,
+        "coacd_threshold": 0.025,
+        "coacd_cap": 32,
     },
     "ruined-watchtower": {
         "name": "North Flank Ruined Watchtower",
@@ -925,9 +980,9 @@ RUIN_SPECS: dict[str, dict[str, Any]] = {
         "sprite_path": "library/sprites/ruined-watchtower.png",
         "dimensions": (6.0, 6.0, 9.0),
         "style": "ruined_watchtower",
-        "target_faces": 600,
-        "coacd_threshold": 0.06,
-        "coacd_cap": 12,
+        "target_faces": 8000,
+        "coacd_threshold": 0.025,
+        "coacd_cap": 32,
     },
     "ancient-ruin-terrace": {
         "name": "Ancient Overhang Ruin Buttress",
@@ -935,9 +990,9 @@ RUIN_SPECS: dict[str, dict[str, Any]] = {
         "sprite_path": "library/sprites/ancient-ruin-terrace.png",
         "dimensions": (22.0, 22.0, 16.0),
         "style": "ruin",
-        "target_faces": 650,
-        "coacd_threshold": 0.06,
-        "coacd_cap": 14,
+        "target_faces": 8000,
+        "coacd_threshold": 0.025,
+        "coacd_cap": 32,
     },
 }
 
