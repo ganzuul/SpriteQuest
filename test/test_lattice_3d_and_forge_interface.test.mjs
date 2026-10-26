@@ -439,39 +439,40 @@ describe('Lattice 3D & Forge Pipeline Interface Guard (TDD)', () => {
     assert.equal(parsed.gate_verdict, 'refused');
   });
 
-  test('7. State Persistence: Save Button and Guarded Clear-Save Operations', async () => {
+  test('7. Per-Asset Persistence: Save Asset and Guarded Clear-Asset Operations', async () => {
     try {
-      // 1. Verify buttons exist in DOM
-      const btnSave = document.getElementById('btn-save-state');
-      const btnClear = document.getElementById('btn-clear-save');
-      assert.ok(btnSave, 'Save State button must exist in header DOM');
-      assert.ok(btnClear, 'Clear Save button must exist in header DOM');
+      // 1. Verify per-asset buttons exist in DOM
+      const btnAssetSave = document.getElementById('btn-asset-save');
+      const btnAssetClear = document.getElementById('btn-asset-clear');
+      assert.ok(btnAssetSave, 'Save Asset button must exist in inspector DOM');
+      assert.ok(btnAssetClear, 'Clear Asset button must exist in inspector DOM');
 
-      // 2. Initially clear any save
-      viewer.clearSaveState(true);
-      assert.equal(viewer.hasSavedState(), false, 'Save state should not exist initially');
+      // 2. Verify header global game save buttons are removed
+      const btnGameSave = document.getElementById('btn-save-state');
+      assert.equal(btnGameSave, null, 'Global save game button must be reverted from header');
 
-      // 3. Move player and select primitive
-      viewer.tryMoveActor('player', 42.0, 55.0);
-      viewer.selectScenePrimitive('ancient-bastion');
+      // 3. Select an asset and clear any previous saved state
+      viewer.selectScenePrimitive('checkpoint-brazier');
+      viewer.clearCurrentAsset('checkpoint-brazier', true);
+      assert.equal(viewer.hasSavedAsset('checkpoint-brazier'), false, 'Asset state should not exist initially');
 
-      // 4. Execute saveState
-      const saveRes = viewer.saveState();
-      assert.ok(saveRes, 'saveState must return result');
-      assert.equal(saveRes.success, true, 'saveState must succeed');
-      assert.equal(viewer.hasSavedState(), true, 'hasSavedState must report true after save');
+      // 4. Execute saveCurrentAsset
+      const saveRes = viewer.saveCurrentAsset('checkpoint-brazier');
+      assert.ok(saveRes, 'saveCurrentAsset must return result');
+      assert.equal(saveRes.success, true, 'saveCurrentAsset must succeed');
+      assert.equal(viewer.hasSavedAsset('checkpoint-brazier'), true, 'hasSavedAsset must report true after save');
 
       // 5. Guarded clear: refusing without confirm
       window.confirm = () => false;
-      const cancelRes = viewer.clearSaveState(false);
-      assert.equal(cancelRes, false, 'clearSaveState must abort when user cancels confirm');
-      assert.equal(viewer.hasSavedState(), true, 'Save must remain intact after cancelled clear');
+      const cancelRes = viewer.clearCurrentAsset('checkpoint-brazier', false);
+      assert.equal(cancelRes, false, 'clearCurrentAsset must abort when user cancels confirm');
+      assert.equal(viewer.hasSavedAsset('checkpoint-brazier'), true, 'Asset save must remain intact after cancelled clear');
 
       // 6. Guarded clear: user confirms
       window.confirm = () => true;
-      const clearRes = viewer.clearSaveState(false);
-      assert.equal(clearRes, true, 'clearSaveState must succeed when confirmed');
-      assert.equal(viewer.hasSavedState(), false, 'hasSavedState must report false after clear');
+      const clearRes = viewer.clearCurrentAsset('checkpoint-brazier', false);
+      assert.equal(clearRes, true, 'clearCurrentAsset must succeed when confirmed');
+      assert.equal(viewer.hasSavedAsset('checkpoint-brazier'), false, 'hasSavedAsset must report false after clear');
     } catch (err) {
       console.error('TEST 7 ERROR:', err);
       throw err;

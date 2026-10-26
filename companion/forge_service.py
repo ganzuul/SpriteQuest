@@ -295,7 +295,9 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
         "/health", "/roster", "/guidance", "/ledger", "/events",
         "/cartographers/status", "/cartographers/ledger",
         "/cartographers/survey", "/cartographers/curate", "/cartographers/criticize",
-        "/forge/pipeline", "/forge/pipeline/3d", "/forge/waterfall", "/forge/compile", "/forge/workflow/snapshot",
+        "/forge/pipeline", "/forge/pipeline/3d", "/forge/waterfall", "/forge/waterfall/status",
+        "/forge/waterfall/clear", "/forge/waterfall/save", "/forge/asset/clear", "/forge/asset/save",
+        "/forge/compile", "/forge/workflow/snapshot",
     ]
 
     class Handler(BaseHTTPRequestHandler):
@@ -469,6 +471,12 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
                     "stl_primitives_available": [p.stem for p in stl_files],
                     "depth_templates_available": [p.stem.replace("-depth", "") for p in depth_files],
                 })
+            elif route == "/forge/waterfall/status":
+                from urllib.parse import parse_qs, urlparse
+                from companion.waterfall_pipeline import get_waterfall_progress
+                parsed_q = parse_qs(urlparse(self.path).query)
+                pid = (parsed_q.get("primitive_id") or parsed_q.get("id") or [""])[0]
+                self._send(200, get_waterfall_progress(pid))
             elif route == "/forge/workflow/snapshot":
                 query_params = {}
                 if "?" in self.path:
@@ -973,6 +981,26 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
                     import traceback
                     traceback.print_exc()
                     self._send(400, {"error": "waterfall_pipeline_failure", "reason": str(exc)})
+            elif route in ("/forge/waterfall/clear", "/forge/asset/clear"):
+                try:
+                    length = int(self.headers.get("Content-Length") or 0)
+                    payload = json.loads(self.rfile.read(length) or b"{}")
+                    primitive_id = payload.get("primitive_id") or payload.get("id") or ""
+                    from companion.waterfall_pipeline import clear_asset_waterfall
+                    res = clear_asset_waterfall(primitive_id)
+                    self._send(200, res)
+                except Exception as exc:
+                    self._send(400, {"error": "clear_failed", "reason": str(exc)})
+            elif route in ("/forge/waterfall/save", "/forge/asset/save"):
+                try:
+                    length = int(self.headers.get("Content-Length") or 0)
+                    payload = json.loads(self.rfile.read(length) or b"{}")
+                    primitive_id = payload.get("primitive_id") or payload.get("id") or ""
+                    from companion.waterfall_pipeline import save_asset_manifest_entry
+                    res = save_asset_manifest_entry(primitive_id, payload.get("data") or payload)
+                    self._send(200, res)
+                except Exception as exc:
+                    self._send(400, {"error": "save_failed", "reason": str(exc)})
             elif route == "/forge/compile":
                 try:
                     length = int(self.headers.get("Content-Length") or 0)
@@ -1125,6 +1153,12 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
                     })
                 except Exception as exc:
                     self._send(400, {"error": "compile failure", "reason": str(exc)})
+            elif route == "/forge/waterfall/status":
+                from urllib.parse import parse_qs, urlparse
+                from companion.waterfall_pipeline import get_waterfall_progress
+                parsed_q = parse_qs(urlparse(self.path).query)
+                pid = (parsed_q.get("primitive_id") or parsed_q.get("id") or [""])[0]
+                self._send(200, get_waterfall_progress(pid))
             elif route == "/forge/workflow/snapshot":
                 try:
                     length = int(self.headers.get("Content-Length") or 0)

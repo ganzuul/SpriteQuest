@@ -555,6 +555,33 @@ class TestForgeCorsAndStaticServing(ForgeCase):
         self.assertEqual(code, 200)
         self.assertTrue(body["ok"])
 
+    def test_waterfall_status_and_asset_save_clear(self):
+        # 1. Test progress status lookup
+        code, status_body = self.get("/forge/waterfall/status?primitive_id=checkpoint-brazier")
+        self.assertEqual(code, 200)
+        self.assertIn("status", status_body)
+
+        # 2. Test saving asset manifest entry
+        code, save_body = self.post("/forge/asset/save", {
+            "primitive_id": "test-brazier",
+            "data": {
+                "label": "Test Brazier",
+                "dimensions": [2.0, 2.0, 3.0],
+                "standing_tier": "verified",
+            },
+        })
+        self.assertEqual(code, 200)
+        self.assertTrue(save_body.get("ok"))
+        self.assertEqual(save_body.get("saved"), "test-brazier")
+
+        # 3. Test clearing asset manifest entry
+        code, clear_body = self.post("/forge/asset/clear", {
+            "primitive_id": "test-brazier",
+        })
+        self.assertEqual(code, 200)
+        self.assertTrue(clear_body.get("ok"))
+        self.assertEqual(clear_body.get("primitive_id"), "test-brazier")
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

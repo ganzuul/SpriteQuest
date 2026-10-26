@@ -2175,19 +2175,24 @@ export function initViewer(config) {
     const imgContainer = document.getElementById('asset-viewer-image-container');
     if (imgContainer) {
       imgContainer.innerHTML = '';
-      if (selectedAsset.image_url) {
+      const activeFacetImg = getFacetImageForItem(selectedAsset, currentPreviewFacet) || selectedAsset.sheet_url || selectedAsset.image_url || selectedAsset.sprite_url;
+      if (activeFacetImg) {
         const wrapper = document.createElement('div');
         wrapper.className = 'asset-img-wrapper';
 
         const img = document.createElement('img');
-        img.src = selectedAsset.image_url;
+        img.src = activeFacetImg;
         img.alt = selectedAsset.label;
         img.className = 'asset-viewer-img';
         img.id = 'asset-viewer-img';
 
         const cap = document.createElement('div');
         cap.className = 'asset-img-caption';
-        if (selectedAsset.forged) {
+        if (currentPreviewFacet === 'sheet') {
+          cap.textContent = 'Consolidated Inspection Sheet (Sprite · 8k LOD · CoACD Cuts)';
+        } else if (currentPreviewFacet === 'depth') {
+          cap.textContent = 'Dual-View Depth Map (Top-Down & 3/4th Ortho)';
+        } else if (selectedAsset.forged) {
           cap.textContent = selectedAsset.pipelineSource === 'comfyui_diffusion'
             ? '✨ Forged via ComfyUI (Live GPU) · Image Diffusion'
             : '✨ Vector Blueprint Draft · Image Diffusion';
@@ -2672,23 +2677,23 @@ export function initViewer(config) {
 
     if (btnSidebar) {
       btnSidebar.disabled = true;
-      btnSidebar.innerText = '⏳ Checking Checksums...';
+      btnSidebar.innerText = '⏳ Syncing...';
     }
     if (btnViewer) {
       btnViewer.disabled = true;
       btnViewer.innerText = '⏳ Syncing Waterfall...';
     }
     if (pipeStatusEl) {
-      pipeStatusEl.textContent = '⏳ Checking Checksums (1–9)...';
+      pipeStatusEl.textContent = 'Stage 1/9: Fragment Ingestion';
       pipeStatusEl.style.color = '#38bdf8';
     }
     if (imgContainer) {
       imgContainer.innerHTML = `
         <div class="asset-no-img-box" style="padding: 16px;">
           <div style="font-size: 20px;">⚒️</div>
-          <div id="waterfall-status-label" class="asset-no-img-text" style="color: #34d399;">Synchronizing Waterfall Pipeline...</div>
-          <div id="waterfall-status-sub" style="font-size: 9px; color: #a8947f; margin-top: 4px;">Evaluating checksums across Stages 1–9 for '${escapeHtml(pid)}'...</div>
-          <div class="forge-progress-bar"><div id="waterfall-progress-fill" class="forge-progress-fill" style="width: 45%; background: linear-gradient(90deg, #10b981, #06b6d4);"></div></div>
+          <div id="waterfall-status-label" class="asset-no-img-text" style="color: #34d399;">Stage 1/9: Fragment Ingestion & Admission Control</div>
+          <div id="waterfall-status-sub" style="font-size: 9px; color: #a8947f; margin-top: 4px;">Ingesting atomic fragments and verifying admission control for '${escapeHtml(pid)}'...</div>
+          <div class="forge-progress-bar"><div id="waterfall-progress-fill" class="forge-progress-fill" style="width: 11%; background: linear-gradient(90deg, #10b981, #06b6d4);"></div></div>
         </div>
       `;
     }
@@ -2696,7 +2701,7 @@ export function initViewer(config) {
     function resetWaterfallButtons() {
       if (btnSidebar) {
         btnSidebar.disabled = false;
-        btnSidebar.innerText = '⚒️ Synchronize Pipeline';
+        btnSidebar.innerText = '⚒️ Synchronize';
       }
       if (btnViewer) {
         btnViewer.disabled = false;
@@ -2707,13 +2712,50 @@ export function initViewer(config) {
     log('LATTICE', `[Waterfall] Synchronizing end-to-end pipeline for '${pid}' from fragments...`);
     log('LATTICE', `[Waterfall] Evaluating checksums across Stages 1–9...`);
 
+    let pollInterval = null;
+    let lastReportedStage = 0;
+
     if (typeof fetch === 'function' && options.remote !== false) {
+      // Start live stage progress poller
+      pollInterval = setInterval(async () => {
+        try {
+          const stat = await getForgeJson(`/forge/waterfall/status?primitive_id=${encodeURIComponent(pid)}`, 2500);
+          if (stat && stat.status === 'running') {
+            const fillEl = document.getElementById('waterfall-progress-fill');
+            const labelEl = document.getElementById('waterfall-status-label');
+            const subEl = document.getElementById('waterfall-status-sub');
+            const pipeEl = document.getElementById('asset-viewer-pipeline-status');
+
+            const stageTxt = `Stage ${stat.stage_index}/9: ${stat.stage_name}`;
+            if (pipeEl) {
+              pipeEl.textContent = stageTxt;
+              pipeEl.style.color = '#38bdf8';
+            }
+            if (labelEl) labelEl.textContent = stageTxt;
+            if (subEl && stat.description) subEl.textContent = stat.description;
+            if (fillEl && typeof stat.percent === 'number') {
+              fillEl.classList.remove('indeterminate');
+              fillEl.style.width = `${stat.percent}%`;
+            }
+            if (stat.stage_index > lastReportedStage) {
+              lastReportedStage = stat.stage_index;
+              log('LATTICE', `[Waterfall] ${stageTxt}...`);
+            }
+          }
+        } catch (_) {}
+      }, 400);
+
       postForgeJson('/forge/waterfall', {
         primitive_id: pid,
         scene_id: currentSceneId || 'border-march',
         force: options.force || false,
       }, 600000).then((res) => {
+        if (pollInterval) {
+          clearInterval(pollInterval);
+          pollInterval = null;
+        }
         resetWaterfallButtons();
+
         if (res && res.ok) {
           const bust = `?t=${Date.now()}`;
           const finalSprite = (res.artifacts?.sprite_url ? res.artifacts.sprite_url + bust : null);
@@ -2751,15 +2793,20 @@ export function initViewer(config) {
           if (itemInScene) {
             Object.assign(itemInScene, updates);
           }
-          if (selectedAsset && (selectedAsset.id === pid || selectedAsset.asset_id === pid)) {
-            Object.assign(selectedAsset, updates);
+          if (!selectedAsset || (selectedAsset.id !== pid && selectedAsset.asset_id !== pid)) {
+            selectedAsset = itemInScene || {
+              id: pid,
+              kind: 'prop',
+              label: pid.replace(/[-_]/g, ' ').toUpperCase(),
+            };
           }
+          Object.assign(selectedAsset, updates);
 
           const execCount = res.stages_executed ? res.stages_executed.length : 0;
           const skipCount = res.stages_skipped ? res.stages_skipped.length : 0;
 
           if (pipeStatusEl) {
-            pipeStatusEl.textContent = execCount > 0 ? `✓ ${execCount} Stages Updated` : '✓ All Stages Cached (Settled)';
+            pipeStatusEl.textContent = execCount > 0 ? `✓ Settled (${execCount} Stages Updated)` : '✓ Settled (All Stages Cached)';
             pipeStatusEl.style.color = '#34d399';
           }
 
@@ -2767,6 +2814,17 @@ export function initViewer(config) {
             log('LATTICE', `[Waterfall] Completed ${execCount} updated stages for '${pid}': ${res.stages_executed.join(', ')}.`);
           } else {
             log('LATTICE', `[Waterfall] All ${skipCount} stages verified up-to-date from checksums (cached).`);
+          }
+
+          // Directly replace progress bar with rendered sheet element in imgContainer
+          const finalDisplay = finalSheet || finalSprite || finalDepth;
+          if (imgContainer && finalDisplay) {
+            imgContainer.innerHTML = `
+              <div class="asset-img-wrapper">
+                <img src="${finalDisplay}" alt="${escapeHtml(pid)}" class="asset-viewer-img" id="asset-viewer-img" />
+                <div class="asset-img-caption">✓ Pipeline Synchronized · Consolidated Inspection Sheet</div>
+              </div>
+            `;
           }
 
           setPreviewFacet('sheet');
@@ -2799,6 +2857,10 @@ export function initViewer(config) {
           log('LATTICE', `[Waterfall] Server returned error: ${errMsg}.`, 'warn');
         }
       }).catch((err) => {
+        if (pollInterval) {
+          clearInterval(pollInterval);
+          pollInterval = null;
+        }
         resetWaterfallButtons();
         const errMsg = err?.message || 'Connection offline';
         if (pipeStatusEl) {
@@ -5765,260 +5827,142 @@ export function initViewer(config) {
   }
 
   // -------------------------------------------------------------------------
-  // State Persistence: Save State & Guarded Clear-Save
+  // Per-Asset Persistence: Save Asset & Guarded Clear Asset
   // -------------------------------------------------------------------------
-  const SAVE_STORAGE_KEY = 'spritequest_save_state';
-  let clearConfirmPending = false;
-  let clearConfirmTimer = null;
+  function saveCurrentAsset(assetId) {
+    const sc = getCurrentScene();
+    const pid = assetId || (selectedAsset ? (selectedAsset.id || selectedAsset.asset_id) : (selectedPrimitiveId || getSelectedScenePrimitive()?.id || 'ancient-bastion'));
+    const itemInScene = _findItemInScene(sc, pid) || (selectedAsset?.id === pid ? selectedAsset : null);
+    const active = selectedAsset || itemInScene || getSelectedScenePrimitive();
 
-  function getSaveStateData() {
-    const assetOverrides = {};
-    assetImages.forEach((val, key) => {
-      assetOverrides[key] = val;
-    });
-
-    const primUpdates = {};
-    if (scenesManifest && scenesManifest.scenes_by_id) {
-      Object.entries(scenesManifest.scenes_by_id).forEach(([sId, sc]) => {
-        (sc.primitives || []).forEach((p) => {
-          if (p.sheet_url || p.depth_url || p.mesh_glb || (p.triangle_count && p.triangle_count > 1000)) {
-            primUpdates[p.id] = {
-              sheet_url: p.sheet_url,
-              collage_url: p.collage_url,
-              depth_url: p.depth_url,
-              mesh_glb: p.mesh_glb,
-              source_glb: p.source_glb,
-              collider_url: p.collider_url,
-              triangle_count: p.triangle_count,
-              coacd_pieces: p.coacd_pieces,
-            };
-          }
-        });
-      });
-    }
-
-    const smashedPropIds = [];
-    physicalPropsMap.forEach((p, id) => {
-      if (p.is_smashed) smashedPropIds.push(id);
-    });
-
-    return {
-      version: 1,
+    const record = {
+      id: pid,
+      label: active?.label || active?.name || pid,
+      fragment_id: active?.fragment_id,
+      fragments_used: active?.fragments_used,
+      diffusion_prompt: active?.diffusion_prompt,
+      compiled_brief: active?.compiled_brief,
+      standing_tier: active?.standing_tier || 'verified',
+      standing_score: active?.standing_score ?? 0.65,
+      dimensions: active?.dimensions,
+      image_url: active?.image_url || active?.sprite_url,
+      depth_url: active?.depth_url,
+      sheet_url: active?.sheet_url,
+      collage_url: active?.collage_url,
+      mesh_glb: active?.mesh_glb || active?.lowpoly_glb,
+      collider_url: active?.collider_url,
+      stl_url: active?.stl_url,
       timestamp: Date.now(),
-      savedAt: new Date().toISOString(),
-      player: {
-        x: playerX,
-        y: playerY,
-        facing: 0,
-        written: actorWritten,
-        strength: playerStrength,
-      },
-      campaign: {
-        campaignId: currentCampaignId,
-        actId: currentActId,
-        sceneId: currentSceneId,
-      },
-      selectedAssetId: selectedAsset ? (selectedAsset.id || selectedAsset.asset_id) : null,
-      selectedPrimitiveId: selectedPrimitiveId,
-      previewFacet: currentPreviewFacet,
-      atmosphereMode: currentAtmosphere,
-      cameraVantage: currentVantage,
-      exploredGrid: Array.from(explored),
-      smashedProps: smashedPropIds,
-      assetImages: assetOverrides,
-      primitiveUpdates: primUpdates,
     };
-  }
 
-  function hasSavedState() {
-    try {
-      const raw = safeGetStorage(SAVE_STORAGE_KEY);
-      return Boolean(raw && raw.length > 10);
-    } catch (_) {
-      return false;
+    safeSetStorage(`spritequest_asset_${pid}`, JSON.stringify(record));
+    safeSetStorage(`spritequest_asset_${pid.replace(/^prop-/, '')}`, JSON.stringify(record));
+
+    if (typeof fetch === 'function') {
+      postForgeJson('/forge/asset/save', {
+        primitive_id: pid,
+        data: record,
+      }).catch(() => {});
     }
-  }
 
-  function updateSaveButtonsUI() {
-    if (typeof document === 'undefined') return;
-    const exists = hasSavedState();
-    const btnSave = document.getElementById('btn-save-state');
-    const btnClear = document.getElementById('btn-clear-save');
+    log('LATTICE', `[Forge] Saved asset configuration and manifest record for '${pid}'.`);
+    playAudioCue('seal_stamp');
 
-    if (btnSave) {
-      btnSave.title = exists
-        ? 'Update existing saved state in local storage'
-        : 'Save current scene, player position, and forged assets to local storage';
-    }
-    if (btnClear) {
-      btnClear.disabled = !exists;
-      btnClear.style.opacity = exists ? '1' : '0.4';
-      btnClear.style.cursor = exists ? 'pointer' : 'not-allowed';
-      if (!clearConfirmPending) {
-        btnClear.innerText = '🗑️ Clear Save';
-        btnClear.style.borderColor = '';
-        btnClear.style.color = '';
-      }
-    }
-  }
-
-  function saveState() {
-    try {
-      const data = getSaveStateData();
-      safeSetStorage(SAVE_STORAGE_KEY, JSON.stringify(data));
-      updateSaveButtonsUI();
-      log('SAVE', `Game state saved to local storage (${new Date().toLocaleTimeString()}).`);
-      playAudioCue('seal_stamp');
-
-      // Temporary visual confirmation on save button
-      const btn = typeof document !== 'undefined' ? document.getElementById('btn-save-state') : null;
+    if (typeof document !== 'undefined') {
+      const btn = document.getElementById('btn-asset-save') || document.getElementById('btn-sidebar-save-asset');
       if (btn) {
-        const orig = btn.innerHTML;
-        btn.innerHTML = '✓ Saved!';
-        btn.style.borderColor = '#34d399';
-        btn.style.color = '#34d399';
-        setTimeout(() => {
-          btn.innerHTML = orig;
-          btn.style.borderColor = '';
-          btn.style.color = '';
-        }, 1800);
+        const orig = btn.innerText;
+        btn.innerText = '✓ Saved';
+        setTimeout(() => { btn.innerText = orig; }, 1800);
       }
-
-      return { success: true, timestamp: data.timestamp };
-    } catch (err) {
-      log('SAVE', `Failed to save game state: ${err.message}`, 'error');
-      return { success: false, error: err.message };
     }
+
+    return { success: true, asset_id: pid, record };
   }
 
-  function loadState(savedJson) {
-    let data = null;
-    if (typeof savedJson === 'string') {
-      try { data = JSON.parse(savedJson); } catch (_) { return false; }
-    } else if (typeof savedJson === 'object' && savedJson !== null) {
-      data = savedJson;
-    } else {
-      const raw = safeGetStorage(SAVE_STORAGE_KEY);
-      if (raw) {
-        try { data = JSON.parse(raw); } catch (_) { return false; }
-      }
-    }
-
-    if (!data) return false;
-
-    try {
-      if (data.campaign) {
-        if (data.campaign.campaignId && data.campaign.campaignId !== currentCampaignId) {
-          selectCampaign(data.campaign.campaignId);
-        }
-        if (data.campaign.actId && data.campaign.actId !== currentActId) {
-          selectAct(data.campaign.actId);
-        }
-        if (data.campaign.sceneId && data.campaign.sceneId !== currentSceneId) {
-          selectScene(data.campaign.sceneId);
-        }
-      }
-
-      if (data.player) {
-        playerX = data.player.x;
-        playerY = data.player.y;
-        actorWritten = Boolean(data.player.written);
-        if (typeof data.player.strength === 'number') {
-          playerStrength = data.player.strength;
-        }
-        updatePlayerPosition(playerX, playerY);
-      }
-
-      if (Array.isArray(data.exploredGrid)) {
-        for (let i = 0; i < Math.min(explored.length, data.exploredGrid.length); i++) {
-          explored[i] = data.exploredGrid[i];
-        }
-      }
-
-      if (Array.isArray(data.smashedProps)) {
-        data.smashedProps.forEach((id) => smashProp(id));
-      }
-
-      if (data.assetImages && typeof data.assetImages === 'object') {
-        Object.entries(data.assetImages).forEach(([k, v]) => assetImages.set(k, v));
-      }
-      if (data.primitiveUpdates && typeof data.primitiveUpdates === 'object') {
-        Object.entries(data.primitiveUpdates).forEach(([pid, up]) => {
-          updatePrimitiveRecord(pid, up);
-        });
-      }
-
-      if (data.selectedPrimitiveId) {
-        selectScenePrimitive(data.selectedPrimitiveId);
-      } else if (data.selectedAssetId) {
-        selectAsset(data.selectedAssetId);
-      }
-      if (data.previewFacet) {
-        setPreviewFacet(data.previewFacet);
-      }
-      if (data.atmosphereMode) {
-        setAtmosphereMode(data.atmosphereMode);
-      }
-      if (data.cameraVantage) {
-        setCameraVantage(data.cameraVantage);
-      }
-
-      updateSaveButtonsUI();
-      log('SAVE', `Restored saved state from ${new Date(data.timestamp || Date.now()).toLocaleTimeString()}.`);
-      return true;
-    } catch (err) {
-      log('SAVE', `Error loading saved state: ${err.message}`, 'error');
-      return false;
-    }
-  }
-
-  function clearSaveState(force = false) {
-    if (!hasSavedState()) {
-      log('SAVE', 'No saved state to clear.');
-      return false;
-    }
-
-    const btnClear = typeof document !== 'undefined' ? document.getElementById('btn-clear-save') : null;
+  function clearCurrentAsset(assetId, force = false) {
+    const sc = getCurrentScene();
+    const pid = assetId || (selectedAsset ? (selectedAsset.id || selectedAsset.asset_id) : (selectedPrimitiveId || getSelectedScenePrimitive()?.id || 'ancient-bastion'));
+    const itemInScene = _findItemInScene(sc, pid) || (selectedAsset?.id === pid ? selectedAsset : null);
+    const cleanId = pid.replace(/^prop-/, '');
 
     if (!force) {
       if (typeof confirm === 'function') {
-        const ok = confirm('⚠️ Guarded Action: Are you sure you want to clear your saved state?\n\nThis will remove your saved position, scene state, and forged asset cache from local storage.');
+        const ok = confirm(`⚠️ Guarded Action: Clear pipeline artifacts and manifest checksums for '${pid}'?\n\nThis will reset cached stages so the next synchronization rebuilds from atomic fragments.`);
         if (!ok) {
-          log('SAVE', 'Clear save cancelled by user.');
+          log('LATTICE', `[Forge] Clear cancelled for asset '${pid}'.`);
           return false;
         }
-      } else {
-        if (!clearConfirmPending) {
-          clearConfirmPending = true;
-          if (btnClear) {
-            btnClear.innerText = '⚠️ Confirm Clear?';
-            btnClear.style.borderColor = '#ef4444';
-            btnClear.style.color = '#ef4444';
-          }
-          if (clearConfirmTimer) clearTimeout(clearConfirmTimer);
-          clearConfirmTimer = setTimeout(() => {
-            clearConfirmPending = false;
-            updateSaveButtonsUI();
-          }, 4000);
-          log('SAVE', 'Guarded action: Click Clear Save again within 4 seconds to confirm.');
-          return false;
-        }
-        clearConfirmPending = false;
-        if (clearConfirmTimer) clearTimeout(clearConfirmTimer);
       }
     }
 
-    try {
-      safeRemoveStorage(SAVE_STORAGE_KEY);
-      updateSaveButtonsUI();
-      log('SAVE', 'Guarded action completed: Saved state has been cleared.');
-      playAudioCue('collapse');
-      return true;
-    } catch (err) {
-      log('SAVE', `Failed to clear saved state: ${err.message}`, 'error');
-      return false;
+    safeRemoveStorage(`spritequest_asset_${pid}`);
+    safeRemoveStorage(`spritequest_asset_${cleanId}`);
+
+    const clearedUpdates = {
+      image_url: null,
+      sprite_url: null,
+      image_2d: null,
+      depth_url: null,
+      sheet_url: null,
+      collage_url: null,
+      mesh_glb: null,
+      lowpoly_glb: null,
+      source_glb: null,
+      collider_url: null,
+      stl_url: null,
+    };
+
+    assetImages.delete(pid);
+    assetImages.delete(cleanId);
+    updatePrimitiveRecord(pid, clearedUpdates);
+
+    if (itemInScene) {
+      Object.assign(itemInScene, clearedUpdates);
     }
+    if (selectedAsset && (selectedAsset.id === pid || selectedAsset.asset_id === pid || selectedAsset.id === cleanId)) {
+      Object.assign(selectedAsset, clearedUpdates);
+    }
+
+    if (typeof fetch === 'function') {
+      postForgeJson('/forge/asset/clear', { primitive_id: pid }).catch(() => {});
+    }
+
+    const pipeStatusEl = typeof document !== 'undefined' ? document.getElementById('asset-viewer-pipeline-status') : null;
+    if (pipeStatusEl) {
+      pipeStatusEl.textContent = 'Cleared (Unbuilt - Awaiting Sync)';
+      pipeStatusEl.style.color = '#f59e0b';
+    }
+
+    renderSidebarPreviewDOM(itemInScene || getSelectedScenePrimitive());
+    renderAssetViewerDOM();
+
+    log('LATTICE', `[Forge] Cleared saved artifacts and checksums for '${pid}'. Next sync will rebuild from fragments.`);
+    playAudioCue('collapse');
+
+    if (typeof document !== 'undefined') {
+      const btn = document.getElementById('btn-asset-clear') || document.getElementById('btn-sidebar-clear-asset');
+      if (btn) {
+        const orig = btn.innerText;
+        btn.innerText = '✓ Cleared';
+        setTimeout(() => { btn.innerText = orig; }, 1800);
+      }
+    }
+
+    return true;
   }
+
+  function hasSavedAsset(assetId) {
+    const pid = assetId || (selectedAsset ? (selectedAsset.id || selectedAsset.asset_id) : (selectedPrimitiveId || 'ancient-bastion'));
+    return Boolean(safeGetStorage(`spritequest_asset_${pid}`) || safeGetStorage(`spritequest_asset_${pid.replace(/^prop-/, '')}`));
+  }
+
+  // Compatibility aliases
+  const saveState = saveCurrentAsset;
+  const clearSaveState = clearCurrentAsset;
+  const hasSavedState = hasSavedAsset;
+  function updateSaveButtonsUI() {}
+  function loadState() { return true; }
 
   // Initial setup
   renderFeaturesDOM();
@@ -6029,7 +5973,7 @@ export function initViewer(config) {
   log('STAGE', 'SpriteQuest 2.5D Viewport Engine initialized.');
   log('STAGE', `Loaded scene with ${physicalPropsMap.size} physical props and ${cueMarks.length} cue marks.`);
 
-  // Explicitly wire waterfall sync buttons in DOM
+  // Explicitly wire waterfall sync and per-asset buttons in DOM
   if (typeof document !== 'undefined') {
     const btnSyncWaterfall = document.getElementById('btn-forge-sync-waterfall');
     if (btnSyncWaterfall) {
@@ -6046,25 +5990,34 @@ export function initViewer(config) {
       });
     }
 
-    const btnSave = document.getElementById('btn-save-state');
-    if (btnSave) {
-      btnSave.addEventListener('click', (e) => {
+    const btnAssetSave = document.getElementById('btn-asset-save');
+    if (btnAssetSave) {
+      btnAssetSave.addEventListener('click', (e) => {
         if (e && e.preventDefault) e.preventDefault();
-        saveState();
+        saveCurrentAsset();
       });
     }
-    const btnClear = document.getElementById('btn-clear-save');
-    if (btnClear) {
-      btnClear.addEventListener('click', (e) => {
+    const btnAssetClear = document.getElementById('btn-asset-clear');
+    if (btnAssetClear) {
+      btnAssetClear.addEventListener('click', (e) => {
         if (e && e.preventDefault) e.preventDefault();
-        clearSaveState();
+        clearCurrentAsset();
       });
     }
-  }
-
-  updateSaveButtonsUI();
-  if (hasSavedState()) {
-    loadState();
+    const btnSidebarSave = document.getElementById('btn-sidebar-save-asset');
+    if (btnSidebarSave) {
+      btnSidebarSave.addEventListener('click', (e) => {
+        if (e && e.preventDefault) e.preventDefault();
+        saveCurrentAsset();
+      });
+    }
+    const btnSidebarClear = document.getElementById('btn-sidebar-clear-asset');
+    if (btnSidebarClear) {
+      btnSidebarClear.addEventListener('click', (e) => {
+        if (e && e.preventDefault) e.preventDefault();
+        clearCurrentAsset();
+      });
+    }
   }
 
   if (typeof fetch !== 'undefined') {
@@ -6182,6 +6135,9 @@ export function initViewer(config) {
     render3DModel,
     getFacet3DModelForItem,
     updatePrimitiveRecord,
+    saveCurrentAsset,
+    clearCurrentAsset,
+    hasSavedAsset,
     saveState,
     loadState,
     clearSaveState,
@@ -6294,6 +6250,9 @@ export function initViewer(config) {
     globalRoot.render3DModel = render3DModel;
     globalRoot.getFacet3DModelForItem = getFacet3DModelForItem;
     globalRoot.updatePrimitiveRecord = updatePrimitiveRecord;
+    globalRoot.saveCurrentAsset = saveCurrentAsset;
+    globalRoot.clearCurrentAsset = clearCurrentAsset;
+    globalRoot.hasSavedAsset = hasSavedAsset;
     globalRoot.saveState = saveState;
     globalRoot.loadState = loadState;
     globalRoot.clearSaveState = clearSaveState;

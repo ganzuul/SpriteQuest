@@ -1428,8 +1428,11 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
     }}
     .forge-progress-fill {{
       height: 100%;
-      background: linear-gradient(90deg, #ca8a04, #38bdf8);
+      background: linear-gradient(90deg, #10b981, #06b6d4);
       width: 0%;
+      transition: width 0.25s ease-in-out;
+    }}
+    .forge-progress-fill.indeterminate {{
       animation: forgeAnim 1.2s ease-in-out infinite alternate;
     }}
     @keyframes forgeAnim {{
@@ -2310,10 +2313,6 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
       <button class="view-tab" id="tab-relief" onclick="setLayerMode('relief')" title="Hillshade & Contour Relief">📐 Topo Relief</button>
     </div>
     <div style="display: flex; align-items: center; gap: 10px;">
-      <div class="header-save-actions" style="display: flex; align-items: center; gap: 6px;">
-        <button class="header-btn btn-save-state" id="btn-save-state" onclick="(window.saveState ? window.saveState() : (window.viewer && window.viewer.saveState && window.viewer.saveState()))" title="Save current scene, player position, and forged assets to local storage">💾 Save</button>
-        <button class="header-btn btn-clear-save" id="btn-clear-save" onclick="(window.clearSaveState ? window.clearSaveState() : (window.viewer && window.viewer.clearSaveState && window.viewer.clearSaveState()))" title="Guarded: Clear saved state from local storage" style="opacity: 0.5;">🗑️ Clear Save</button>
-      </div>
       <div class="controls-hint">
         WASD / Arrows / Click to Move • Hover probes elevation
       </div>
@@ -2433,7 +2432,9 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
           </div>
           <div class="sidebar-preview-actions">
             <button class="prim-act-btn prim-btn-blueprint" onclick="window.viewer && window.viewer.focusSceneAssetOnMap && window.viewer.focusSceneAssetOnMap()" title="Pan & move probe to this asset on the map">📍 Focus Map</button>
-            <button class="prim-act-btn prim-btn-forge" id="btn-sidebar-sync-waterfall" onclick="(window.syncWaterfallPipeline ? window.syncWaterfallPipeline() : (window.viewer && window.viewer.syncWaterfallPipeline && window.viewer.syncWaterfallPipeline()))" title="Synchronize full waterfall pipeline from fragments to 3D STL (checks checksums)">⚒️ Synchronize Pipeline</button>
+            <button class="prim-act-btn prim-btn-forge" id="btn-sidebar-sync-waterfall" onclick="(window.syncWaterfallPipeline ? window.syncWaterfallPipeline() : (window.viewer && window.viewer.syncWaterfallPipeline && window.viewer.syncWaterfallPipeline()))" title="Synchronize full waterfall pipeline from fragments to 3D STL (checks checksums)">⚒️ Synchronize</button>
+            <button class="prim-act-btn" id="btn-sidebar-save-asset" style="border-color: #059669; color: #34d399;" onclick="(window.saveCurrentAsset ? window.saveCurrentAsset() : (window.viewer && window.viewer.saveCurrentAsset && window.viewer.saveCurrentAsset()))" title="Save this asset's parameters, prompt, and manifest record">💾 Save</button>
+            <button class="prim-act-btn" id="btn-sidebar-clear-asset" style="border-color: #dc2626; color: #f87171;" onclick="(window.clearCurrentAsset ? window.clearCurrentAsset() : (window.viewer && window.viewer.clearCurrentAsset && window.viewer.clearCurrentAsset()))" title="Guarded: Clear saved artifacts and manifest checksums for this asset to force a full rebuild from fragments">🗑️ Clear</button>
           </div>
         </div>
       </div>
@@ -2533,6 +2534,14 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
           <div style="display: flex; gap: 6px; margin-bottom: 6px;">
             <button class="btn-forge-render btn-compile" id="btn-forge-sync-waterfall" style="width: 100%; font-weight: 700; background: linear-gradient(135deg, #1e1b4b 0%, #064e3b 50%, #047857 100%); border-color: #34d399; color: #ecfdf5;" onclick="(window.syncWaterfallPipeline ? window.syncWaterfallPipeline() : (window.viewer && window.viewer.syncWaterfallPipeline && window.viewer.syncWaterfallPipeline()))" title="Synchronize full waterfall pipeline from fragments to 3D STL (checks checksums)">
               ⚒️ Synchronize Waterfall Pipeline
+            </button>
+          </div>
+          <div class="asset-persistence-actions" style="display: flex; gap: 6px; margin-bottom: 6px;">
+            <button class="btn-forge-render btn-secondary" id="btn-asset-save" style="font-size: 10px; padding: 5px 8px; flex: 1; border-color: #059669; color: #34d399;" onclick="(window.saveCurrentAsset ? window.saveCurrentAsset() : (window.viewer && window.viewer.saveCurrentAsset && window.viewer.saveCurrentAsset()))" title="Save this asset's parameters, prompt, and manifest record">
+              💾 Save Asset
+            </button>
+            <button class="btn-forge-render btn-secondary" id="btn-asset-clear" style="font-size: 10px; padding: 5px 8px; flex: 1; border-color: #dc2626; color: #f87171;" onclick="(window.clearCurrentAsset ? window.clearCurrentAsset() : (window.viewer && window.viewer.clearCurrentAsset && window.viewer.clearCurrentAsset()))" title="Guarded: Clear saved artifacts and manifest checksums for this asset to force a full rebuild from fragments">
+              🗑️ Clear Asset
             </button>
           </div>
           <!-- Compatibility hooks for automated tests & legacy workflows -->
