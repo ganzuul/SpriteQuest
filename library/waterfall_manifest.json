@@ -44,5 +44,28 @@
       1.6
     ],
     "lattice_run_id": "waterfall-e212b17a22"
+  },
+  "unmodelled_placeholder_slab": {
+    "prompt_hash": "0b7097dc234cd381",
+    "prompt_text": "orthographic top-down 2.5D isometric game asset cutout, single front isometric elevation displaying primary visible face, unknown_asset, untextured digital clay wireframe bounding slab awaiting text prompt specification, orthographic bounding box, chamfered edges, neutral calibration plane, grounded upon weathered stone and timber subfloor in Border-March Hall, crafted with cracked cyclopean limestone masonry, 45-degree cantilever granite blocks, dry-stone cairn slate, weathered brass theodolite brackets, alpine scree, isolated on neutral solid grey background (#707070), no background walls, no room floors, perfectly clean silhouette, ready for alpha matting, subtle directional studio lighting from top-left, soft ground contact occlusion shadow beneath base, crisp 16-bit painterly texture, highly detailed tactile physical prop, image diffusion render, 1024x1024",
+    "fragments": [
+      "shared/single-face-reading"
+    ],
+    "sprite_hash": "6e75ddc7d063c25b",
+    "sprite_path": "renders/primitives/unmodelled_placeholder_slab-generated.png",
+    "mesh_hash": "cb91af3bdd721a98",
+    "lowpoly_faces": 7578,
+    "source_faces": 751322,
+    "collider_hash": "725b6e22b7c57029",
+    "collider_blocks": 32,
+    "depth_hash": "62cecfe438da444b",
+    "sheet_hash": "83a94691f9e0380b",
+    "updated_at": "2026-10-26T15:12:54Z",
+    "dimensions": [
+      4.0,
+      4.0,
+      6.0
+    ],
+    "lattice_run_id": "waterfall-02517dd2dd"
   }
 }
