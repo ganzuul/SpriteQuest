@@ -678,6 +678,11 @@ class TerrainMesh:
         return Image.fromarray(rgba_arr, mode="RGBA")
 
 
+def _gltf_to_terrain_axes(tris: np.ndarray) -> np.ndarray:
+    # Match convert_glb_to_stl: glTF Y-up becomes terrain Z-up.
+    return np.asarray(tris[:, :, [0, 2, 1]], dtype=np.float32)
+
+
 def load_mesh_triangles(mesh_or_path: Any) -> np.ndarray:
     """
     Extract 3D triangle faces as float32 np.ndarray of shape (N, 3, 3).
@@ -687,6 +692,8 @@ def load_mesh_triangles(mesh_or_path: Any) -> np.ndarray:
       - Binary or ASCII STL files (.stl)
       - Binary glTF files (.glb)
       - Any 3D geometry loadable via trimesh
+
+    GLB vertices are mapped from glTF [X, Y, Z] into terrain [X, Z, Y] axes.
     """
     if isinstance(mesh_or_path, np.ndarray):
         if mesh_or_path.ndim == 3 and mesh_or_path.shape[1:] == (3, 3):
@@ -754,19 +761,25 @@ def load_mesh_triangles(mesh_or_path: Any) -> np.ndarray:
                 tris = verts[indices].reshape(-1, 3, 3)
             else:
                 tris = verts.reshape(-1, 3, 3)
-            return tris.astype(np.float32)
+            return _gltf_to_terrain_axes(tris)
         except Exception:
             pass
 
     import trimesh
     loaded = trimesh.load(path)
     if hasattr(loaded, "triangles"):
-        return np.asarray(loaded.triangles, dtype=np.float32)
+        tris = np.asarray(loaded.triangles, dtype=np.float32)
     elif hasattr(loaded, "geometry"):
         all_tris = [np.asarray(g.triangles, dtype=np.float32) for g in loaded.geometry.values() if hasattr(g, "triangles")]
         if all_tris:
-            return np.concatenate(all_tris, axis=0)
-    raise ValueError(f"Unable to extract triangles from mesh: {path}")
+            tris = np.concatenate(all_tris, axis=0)
+        else:
+            raise ValueError(f"Unable to extract triangles from mesh: {path}")
+    else:
+        raise ValueError(f"Unable to extract triangles from mesh: {path}")
+    if suffix == ".glb":
+        tris = _gltf_to_terrain_axes(tris)
+    return tris
 
 
 def _rasterize_triangles_numpy(
