@@ -33,6 +33,7 @@ from companion.terrain_mesh import (
     TAG_CANYON_GORGE,
     TAG_ROAD_PASS,
     TerrainMesh,
+    rasterize_mesh_depth,
     rasterize_stl_depth,
 )
 
@@ -179,6 +180,17 @@ class TestTerrainMesh(unittest.TestCase):
             # Center hill should be bright, corners dark
             self.assertGreater(int(arr[128, 128]), 200)
             self.assertEqual(int(arr[0, 0]), 0)
+
+    def test_dense_mesh_depth_rasterization_fills_triangle_interiors(self):
+        triangle = np.array([[[0.0, 0.0, 0.0], [10.0, 0.0, 10.0], [0.0, 10.0, 20.0]]], dtype=np.float32)
+        dense_mesh = np.repeat(triangle, 10001, axis=0)
+
+        depth_img = rasterize_mesh_depth(dense_mesh, width=64, height=64, pad_ratio=0.0)
+        depth = np.asarray(depth_img)
+
+        self.assertGreater(int(depth[10, 10]), 0)
+        self.assertGreater(int(depth[10, 10]), int(depth[50, 10]))
+        self.assertEqual(int(depth[0, 63]), 0)
 
     def test_render_stratum_layer_with_base_art(self):
         self.tm.add_hill(20.0, 20.0, height=16.0, radius=12.0)
