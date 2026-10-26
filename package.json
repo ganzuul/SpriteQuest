@@ -9,7 +9,7 @@
   "scripts": {
     "test": "node tools/test-all.mjs",
     "test:fast": "node --test test/*.test.mjs",
-    "test:light": "node --test test/*.test.mjs && python3 companion/test_web_preview.py && python3 companion/test_terrain.py && python3 companion/test_stl_primitives.py && python3 companion/test_sdf_primitives.py",
+    "test:light": "node --test test/*.test.mjs && python3 companion/test_web_preview.py && python3 companion/test_terrain.py && python3 companion/test_stl_primitives.py && python3 companion/test_scene_primitives_menu.py",
     "test:ci": "npm run test:light",
     "test:browser": "playwright test",
     "harness": "node tools/serve-harness.mjs",

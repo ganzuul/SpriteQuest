@@ -43,6 +43,7 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
     ]
 
     map_dir = out_html_path.parent
+    map_dir.mkdir(parents=True, exist_ok=True)
     stl_path = map_dir / f"{map_data.get('id', map_path.stem)}.stl"
     depth_path = map_dir / "depth_map.png"
     art_path = map_dir / "map_art.png"

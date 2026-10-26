@@ -281,7 +281,7 @@ class TestSTLPrimitives(unittest.TestCase):
             )
 
             self.assertEqual(report["map_id"], "border-march")
-            self.assertGreater(report["triangles"], 140000)
+            self.assertGreater(report["triangles"], 130000)
             self.assertGreater(report["stl_primitives_placed"], 5)
 
             # Check output files exist

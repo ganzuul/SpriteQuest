@@ -13,14 +13,25 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v4
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
 
+      - name: Install Python dependencies
+        run: python -m pip install -r requirements.txt
+
       - name: Install dependencies
         run: npm ci
+
+      - name: Generate map preview for tests
+        run: python companion/export_web_preview.py
 
       - name: Run lightweight CI test suite
         run: npm run test:ci
