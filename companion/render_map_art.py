@@ -8,7 +8,7 @@ Provides:
   1. STL & TerrainMesh Z-depth map rasterization (depth_map.png).
   2. Deterministic stylized fantasy cartography rendering (aged parchment,
      biome elevation washes, oblique hillshading, and iso-contour ink lines).
-  3. ComfyUI pipeline for Black Forest Labs' Flux 3 Klein conditioned on the
+  3. ComfyUI pipeline for MOSS-Image-SFT conditioned on the
      topographic Z-depth map via ReferenceLatent to produce painterly hand-drawn map art.
   4. Automatic integration into outdoor map bundles (renders/maps/<map_id>/).
 
@@ -40,7 +40,15 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from companion.render_sheets import Comfy, pick_clip, pick_unet, pick_vae
+from companion.render_sheets import (
+    Comfy,
+    pick_clip,
+    pick_clip_type,
+    pick_unet,
+    pick_vae,
+    save_workflow_snapshot,
+    COMFY_WORKFLOWS_DIR,
+)
 from companion.terrain_mesh import (
     TAG_ANCIENT_RUIN,
     TAG_BUILD_PLATE,
@@ -373,16 +381,19 @@ def build_map_art_workflow(
     width: int = 1024,
     height: int = 1024,
     seed: int = 7777,
-    steps: int = 8,
-    cfg: float = 1.0,
+    steps: int = 25,
+    cfg: float = 3.0,
     denoise: float = 1.0,
     prefix: str = "map_art/border_march",
+    snapshot_name: str | Path | None = None,
 ) -> dict:
     """
-    Construct the ComfyUI API graph conditioning Black Forest Labs' Flux 3 Klein
+    Construct the ComfyUI API graph conditioning MOSS-Image-SFT
     on the Z-depth map using ReferenceLatent and a fresh latent canvas.
     """
     unet_name = pick_unet()
+    clip_name = pick_clip()
+    clip_type = pick_clip_type(clip_name, unet_name)
     if unet_name.endswith(".gguf"):
         unet_node = {
             "class_type": "UnetLoaderGGUF",
@@ -394,13 +405,13 @@ def build_map_art_workflow(
             "inputs": {"unet_name": unet_name, "weight_dtype": "default"},
         }
 
-    return {
+    workflow = {
         "1": unet_node,
         "2": {
             "class_type": "CLIPLoader",
             "inputs": {
-                "clip_name": pick_clip(),
-                "type": "flux3",
+                "clip_name": clip_name,
+                "type": clip_type,
                 "device": "default",
             },
         },
@@ -460,6 +471,9 @@ def build_map_art_workflow(
             "inputs": {"images": ["8", 0], "filename_prefix": prefix},
         },
     }
+    if snapshot_name is not None:
+        save_workflow_snapshot(workflow, snapshot_name)
+    return workflow
 
 
 def render_map_bundle_art(
@@ -469,13 +483,13 @@ def render_map_bundle_art(
     force_stylized: bool = False,
     prompt: str = DEFAULT_MAP_PROMPT,
     seed: int = 7777,
-    steps: int = 8,
+    steps: int = 25,
 ) -> dict:
     """
     End-to-end pipeline:
       1. Resolves map JSON declaration and STL mesh.
       2. Generates depth_map.png (rasterized directly from STL if present, else TerrainMesh).
-      3. Renders map_art.png via ComfyUI (Flux 3 Klein) or fallback stylized cartography.
+      3. Renders map_art.png via ComfyUI (MOSS-Image-SFT) or fallback stylized cartography.
       4. Saves all assets into out_dir (defaults to renders/maps/<map_id>/).
     """
     map_p = Path(map_id_or_path)
@@ -529,10 +543,11 @@ def render_map_bundle_art(
                     seed=seed,
                     steps=steps,
                     prefix=f"map_art/{map_id}",
+                    snapshot_name=f"map_{map_id}.json",
                 )
                 img_bytes = comfy.run(wf)
                 art_path.write_bytes(img_bytes)
-                rendered_via = "flux3_klein"
+                rendered_via = "moss_image_sft"
         except Exception as exc:
             print(f"ComfyUI generation notice ({exc}), using stylized cartography fallback", file=sys.stderr)
 

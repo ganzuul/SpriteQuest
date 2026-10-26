@@ -60,8 +60,8 @@ The boundary is an **engineering discipline**, not a creative prohibition:
    - `companion/npcs/`: Character declaration sheets (`hollis.json`, `pell-the-underwritten.json`, etc.).
    - `companion/convert_character_card.py`: Converter between NPC sheets and Tavern v2 cards.
    - `companion/compile_faction_npc.py`: Compiler composing NPC sheets with faction plans into Tavern v2 cards.
-   - `companion/render_sheets.py`: Batch sheet facet renderer targeting Black Forest Labs' Flux 3 Klein via ComfyUI.
-   - `companion/check_models.py`: Model weights presence validator for Flux 3 Klein.
+   - `companion/render_sheets.py`: Batch sheet facet renderer targeting MOSS-Image-SFT via ComfyUI.
+   - `companion/check_models.py`: Model weights presence validator for MOSS-Image-SFT.
 
 4. **Historical Prototype Archive**:
    - The pre-pivot experimental tools (ComfyUI pipelines, 3D meshes, Godot probes) are preserved in git branch `archive/pre-pivot-prototype`. They do not run inside the extension runtime.

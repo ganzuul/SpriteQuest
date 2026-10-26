@@ -69,6 +69,11 @@ from companion.fragment_compiler import (
     resolve_scene_zone_context,
     select_asset_recipe,
 )
+from companion.render_sheets import (
+    COMFY_WORKFLOWS_DIR,
+    build_moss_image_workflow,
+    save_workflow_snapshot,
+)
 
 DEFAULT_STATE = Path.home() / ".local" / "state" / "spritequest" / "hollis-ledger.jsonl"
 
@@ -290,7 +295,7 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
         "/health", "/roster", "/guidance", "/ledger", "/events",
         "/cartographers/status", "/cartographers/ledger",
         "/cartographers/survey", "/cartographers/curate", "/cartographers/criticize",
-        "/forge/pipeline", "/forge/pipeline/3d", "/forge/compile",
+        "/forge/pipeline", "/forge/pipeline/3d", "/forge/compile", "/forge/workflow/snapshot",
     ]
 
     class Handler(BaseHTTPRequestHandler):
@@ -464,6 +469,40 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
                     "stl_primitives_available": [p.stem for p in stl_files],
                     "depth_templates_available": [p.stem.replace("-depth", "") for p in depth_files],
                 })
+            elif route == "/forge/workflow/snapshot":
+                query_params = {}
+                if "?" in self.path:
+                    query_str = self.path.split("?", 1)[1]
+                    for pair in query_str.split("&"):
+                        if "=" in pair:
+                            k, v = pair.split("=", 1)
+                            query_params[k] = v
+                asset_id = query_params.get("asset_id") or query_params.get("id")
+                COMFY_WORKFLOWS_DIR.mkdir(parents=True, exist_ok=True)
+                if asset_id:
+                    safe_id = Path(asset_id).name
+                    snapshot_file = COMFY_WORKFLOWS_DIR / f"{safe_id}.json" if not safe_id.endswith(".json") else COMFY_WORKFLOWS_DIR / safe_id
+                    if snapshot_file.is_file():
+                        try:
+                            wf_data = json.loads(snapshot_file.read_text(encoding="utf-8"))
+                            self._send(200, {
+                                "ok": True,
+                                "asset_id": asset_id,
+                                "path": str(snapshot_file.relative_to(REPO_ROOT)),
+                                "workflow": wf_data,
+                            })
+                        except Exception as exc:
+                            self._send(500, {"error": "read_failed", "reason": str(exc)})
+                    else:
+                        self._send(404, {"error": "snapshot_not_found", "asset_id": asset_id})
+                else:
+                    files = sorted([p.name for p in COMFY_WORKFLOWS_DIR.glob("*.json")])
+                    self._send(200, {
+                        "ok": True,
+                        "directory": str(COMFY_WORKFLOWS_DIR.relative_to(REPO_ROOT)),
+                        "snapshots": files,
+                        "count": len(files),
+                    })
             else:
                 self._send(404, {"error": "unknown route",
                                  "route": route,
@@ -970,6 +1009,20 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
 
                     entity_prefix = "npc" if (kind == "actor" or asset_id in ("hollis", "pell", "player")) else "prop"
                     lattice_run_id = f"run-compile-{uuid.uuid4().hex[:12]}"
+                    snapshot_filename = f"{asset_id}.json"
+                    comfy_wf = build_moss_image_workflow(
+                        prompt=compiled_brief_obj.rewritten_prompt,
+                        negative=compiled_brief_obj.negative_prompt or "ugly, blurry, low quality, artifacts, watermark",
+                        seed=424242,
+                        width=1024,
+                        height=1024,
+                        prefix=f"spritequest/{entity_prefix}/{asset_id}",
+                        steps=25,
+                        cfg=3.0,
+                        snapshot_name=snapshot_filename,
+                    )
+                    snapshot_relpath = str((COMFY_WORKFLOWS_DIR / snapshot_filename).relative_to(REPO_ROOT))
+
                     ledger.append({
                         "kind": "standing.granted",
                         "entity": f"{entity_prefix}/{asset_id}",
@@ -981,6 +1034,7 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
                             "standing_tier": compiled_brief_obj.standing_tier,
                             "standing_score": compiled_brief_obj.standing_score,
                             "fragments_used": compiled_brief_obj.fragments_used,
+                            "workflow_snapshot": snapshot_relpath,
                         },
                         "gate": {"rule": "lattice_compiler_rewrite", "verdict": "pass"},
                         "provenance": {
@@ -1008,6 +1062,8 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
                         "standing_tier": compiled_brief_obj.standing_tier,
                         "standing_score": compiled_brief_obj.standing_score,
                         "scene_backpressure": compiled_brief_obj.scene_backpressure,
+                        "workflow_snapshot": snapshot_relpath,
+                        "comfyui_workflow": comfy_wf,
                         "conditioning": {
                             "prompt": compiled_brief_obj.rewritten_prompt,
                             "negative": compiled_brief_obj.negative_prompt,
@@ -1020,6 +1076,45 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
                     })
                 except Exception as exc:
                     self._send(400, {"error": "compile failure", "reason": str(exc)})
+            elif route == "/forge/workflow/snapshot":
+                try:
+                    length = int(self.headers.get("Content-Length") or 0)
+                    payload = json.loads(self.rfile.read(length) or b"{}")
+                    asset_id = payload.get("asset_id") or payload.get("name") or f"workflow_{uuid.uuid4().hex[:8]}"
+                    workflow = payload.get("workflow")
+                    safe_id = Path(asset_id).name
+                    snapshot_filename = f"{safe_id}.json" if not safe_id.endswith(".json") else safe_id
+
+                    if not workflow or not isinstance(workflow, dict):
+                        cond = payload.get("conditioning") or {}
+                        prompt = cond.get("prompt") or payload.get("prompt") or f"Asset cutout for {safe_id}"
+                        neg = cond.get("negative") or payload.get("negative") or ""
+                        steps = int(cond.get("steps") or 25)
+                        cfg = float(cond.get("cfg") or 3.0)
+                        workflow = build_moss_image_workflow(
+                            prompt=prompt,
+                            negative=neg,
+                            seed=int(payload.get("seed") or 424242),
+                            width=int(cond.get("width") or 1024),
+                            height=int(cond.get("height") or 1024),
+                            prefix=f"spritequest/snapshot/{safe_id}",
+                            steps=steps,
+                            cfg=cfg,
+                            snapshot_name=snapshot_filename,
+                        )
+                    else:
+                        save_workflow_snapshot(workflow, snapshot_filename)
+
+                    out_path = COMFY_WORKFLOWS_DIR / snapshot_filename
+                    self._send(200, {
+                        "ok": True,
+                        "asset_id": asset_id,
+                        "workflow_snapshot": str(out_path.relative_to(REPO_ROOT)),
+                        "saved": True,
+                        "nodes_count": len(workflow),
+                    })
+                except Exception as exc:
+                    self._send(400, {"error": "snapshot_failure", "reason": str(exc)})
             else:
                 self._send(404, {"error": "unknown route", "route": route,
                                  "known": known_routes})

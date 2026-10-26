@@ -294,7 +294,7 @@ describe('Interface Connection with Lattice & Prompt Rewrite Pipeline (TDD)', ()
     assert.equal(compRes.success, true);
     assert.ok(compRes.prompt.includes('45-degree cantilever overhang rule'), 'Must weave 45-degree cantilever rule');
     assert.ok(compRes.prompt.includes('cyclopean'), 'Must weave cyclopean masonry');
-    assert.ok(compRes.prompt.includes('Black Forest Labs Flux 3 Klein render'), 'Must condition for Flux 3 Klein');
+    assert.ok(compRes.prompt.includes('image diffusion render'), 'Must condition for image diffusion');
 
     // 4. Verify sidebar DOM prompt element is populated
     const promptEl = document.getElementById('sidebar-preview-prompt');
@@ -405,7 +405,7 @@ describe('Interface Connection with Lattice & Prompt Rewrite Pipeline (TDD)', ()
     assert.ok(prompt.includes('single front isometric elevation displaying primary visible face'), 'Must enforce single-face reading doctrine');
     assert.ok(prompt.includes('asymmetric alpine lichen patina'), 'Must enforce asymmetric weathering rule');
     assert.ok(prompt.includes('45-degree cantilever'), 'Must incorporate 45-degree cantilever overhang rule');
-    assert.ok(prompt.includes('Black Forest Labs Flux 3 Klein render, 1024x1024'), 'Must condition for Flux 3 Klein');
+    assert.ok(prompt.includes('image diffusion render, 1024x1024'), 'Must condition for image diffusion');
 
     // Verify DOM was updated with the refined prompt
     const promptEl = document.getElementById('sidebar-preview-prompt');

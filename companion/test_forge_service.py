@@ -362,6 +362,10 @@ class TestForgeCompilerPipelineBridge(ForgeCase):
         self.assertIn("Weigh & Inspection Hall", body["diffusion_prompt"])
         self.assertIn("conditioning", body)
         self.assertEqual(body["conditioning"]["steps"], 16)
+        self.assertIn("workflow_snapshot", body)
+        self.assertTrue(body["workflow_snapshot"].endswith("r6_ship_crate_standard.json"))
+        self.assertIn("comfyui_workflow", body)
+        self.assertIn("1", body["comfyui_workflow"])
 
         # Check ledger record
         code, ledger_res = self.get("/ledger")
@@ -369,6 +373,40 @@ class TestForgeCompilerPipelineBridge(ForgeCase):
         compile_event = next((e for e in ledger_res["events"] if e.get("kind") == "standing.granted" and e.get("entity") == "prop/r6_ship_crate_standard"), None)
         self.assertIsNotNone(compile_event)
         self.assertEqual(compile_event["provenance"]["workflow"], "asset-forge.lattice.json")
+        self.assertEqual(compile_event["data"]["workflow_snapshot"], body["workflow_snapshot"])
+
+    def test_forge_workflow_snapshot_endpoints(self):
+        # 1. POST snapshot with explicit workflow
+        custom_wf = {
+            "1": {"class_type": "UNETLoader", "inputs": {"unet_name": "moss_image_sft_bf16.safetensors"}},
+            "2": {"class_type": "CLIPLoader", "inputs": {"clip_name": "qwen3.5_9b_int8_convrot.safetensors"}},
+        }
+        code, post_body = self.post("/forge/workflow/snapshot", {
+            "asset_id": "test_crate_flow",
+            "workflow": custom_wf,
+        })
+        self.assertEqual(code, 200)
+        self.assertTrue(post_body["ok"])
+        self.assertTrue(post_body["saved"])
+        self.assertEqual(post_body["nodes_count"], 2)
+        self.assertEqual(post_body["workflow_snapshot"], "workflows/comfyui/test_crate_flow.json")
+
+        # 2. GET specific snapshot
+        code, get_body = self.get("/forge/workflow/snapshot?asset_id=test_crate_flow")
+        self.assertEqual(code, 200)
+        self.assertTrue(get_body["ok"])
+        self.assertEqual(get_body["workflow"]["1"]["class_type"], "UNETLoader")
+
+        # 3. GET directory listing
+        code, list_body = self.get("/forge/workflow/snapshot")
+        self.assertEqual(code, 200)
+        self.assertTrue(list_body["ok"])
+        self.assertIn("test_crate_flow.json", list_body["snapshots"])
+
+        # Clean up test snapshot
+        snap_file = REPO_ROOT / "workflows" / "comfyui" / "test_crate_flow.json"
+        if snap_file.is_file():
+            snap_file.unlink()
 
     def test_forge_compile_actors(self):
         # 1. Compile Hollis
@@ -408,7 +446,7 @@ class TestForgeCompilerPipelineBridge(ForgeCase):
         self.assertEqual(body["rewriter"], "gemma4-orion")
         self.assertIn("single front isometric elevation displaying primary visible face", body["diffusion_prompt"])
         self.assertIn("45-degree cantilever", body["diffusion_prompt"])
-        self.assertIn("Flux 3 Klein", body["diffusion_prompt"])
+        self.assertIn("image diffusion", body["diffusion_prompt"])
         self.assertIn("doctrine_rules", body)
 
     def test_forge_pipeline_3d_execution(self):

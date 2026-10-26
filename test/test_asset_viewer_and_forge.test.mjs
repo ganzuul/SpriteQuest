@@ -128,7 +128,7 @@ describe('Sidebar Asset Viewer & Asset Forge Engine (TDD)', () => {
     assert.equal(imgEl.src, result.imageUrl);
 
     const badgeEl = document.getElementById('asset-viewer-badge');
-    assert.equal(badgeEl.textContent, '[FORGED · FLUX 3 KLEIN]');
+    assert.equal(badgeEl.textContent, '[FORGED · IMAGE DIFFUSION]');
 
     const btn = document.getElementById('btn-forge-render');
     assert.match(btn.innerText, /Re-render in Asset Forge/);
@@ -349,5 +349,20 @@ describe('Sidebar Asset Viewer & Asset Forge Engine (TDD)', () => {
     assert.ok(latticeLogs.some(l => l.message.includes('rewrite-prompt')), 'Must log [rewrite-prompt] stage');
     assert.ok(latticeLogs.some(l => l.message.includes('format-flux3-conditioning')), 'Must log [format-flux3-conditioning] stage');
     assert.ok(latticeLogs.some(l => l.message.includes('forge-dispatch')), 'Must log [forge-dispatch] stage');
+  });
+
+  test('10. Workflow Snapshot Inspection and Action Button', () => {
+    viewer.selectAsset('r6_ship_crate_standard');
+    const btnWorkflow = document.getElementById('btn-forge-workflow');
+    assert.ok(btnWorkflow, 'Must render Workflow button in action panel');
+
+    assert.equal(typeof viewer.viewWorkflowSnapshot, 'function', 'viewWorkflowSnapshot must be exported');
+    viewer.viewWorkflowSnapshot('r6_ship_crate_standard');
+
+    const logs = viewer.getLogs();
+    assert.ok(
+      logs.some(l => l.message.includes('Inspecting workflow snapshot') && l.message.includes('r6_ship_crate_standard.json')),
+      'Must log workflow snapshot path'
+    );
   });
 });

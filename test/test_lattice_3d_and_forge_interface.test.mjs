@@ -10,7 +10,7 @@
  *   2. Lattice Execution: Watertight STL Depth Rasterization Target (`runWorkflow`)
  *   3. Lattice Execution: Non-Watertight & Illegal Overhang Rejection Gate
  *   4. Lattice Execution: Gemma4-Orion Prompt Rewriter Target (`runWorkflow`)
- *   5. Lattice Execution: Unified Multi-Modal Flux 3 Klein Conditioning Target (`runWorkflow`)
+ *   5. Lattice Execution: Unified Multi-Modal Image Diffusion Conditioning Target (`runWorkflow`)
  *   6. Interface Guard: Viewer Compile Executes via Lattice Runtime Engine
  *   7. Interface Guard: Viewer 3D Pipeline Executes via Lattice Runtime Engine
  *   8. Companion Ledger Provenance: Records Genuine Lattice Run ID and Target Node
@@ -282,7 +282,7 @@ describe('Lattice 3D & Forge Pipeline Interface Guard (TDD)', () => {
     assert.match(artifact.value.text, /45-degree cantilever/);
   });
 
-  test('4. Lattice Execution: Unified Multi-Modal Flux 3 Klein Conditioning Target (runWorkflow)', async () => {
+  test('4. Lattice Execution: Unified Multi-Modal Image Diffusion Conditioning Target (runWorkflow)', async () => {
     const execGraph = structuredClone(rawWorkflow.graph);
 
     delete execGraph.nodes['read-prop-spec'];
@@ -319,7 +319,7 @@ describe('Lattice 3D & Forge Pipeline Interface Guard (TDD)', () => {
       cfg: 1.0,
       sampler: 'euler',
       scheduler: 'simple',
-      target_model: 'Flux 3 Klein',
+      target_model: 'image diffusion',
     });
 
     const target = {
@@ -337,11 +337,11 @@ describe('Lattice 3D & Forge Pipeline Interface Guard (TDD)', () => {
     assert.equal(runResult.ok, true, `runWorkflow failed: ${JSON.stringify(runResult.error)}`);
 
     const artifact = runResult.recording.artifacts.find(
-      (a) => a.kind === 'text' && a.value?.text?.includes('Flux 3 Klein')
+      (a) => a.kind === 'text' && a.value?.text?.includes('image diffusion')
     );
     assert.ok(artifact, 'Must record unified conditioning artifact');
     const parsed = JSON.parse(artifact.value.text);
-    assert.equal(parsed.target_model, 'Flux 3 Klein');
+    assert.equal(parsed.target_model, 'image diffusion');
     assert.equal(parsed.depth_map, 'renders/primitives/ancient-bastion-depth.png');
     assert.match(parsed.prompt, /Ancient Overhang Bastion/);
     assert.deepEqual(parsed.dimensions, [1024, 1024]);

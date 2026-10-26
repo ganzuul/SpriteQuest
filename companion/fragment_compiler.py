@@ -1437,10 +1437,10 @@ def query_gemma4_orion_rewriter(
 
     system_prompt = (
         "You are gemma4-orion, the prompt rewriter for the Cartographers of the Bureau of the Unwritten Atlas in SpriteQuest. "
-        "You rewrite structured game asset briefs into coherent, single-face orthographic 2.5D visual prompts conditioned for Black Forest Labs Flux 3 Klein diffusion."
+        "You rewrite structured game asset briefs into coherent, single-face orthographic 2.5D visual prompts conditioned for image diffusion."
     )
     user_prompt = (
-        f"Rewrite this game asset brief into a refined, single-sentence Flux 3 Klein diffusion prompt:\n"
+        f"Rewrite this game asset brief into a refined, single-sentence image diffusion prompt:\n"
         f"- Subject: {label} ({asset_id}, recipe: {recipe_name})\n"
         f"- Setting & Atmosphere: {world_look.get('setting', 'ancient ruins')}\n"
         f"- Materials: {world_look.get('materials', 'weathered stone')}\n"
@@ -1562,7 +1562,7 @@ def rewrite_prompt(
         f"crafted with {materials_clause}",
         "isolated on neutral solid grey background (#707070), no background walls, no room floors, perfectly clean silhouette, ready for alpha matting",
         "subtle directional studio lighting from top-left, soft ground contact occlusion shadow beneath base",
-        "crisp 16-bit painterly texture, highly detailed tactile physical prop, Black Forest Labs Flux 3 Klein render, 1024x1024",
+        "crisp 16-bit painterly texture, highly detailed tactile physical prop, image diffusion render, 1024x1024",
     ]
 
     return ", ".join(prompt_parts)
@@ -1658,14 +1658,14 @@ def compile_npc_facet_brief(
             "full-figure standing character from head to boots, front three-quarter view, perfectly clean silhouette, ready for alpha matting",
             "isolated on neutral solid grey background (#707070), no background walls, no room floors",
             "subtle directional studio lighting from top-left, soft ground contact occlusion shadow beneath feet",
-            "crisp 16-bit painterly texture, highly detailed tactile character sprite, Black Forest Labs Flux 3 Klein render, 1024x1024",
+            "crisp 16-bit painterly texture, highly detailed tactile character sprite, image diffusion render, 1024x1024",
         ]
     elif facet == "portrait":
         prompt_parts = [
             style if style else "Retro JRPG character art, sword and sorcery, 16-bit pixel aesthetic with painterly shading",
             "character portrait bust, front three-quarter angle",
             core_body,
-            "expressive character visage, fine facial details, atmospheric cinematic rim lighting, 16-bit painterly texture, Black Forest Labs Flux 3 Klein render, 1024x1024",
+            "expressive character visage, fine facial details, atmospheric cinematic rim lighting, 16-bit painterly texture, image diffusion render, 1024x1024",
         ]
     elif facet == "home":
         prompt_parts = [
@@ -1673,21 +1673,21 @@ def compile_npc_facet_brief(
             "wide environmental interior perspective",
             core_body,
             f"constructed with {zone_ctx.substrate_material}, atmospheric depth, volumetric light shafts",
-            "rich narrative environmental details, level transition threshold, Black Forest Labs Flux 3 Klein render, 1024x1024",
+            "rich narrative environmental details, level transition threshold, image diffusion render, 1024x1024",
         ]
     elif facet == "favored_items":
         prompt_parts = [
             style if style else "Retro JRPG inventory icon art, painterly shading",
             "tactile inventory item prop cutout on neutral background",
             core_body,
-            "hand-held tactile physical relic, material wear and verified provenance, clean isolated silhouette, subtle drop shadow, Black Forest Labs Flux 3 Klein render, 1024x1024",
+            "hand-held tactile physical relic, material wear and verified provenance, clean isolated silhouette, subtle drop shadow, image diffusion render, 1024x1024",
         ]
     else:  # aspirations
         prompt_parts = [
             style if style else "Theatrical cinematic narrative art, painterly shading",
             "wide narrative tableau",
             core_body,
-            "dramatic theatrical lighting contrast, chiaroscuro, poetic environmental scale, Black Forest Labs Flux 3 Klein render, 1024x1024",
+            "dramatic theatrical lighting contrast, chiaroscuro, poetic environmental scale, image diffusion render, 1024x1024",
         ]
 
     rewritten_prompt = ". ".join(p.strip().rstrip(".") for p in prompt_parts if p) + "."

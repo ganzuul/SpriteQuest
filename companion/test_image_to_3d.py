@@ -161,7 +161,7 @@ class TestLatticePromptRefinementForRuins(unittest.TestCase):
         self.assertIn("orthographic top-down 2.5D isometric game asset cutout", res.rewritten_prompt)
         self.assertIn("45-degree cantilever overhang rule", res.rewritten_prompt)
         self.assertIn("cyclopean", res.rewritten_prompt.lower())
-        self.assertIn("Black Forest Labs Flux 3 Klein render", res.rewritten_prompt)
+        self.assertIn("image diffusion render", res.rewritten_prompt)
         self.assertIn("1024x1024", res.rewritten_prompt)
 
     def test_relic_cairn_lattice_prompt_refinement(self):
@@ -183,7 +183,7 @@ class TestLatticePromptRefinementForRuins(unittest.TestCase):
         self.assertIn("cartographers/the-living-atlas", res.fragments_used)
         self.assertIn("orthographic top-down 2.5D isometric game asset cutout", res.rewritten_prompt)
         self.assertIn("Theodolite Station", res.rewritten_prompt)
-        self.assertIn("Black Forest Labs Flux 3 Klein", res.rewritten_prompt)
+        self.assertIn("image diffusion", res.rewritten_prompt)
 
     def test_wish_stone_slab_lattice_prompt_refinement(self):
         """Wish stone slab incorporates Orom's literal wish-granting lore and megalithic physics."""

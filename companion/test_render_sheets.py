@@ -2,7 +2,7 @@
 """
 companion/test_render_sheets.py
 
-Automated unit tests for the Black Forest Labs Flux 3 Klein renderer and model checker.
+Automated unit tests for the image diffusion renderer and model checker.
 Offline, stdlib only.
 """
 
@@ -24,15 +24,19 @@ from companion.check_models import (
     pick_first,
 )
 from companion.render_sheets import (
+    COMFY_WORKFLOWS_DIR,
     assemble,
     brief_for,
     build_flux_workflow,
+    build_moss_image_workflow,
     facets_of,
     full_prompt,
+    pick_clip_type,
+    save_workflow_snapshot,
 )
 
 
-class TestFluxRenderer(unittest.TestCase):
+class TestMossImageRenderer(unittest.TestCase):
     def setUp(self):
         self.sample_sheet = {
             "name": "Hollis the Twice-Written",
@@ -69,17 +73,17 @@ class TestFluxRenderer(unittest.TestCase):
         self.assertTrue(prompt.startswith("Retro JRPG 16-bit aesthetic"))
         self.assertIn("Hollis the Twice-Written", prompt)
 
-    def test_build_flux_workflow(self):
-        """build_flux_workflow generates a valid ComfyUI API graph for Flux 3 Klein."""
-        graph = build_flux_workflow(
+    def test_build_moss_image_workflow(self):
+        """build_moss_image_workflow generates a valid ComfyUI API graph for MOSS-Image-SFT."""
+        graph = build_moss_image_workflow(
             prompt="Retro character portrait",
             negative="",
             seed=42,
             width=1024,
             height=1536,
             prefix="test/hollis/portrait",
-            steps=16,
-            cfg=1.0,
+            steps=25,
+            cfg=3.0,
         )
 
         # Ensure all required node types exist in graph
@@ -98,19 +102,57 @@ class TestFluxRenderer(unittest.TestCase):
 
         # Check KSampler inputs
         ksampler = [n for n in graph.values() if n["class_type"] == "KSampler"][0]
-        self.assertEqual(ksampler["inputs"]["steps"], 16)
-        self.assertEqual(ksampler["inputs"]["cfg"], 1.0)
+        self.assertEqual(ksampler["inputs"]["steps"], 25)
+        self.assertEqual(ksampler["inputs"]["cfg"], 3.0)
         self.assertEqual(ksampler["inputs"]["sampler_name"], "euler")
         self.assertEqual(ksampler["inputs"]["seed"], 42)
 
-        # Check CLIPLoader has type="flux3"
+        # Check CLIPLoader has valid model-compatible type
         cliploader = [n for n in graph.values() if n["class_type"] == "CLIPLoader"][0]
-        self.assertEqual(cliploader["inputs"]["type"], "flux3")
+        self.assertIn(cliploader["inputs"]["type"], ("flux3", "moss_image", "qwen_image"))
+        self.assertEqual(pick_clip_type(unet_name="moss_image_sft_bf16.safetensors"), "moss_image")
+        self.assertEqual(pick_clip_type(unet_name="flux3_image_klein_sd_Q4_K_M.gguf"), "flux3")
+
+        # Also verify backwards compatibility alias build_flux_workflow produces identical graph
+        graph_alias = build_flux_workflow(
+            prompt="Retro character portrait",
+            negative="",
+            seed=42,
+            width=1024,
+            height=1536,
+            prefix="test/hollis/portrait",
+            steps=25,
+            cfg=3.0,
+        )
+        self.assertEqual(graph, graph_alias)
+
+    def test_workflow_snapshot_saving(self):
+        """build_moss_image_workflow and save_workflow_snapshot write valid JSON to workflows/comfyui/."""
+        snap_name = "test_snapshot_hollis_portrait.json"
+        target_path = COMFY_WORKFLOWS_DIR / snap_name
+        if target_path.exists():
+            target_path.unlink()
+
+        graph = build_moss_image_workflow(
+            prompt="Retro test character portrait",
+            negative="ugly, blurry",
+            seed=12345,
+            width=512,
+            height=512,
+            prefix="test/snapshot",
+            snapshot_name=snap_name,
+        )
+
+        self.assertTrue(target_path.is_file(), "Snapshot file must be written to disk")
+        saved_data = json.loads(target_path.read_text(encoding="utf-8"))
+        self.assertEqual(saved_data, graph)
+        self.assertEqual(saved_data["4"]["inputs"]["text"], "Retro test character portrait")
+        target_path.unlink()
 
     def test_candidates_defined(self):
-        """Model candidate lists prioritize Flux 3 Klein."""
-        self.assertIn("flux3_image_klein", DIFFUSION_CANDIDATES[0])
-        self.assertTrue(any("flux" in c for c in DIFFUSION_CANDIDATES))
+        """Model candidate lists prioritize MOSS-Image-SFT."""
+        self.assertIn("moss_image_sft", DIFFUSION_CANDIDATES[0])
+        self.assertTrue(any("moss" in c for c in DIFFUSION_CANDIDATES))
         self.assertTrue(any("qwen" in c or "t5" in c for c in CLIP_CANDIDATES))
         self.assertTrue(any("flux" in v or "ae" in v for v in VAE_CANDIDATES))
 

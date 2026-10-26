@@ -768,7 +768,7 @@ def render_5cell_collage(
         d.rectangle([x, y + CELL_SIZE - 26, x + CELL_SIZE, y + CELL_SIZE], fill=(15, 15, 18))
         d.text((x + 12, y + CELL_SIZE - 20), caption, fill=(245, 245, 245), font=font)
 
-    d.text((12, total_h - 22), f"SpriteQuest Asset Pipeline: {asset_name} · Black Forest Labs Flux 3 Klein -> CoACD Collider", fill=(148, 163, 184), font=font)
+    d.text((12, total_h - 22), f"SpriteQuest Asset Pipeline: {asset_name} · Image Diffusion -> CoACD Collider", fill=(148, 163, 184), font=font)
     banner.save(out_p)
     return out_p
 

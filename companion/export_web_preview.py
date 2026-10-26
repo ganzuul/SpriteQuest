@@ -2410,7 +2410,7 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
             <button class="prim-act-btn prim-btn-blueprint" onclick="window.viewer && window.viewer.focusSceneAssetOnMap && window.viewer.focusSceneAssetOnMap()" title="Pan & move probe to this asset on the map">📍 Focus Map</button>
             <button class="prim-act-btn prim-btn-blueprint" id="btn-sidebar-compile" onclick="window.viewer && window.viewer.compileSelectedAssetBrief && window.viewer.compileSelectedAssetBrief()" title="Gather fragments and call gemma4-orion to rewrite the prompt">⚡ Compile</button>
             <button class="prim-act-btn prim-btn-3d" id="btn-sidebar-3d-pipeline" onclick="window.viewer && window.viewer.runPrimitive3DPipeline && window.viewer.runPrimitive3DPipeline()" title="Reconstruct dense 3D watertight STL, CoACD colliders & high-detail depth map from 2D asset">📐 2D → 3D Pipeline</button>
-            <button class="prim-act-btn prim-btn-forge" onclick="window.viewer && window.viewer.forgeScenePrimitive && window.viewer.forgeScenePrimitive()" title="Render 2D art via Flux 3 Klein">✨ Forge Art</button>
+            <button class="prim-act-btn prim-btn-forge" onclick="window.viewer && window.viewer.forgeScenePrimitive && window.viewer.forgeScenePrimitive()" title="Render 2D art via MOSS-Image-SFT">✨ Forge Art</button>
           </div>
         </div>
       </div>
@@ -2497,7 +2497,7 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
           <div class="stat-row"><span>Cartographer Standing:</span><span class="stat-val stat-gold" id="asset-viewer-standing">VERIFIED (0.65)</span></div>
           <div class="stat-row"><span>Scene Backpressure:</span><span class="stat-val" id="asset-viewer-coherence">clearance-foyer · coherent</span></div>
           <div class="stat-row"><span>Physicality:</span><span class="stat-val" id="asset-viewer-physicality">42.5kg · physics object</span></div>
-          <div class="stat-row"><span>Diffusion Model:</span><span class="stat-val stat-gold" id="asset-viewer-model">Black Forest Labs Flux 3 Klein</span></div>
+          <div class="stat-row"><span>Diffusion Model:</span><span class="stat-val stat-gold" id="asset-viewer-model">MOSS-Image-SFT</span></div>
           <div class="stat-row"><span>Pipeline Server:</span><span class="stat-val" id="asset-viewer-server-status" style="color: #4ade80;">Checking...</span></div>
           <div class="stat-row"><span>Lattice Pipeline:</span><span class="stat-val stat-gold" id="asset-viewer-pipeline-status">Fragment Compiler + Rewriter</span></div>
         </div>
@@ -2527,6 +2527,9 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
             </button>
             <button class="btn-forge-render btn-secondary" id="btn-cartographer-criticize" style="font-size: 10px; padding: 5px 8px; flex: 1;" onclick="window.viewer && window.viewer.criticizeAssetFragment && window.viewer.criticizeAssetFragment()">
               🗑️ Criticize
+            </button>
+            <button class="btn-forge-render btn-secondary" id="btn-forge-workflow" style="font-size: 10px; padding: 5px 8px; flex: 1;" onclick="window.viewer && window.viewer.viewWorkflowSnapshot && window.viewer.viewWorkflowSnapshot()" title="View and inspect ComfyUI JSON workflow snapshot in workflows/comfyui/">
+              💾 Workflow
             </button>
           </div>
         </div>

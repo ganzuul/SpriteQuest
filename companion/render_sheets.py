@@ -3,11 +3,11 @@
 companion/render_sheets.py
 
 Batch-render NPC character sheets through a local ComfyUI server using
-Black Forest Labs' Flux 3 Klein.
+MOSS-Image-SFT.
 
 Each NPC is a JSON sheet describing facets: portrait, home, favored_items,
 aspirations, and cutout (an isolated figure for 2.5D anchoring).
-Every facet becomes one image rendered via Black Forest Labs' Flux 3 Klein.
+Every facet becomes one image rendered via MOSS-Image-SFT.
 
 Stdlib only. Talks HTTP to ComfyUI.
 
@@ -35,13 +35,20 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 NPCS_DIR = REPO_ROOT / "companion" / "npcs"
 RENDERS_DIR = REPO_ROOT / "renders"
+COMFY_WORKFLOWS_DIR = REPO_ROOT / "workflows" / "comfyui"
 
 COMFY_MODELS = Path(
     os.environ.get("COMFY_MODELS", Path.home() / "ComfyUI" / "models")
 )
 
-# --- Black Forest Labs Flux 3 Klein Model Candidates -------------------------
+# --- MOSS-Image-SFT Model Candidates -----------------------------------------
 DIFFUSION_CANDIDATES = [
+    "moss_image_sft_bf16.safetensors",
+    "moss_image_sft_int8_convrot.safetensors",
+    "moss-image-sft-bf16.safetensors",
+    "moss_image_sft.safetensors",
+    "moss-image-sft.safetensors",
+    "moss_image_sft_sd_Q4_K_M.gguf",
     "flux3_image_klein_sd_Q4_K_M.gguf",
     "flux_3_image_klein_int8_convrot.safetensors",
     "flux3-image-klein-sd-int8-convrot.safetensors",
@@ -54,6 +61,10 @@ DIFFUSION_CANDIDATES = [
 ]
 
 CLIP_CANDIDATES = [
+    "qwen3.5_9b_int8_convrot.safetensors",
+    "qwen3.5_9b_bf16.safetensors",
+    "qwen3.5_9b_w4a8_gptq.safetensors",
+    "qwen3.5_9b_moss_image_w4a8.safetensors",
     "qwen3vl_4b_int8_convrot.safetensors",
     "qwen3.5_9b_flux3_prompt_upsampler_w4a8.safetensors",
     "qwen3vl_8b_w4a8.safetensors",
@@ -91,9 +102,24 @@ def pick_vae() -> str:
     return pick_first(COMFY_MODELS / "vae", VAE_CANDIDATES)
 
 
-# --- Sampling defaults (Black Forest Labs Flux 3 Klein step-distilled) --------
-DEFAULT_STEPS = 16
-DEFAULT_CFG = 1.0
+def pick_clip_type(clip_name: str | None = None, unet_name: str | None = None) -> str:
+    """Determine the CLIPLoader type compatible with the diffusion model and text encoder."""
+    unet = (unet_name or pick_unet()).lower()
+    clip = (clip_name or pick_clip()).lower()
+    if "moss" in unet or "moss" in clip:
+        return "moss_image"
+    if "flux3" in unet or "klein" in unet or "flux3" in clip:
+        return "flux3"
+    if "flux" in unet:
+        return "flux2"
+    if "qwen_image" in unet or "qwen" in unet:
+        return "qwen_image"
+    return "flux3"
+
+
+# --- Sampling defaults (MOSS-Image-SFT DiT) ----------------------------------
+DEFAULT_STEPS = 25
+DEFAULT_CFG = 3.0
 DEFAULT_SAMPLER = "euler"
 DEFAULT_SCHEDULER = "simple"
 DEFAULT_DENOISE = 1.0
@@ -162,8 +188,24 @@ def facets_of(sheet: dict) -> list[tuple[str, list[str]]]:
     return out
 
 
-# --- ComfyUI Graph Builder for Flux 3 Klein ----------------------------------
-def build_flux_workflow(
+# --- ComfyUI Graph Builder for MOSS-Image-SFT --------------------------------
+def save_workflow_snapshot(workflow: dict, filename_or_path: str | Path) -> Path:
+    """Save a snapshot of a built ComfyUI workflow JSON into workflows/comfyui/."""
+    COMFY_WORKFLOWS_DIR.mkdir(parents=True, exist_ok=True)
+    if isinstance(filename_or_path, Path):
+        out_path = filename_or_path
+    else:
+        name = str(filename_or_path)
+        if not name.endswith(".json"):
+            name = f"{name}.json"
+        out_path = COMFY_WORKFLOWS_DIR / name
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(workflow, f, indent=2)
+    return out_path
+
+
+def build_moss_image_workflow(
     prompt: str,
     negative: str,
     seed: int,
@@ -174,9 +216,12 @@ def build_flux_workflow(
     cfg: float = DEFAULT_CFG,
     sampler: str = DEFAULT_SAMPLER,
     scheduler: str = DEFAULT_SCHEDULER,
+    snapshot_name: str | Path | None = None,
 ) -> dict:
-    """Build ComfyUI API graph for Black Forest Labs Flux 3 Klein."""
+    """Build ComfyUI API graph for MOSS-Image-SFT."""
     unet_name = pick_unet()
+    clip_name = pick_clip()
+    clip_type = pick_clip_type(clip_name, unet_name)
     if unet_name.endswith(".gguf"):
         unet_node = {
             "class_type": "UnetLoaderGGUF",
@@ -192,13 +237,13 @@ def build_flux_workflow(
                 "weight_dtype": "default",
             },
         }
-    return {
+    workflow = {
         "1": unet_node,
         "2": {
             "class_type": "CLIPLoader",
             "inputs": {
-                "clip_name": pick_clip(),
-                "type": "flux3",
+                "clip_name": clip_name,
+                "type": clip_type,
                 "device": "default"
             }
         },
@@ -260,6 +305,13 @@ def build_flux_workflow(
             }
         }
     }
+    if snapshot_name is not None:
+        save_workflow_snapshot(workflow, snapshot_name)
+    return workflow
+
+
+# Backwards compatibility alias
+build_flux_workflow = build_moss_image_workflow
 
 
 class ComfyError(RuntimeError):
@@ -323,9 +375,9 @@ class Comfy:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Render NPC sheets with Black Forest Labs Flux 3 Klein via ComfyUI.")
+    parser = argparse.ArgumentParser(description="Render NPC sheets with MOSS-Image-SFT via ComfyUI.")
     parser.add_argument("sheets", nargs="*", help="Path(s) to NPC sheet JSON file(s). Defaults to companion/npcs/*.json")
-    parser.add_argument("--server", default="http://127.0.0.1:8188", help="ComfyUI server URL (default: http://127.0.0.1:8188)")
+    parser.add_argument("--server", default=os.environ.get("COMFY_SERVER", "http://127.0.0.1:8080/upstream/comfyui"), help="ComfyUI server URL (default: http://127.0.0.1:8080/upstream/comfyui via llama-swap)")
     parser.add_argument("--dry-run", action="store_true", help="Print prompt assembly and graph without calling ComfyUI")
     parser.add_argument("--facets", nargs="*", help="Limit rendering to specific facets (e.g. portrait, home)")
     parser.add_argument("--scene", default="customs-house", help="Host floorplan scene ID for coherence backpressure (default: customs-house)")
@@ -333,6 +385,7 @@ def main():
     parser.add_argument("--steps", type=int, default=DEFAULT_STEPS, help=f"Sampling steps (default: {DEFAULT_STEPS})")
     parser.add_argument("--cfg", type=float, default=DEFAULT_CFG, help=f"CFG scale (default: {DEFAULT_CFG})")
     parser.add_argument("--seed", type=int, help="Fixed random seed (random if omitted)")
+    parser.add_argument("--no-snapshot", action="store_true", help="Disable saving ComfyUI JSON workflow snapshots to workflows/comfyui/")
 
     args = parser.parse_args()
 
@@ -354,7 +407,7 @@ def main():
         print("No NPC sheets found to render.", file=sys.stderr)
         return 1
 
-    print(f"Diffusion Engine: Black Forest Labs Flux 3 Klein")
+    print(f"Diffusion Engine: MOSS-Image-SFT")
     print(f"Diffusion Model:  {pick_unet()}")
     print(f"Text Encoder:     {pick_clip()}")
     print(f"VAE:              {pick_vae()}")
@@ -389,8 +442,9 @@ def main():
                 prompt = full_prompt(sheet, frag, facet, scene_id=args.scene)
                 seed = args.seed if args.seed is not None else random.randint(1, 2**32 - 1)
                 prefix = f"spritequest/{slug}/{facet}_{idx + 1}"
+                snapshot_name = f"{slug}_{facet}_{idx + 1}.json"
 
-                workflow = build_flux_workflow(
+                workflow = build_moss_image_workflow(
                     prompt=prompt,
                     negative="",
                     seed=seed,
@@ -399,11 +453,14 @@ def main():
                     prefix=prefix,
                     steps=args.steps,
                     cfg=args.cfg,
+                    snapshot_name=None if args.no_snapshot else snapshot_name,
                 )
 
                 if args.dry_run:
                     print(f"  [{facet}] ({dim[0]}x{dim[1]}, seed {seed}):")
                     print(f"    Prompt: {prompt[:120]}...")
+                    if not args.no_snapshot:
+                        print(f"    Snapshot: {COMFY_WORKFLOWS_DIR / snapshot_name}")
                 else:
                     print(f"  Queueing [{facet}] ({dim[0]}x{dim[1]})...", end="", flush=True)
                     pid = comfy.queue(workflow)

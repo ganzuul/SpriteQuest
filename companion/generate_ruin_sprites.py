@@ -4,7 +4,7 @@ companion/generate_ruin_sprites.py
 
 Synthesizes high-resolution 2.5D isometric game asset diffusion cutout sprites
 for outdoor map ruins (with transparent alpha masks, weathered stone textures,
-and dramatic directional rim lighting) conforming to Black Forest Labs Flux 3 Klein
+and dramatic directional rim lighting) conforming to image diffusion
 single-face orthographic game asset prompts.
 """
 

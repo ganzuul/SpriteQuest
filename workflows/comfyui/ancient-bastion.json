@@ -1,0 +1,100 @@
+{
+  "1": {
+    "class_type": "UnetLoaderGGUF",
+    "inputs": {
+      "unet_name": "flux3_image_klein_sd_Q4_K_M.gguf"
+    }
+  },
+  "2": {
+    "class_type": "CLIPLoader",
+    "inputs": {
+      "clip_name": "qwen3vl_4b_int8_convrot.safetensors",
+      "type": "flux3",
+      "device": "default"
+    }
+  },
+  "3": {
+    "class_type": "VAELoader",
+    "inputs": {
+      "vae_name": "flux2-vae.safetensors"
+    }
+  },
+  "4": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "clip": [
+        "2",
+        0
+      ],
+      "text": "orthographic top-down 2.5D isometric game asset cutout, single front isometric elevation displaying primary visible face, Ancient 45\u00b0 Stepped Bastion (North Rampart), cyclopean masonry blocks, conforming to the 45-degree cantilever overhang rule, stratified ancient stone foundations, weathered mineral fractures and lichen patina, grounded firmly upon bedrock, grounded upon weathered stone and timber subfloor in Border-March Hall, a high mountain valley strewn with the toppled colonnades, sunken plazas, and eroded foundations of multiple distinct lost civilizations layered one atop another, untouched by scorch marks or siege weapons, watched over by a lone slate-grey figure standing on a ridge, crafted with cracked cyclopean limestone masonry, 45-degree cantilever granite blocks, dry-stone cairn slate, weathered brass theodolite brackets, alpine scree, isolated on neutral solid grey background (#707070), no background walls, no room floors, perfectly clean silhouette, ready for alpha matting, subtle directional studio lighting from top-left, soft ground contact occlusion shadow beneath base, crisp 16-bit painterly texture, highly detailed tactile physical prop, image diffusion render, 1024x1024"
+    }
+  },
+  "5": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "clip": [
+        "2",
+        0
+      ],
+      "text": "ugly, blurry, low quality, artifacts, watermark, signature, distorted geometry, photographic full-room background, busy wall environment, camera perspective distortion, cutoff silhouette, extra floating items, chaotic composition"
+    }
+  },
+  "6": {
+    "class_type": "EmptyFlux2LatentImage",
+    "inputs": {
+      "width": 1024,
+      "height": 1024,
+      "batch_size": 1
+    }
+  },
+  "7": {
+    "class_type": "KSampler",
+    "inputs": {
+      "model": [
+        "1",
+        0
+      ],
+      "positive": [
+        "4",
+        0
+      ],
+      "negative": [
+        "5",
+        0
+      ],
+      "latent_image": [
+        "6",
+        0
+      ],
+      "seed": 424242,
+      "steps": 25,
+      "cfg": 3.0,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "denoise": 1.0
+    }
+  },
+  "8": {
+    "class_type": "VAEDecode",
+    "inputs": {
+      "samples": [
+        "7",
+        0
+      ],
+      "vae": [
+        "3",
+        0
+      ]
+    }
+  },
+  "9": {
+    "class_type": "SaveImage",
+    "inputs": {
+      "images": [
+        "8",
+        0
+      ],
+      "filename_prefix": "spritequest/prop/ancient-bastion"
+    }
+  }
+}

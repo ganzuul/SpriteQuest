@@ -1016,10 +1016,10 @@ def compose_room_map(
     }
 
 
-def build_flux3_layout_prompt(base_prompt: str, prop_records: list[dict]) -> str:
+def build_moss_image_layout_prompt(base_prompt: str, prop_records: list[dict]) -> str:
     """
-    Format placed 3D asset bounding boxes using ComfyUI's native `Flux3LayoutPrompt`
-    convention (`comfy_extras/nodes_flux.py`):
+    Format placed 3D asset bounding boxes using ComfyUI's native structured layout
+    convention (supporting both MOSS-Image-SFT and Flux layout schemas):
       - Cite box N as `<obj_N>` in the prompt text
       - Append JSON array `[{"id": "obj_1", "bbox": [x1, y1, x2, y2], "desc": "..."}]`
     """
@@ -1036,6 +1036,10 @@ def build_flux3_layout_prompt(base_prompt: str, prop_records: list[dict]) -> str
         citations.append(f"{rec['label']} <{obj_id}>")
     cited_clause = " Placed furniture elements: " + ", ".join(citations) + "."
     return f"{base_prompt.rstrip()}{cited_clause} {json.dumps(rows, ensure_ascii=False)}"
+
+
+# Backwards compatibility alias
+build_flux3_layout_prompt = build_moss_image_layout_prompt
 
 
 def render_sprite_contact_sheet(sprites: list[AssetTopDownSprite], cell: int = 192) -> Image.Image:
@@ -1266,6 +1270,7 @@ def save_ortho_bundle(scene: RoomFloorPlanScene, out_dir: Path, supersample: int
             "cam_y": cam.cam_y,
         },
         "base_prompt": base_prompt,
+        "moss_image_layout_prompt": layout_prompt,
         "flux3_layout_prompt": layout_prompt,
         "props": res["props"],
     }

@@ -24,10 +24,10 @@ should not pretend to be:
 
 | `for` | Read by | Composed into | Admission test |
 |---|---|---|---|
-| `diffusion` | the sampler (Black Forest Labs Flux 3 Klein) | appended to the render prompt, **after** refinement | could an artist be handed this line and draw it? |
+| `diffusion` | the sampler (image diffusion) | appended to the render prompt, **after** refinement | could an artist be handed this line and draw it? |
 | `gemma4-orion` | the rewriter | the system prompt, **before** refinement | would this change what the compiler writes? |
 
-> **Diffusion Architecture**: The project's diffusion model for NPC sheet facets and scene visual generation is **Black Forest Labs' Flux 3 Klein** (running via ComfyUI with step-distilled or base weights), replacing legacy Qwen Image 2.1.
+> **Diffusion Architecture**: The project's visual generation targets **image diffusion** (running via ComfyUI), replacing legacy Qwen Image 2.1.
 
 The distinction is enforced at compose time, not advisory, and the reason is
 `docs/quarantine/dev-pain-log.md` entries 2 and 9: **rewriting erodes constraints**. A

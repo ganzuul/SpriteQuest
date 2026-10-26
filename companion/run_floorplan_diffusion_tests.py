@@ -2,14 +2,14 @@
 """
 companion/run_floorplan_diffusion_tests.py
 
-Empirical test suite measuring spatial/layout control over Black Forest Labs'
-Flux 3 Klein when generating 2D architectural floor plans from placed 3D assets.
+Empirical test suite measuring spatial/layout control over
+MOSS-Image-SFT when generating 2D architectural floor plans from placed 3D assets.
 
 Tests 5 progressive degrees of conditioning against the ground-truth 16-asset
 top-down orthographic room map (`library/floorplans/furniture-room.json`):
   1. `text_only`: Verbal room + furniture description only.
-  2. `flux3_layout_bbox`: Flux 3 Klein native `<obj_N>` layout bounding-box table (`Flux3LayoutPrompt`).
-  3. `ref_latent_blueprint`: Flux 3 Klein `ReferenceLatent` (`image_cond` stream) conditioned on `blueprint_map.png` (`denoise=1.0`).
+  2. `flux3_layout_bbox`: MOSS-Image-SFT native `<obj_N>` layout bounding-box table (`build_moss_image_layout_prompt`).
+  3. `ref_latent_blueprint`: MOSS-Image-SFT `ReferenceLatent` (`image_cond` stream) conditioned on `blueprint_map.png` (`denoise=1.0`).
   4. `img2img_denoise_070`: Orthographic 2D composite map + `VAEEncode` + `ReferenceLatent` (`denoise=0.70`).
   5. `img2img_denoise_045`: Orthographic 2D composite map + `VAEEncode` + `ReferenceLatent` (`denoise=0.45`).
 
@@ -45,7 +45,15 @@ from companion.ortho_floorplan import (
     load_room_scene,
     save_ortho_bundle,
 )
-from companion.render_sheets import Comfy, pick_clip, pick_unet, pick_vae
+from companion.render_sheets import (
+    Comfy,
+    pick_clip,
+    pick_clip_type,
+    pick_unet,
+    pick_vae,
+    save_workflow_snapshot,
+    COMFY_WORKFLOWS_DIR,
+)
 
 COMFY_INPUT_DIR = Path.home() / "ComfyUI" / "input"
 DEFAULT_SERVER = "http://127.0.0.1:8080/upstream/comfyui"
@@ -53,6 +61,8 @@ DEFAULT_SERVER = "http://127.0.0.1:8080/upstream/comfyui"
 
 def _base_loader_nodes() -> dict:
     unet_name = pick_unet()
+    clip_name = pick_clip()
+    clip_type = pick_clip_type(clip_name, unet_name)
     if unet_name.endswith(".gguf"):
         unet_node = {
             "class_type": "UnetLoaderGGUF",
@@ -68,8 +78,8 @@ def _base_loader_nodes() -> dict:
         "2": {
             "class_type": "CLIPLoader",
             "inputs": {
-                "clip_name": pick_clip(),
-                "type": "flux3",
+                "clip_name": clip_name,
+                "type": clip_type,
                 "device": "default",
             },
         },
@@ -86,12 +96,13 @@ def build_condition_workflow(
     width: int = 1024,
     height: int = 1024,
     seed: int = 424242,
-    steps: int = 8,
-    cfg: float = 1.0,
+    steps: int = 25,
+    cfg: float = 3.0,
     denoise: float = 1.0,
     ref_image_name: str | None = None,
     use_img2img_latent: bool = False,
     attach_ref_latent: bool = True,
+    snapshot_name: str | Path | None = None,
 ) -> dict:
     graph = _base_loader_nodes()
     graph["4"] = {
@@ -162,6 +173,8 @@ def build_condition_workflow(
             "filename_prefix": f"floorplan_test/{condition_id}",
         },
     }
+    if snapshot_name is not None:
+        save_workflow_snapshot(graph, snapshot_name)
     return graph
 
 
@@ -276,7 +289,7 @@ def free_comfy_vram(server: str) -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Run empirical Flux 3 Klein floor plan spatial control tests.")
+    parser = argparse.ArgumentParser(description="Run empirical MOSS-Image-SFT floor plan spatial control tests.")
     parser.add_argument(
         "scene",
         nargs="?",
@@ -289,7 +302,7 @@ def main() -> int:
         help="Output directory for ortho bundle and diffusion control tests",
     )
     parser.add_argument("--server", default=DEFAULT_SERVER, help="ComfyUI server URL")
-    parser.add_argument("--steps", type=int, default=8, help="Flux 3 Klein sampling steps (default: 8)")
+    parser.add_argument("--steps", type=int, default=25, help="MOSS-Image-SFT sampling steps (default: 25)")
     parser.add_argument("--seed", type=int, default=424242, help="Deterministic RNG seed")
     parser.add_argument("--reuse-existing", action="store_true", help="Reuse existing condition PNGs if already rendered")
     args = parser.parse_args()
@@ -428,6 +441,7 @@ def main() -> int:
                     ref_image_name=cond["ref_image"],
                     use_img2img_latent=cond["use_img2img"],
                     attach_ref_latent=cond["attach_ref_latent"],
+                    snapshot_name=f"floorplan_{cid}.json",
                 )
                 img_bytes = comfy.run(wf)
                 ran_comfy = True

@@ -8,7 +8,7 @@ from binary STL primitives in `library/stl_primitives/` to `renders/primitives/<
 These high-detail depth templates are consumed directly by:
   1. The Left Sidebar multi-representation inspector (facet: 'depth')
   2. The 3D Pipeline action button in SillyTavern / Web Viewer
-  3. Black Forest Labs Flux 3 Klein depth-conditioned img2img / ControlNet
+  3. Image diffusion depth-conditioned img2img / ControlNet
 """
 
 from __future__ import annotations

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify the Black Forest Labs Flux 3 Klein files the renderer needs are present.
+"""Verify the MOSS-Image-SFT files the renderer needs are present.
 
 Run before rendering or starting ComfyUI:
 
@@ -20,6 +20,12 @@ COMFY_MODELS = Path(
 )
 
 DIFFUSION_CANDIDATES = [
+    "moss_image_sft_bf16.safetensors",
+    "moss_image_sft_int8_convrot.safetensors",
+    "moss-image-sft-bf16.safetensors",
+    "moss_image_sft.safetensors",
+    "moss-image-sft.safetensors",
+    "moss_image_sft_sd_Q4_K_M.gguf",
     "flux3_image_klein_sd_Q4_K_M.gguf",
     "flux_3_image_klein_int8_convrot.safetensors",
     "flux3-image-klein-sd-int8-convrot.safetensors",
@@ -32,6 +38,10 @@ DIFFUSION_CANDIDATES = [
 ]
 
 CLIP_CANDIDATES = [
+    "qwen3.5_9b_int8_convrot.safetensors",
+    "qwen3.5_9b_bf16.safetensors",
+    "qwen3.5_9b_w4a8_gptq.safetensors",
+    "qwen3.5_9b_moss_image_w4a8.safetensors",
     "qwen3vl_4b_int8_convrot.safetensors",
     "qwen3.5_9b_flux3_prompt_upsampler_w4a8.safetensors",
     "qwen3vl_8b_w4a8.safetensors",
@@ -86,13 +96,13 @@ def main():
         missing.append(f"VAE in {vae_dir} (e.g. {VAE_CANDIDATES[0]})")
 
     if missing:
-        print("\nMissing required model weights for Black Forest Labs Flux 3 Klein:", file=sys.stderr)
+        print("\nMissing required model weights for MOSS-Image-SFT:", file=sys.stderr)
         for m in missing:
             print(f"  - {m}", file=sys.stderr)
-        print("\nTo download Black Forest Labs Flux 3 Klein weights, place them in ~/ComfyUI/models/.", file=sys.stderr)
+        print("\nTo download MOSS-Image-SFT weights, place them in ~/ComfyUI/models/.", file=sys.stderr)
         return 1
 
-    print("\nAll required model components for Flux 3 Klein are present and ready.")
+    print("\nAll required model components for MOSS-Image-SFT are present and ready.")
     return 0
 
 

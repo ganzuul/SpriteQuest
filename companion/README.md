@@ -21,18 +21,19 @@ This loop is implemented as the Lattice workflow [`workflows/understudy.lattice.
 - `convert_character_card.py`: Bidirectional converter between `companion/npcs/*.json` and Tavern v2 character cards.
 - `compile_faction_npc.py`: Compiles a base NPC declaration sheet with an NPC faction template into a faction-aligned NPC and Tavern v2 character card with embedded lorebook entries.
 - `test_faction_compiler.py`: Unit test suite for the faction compiler and faction templates.
-- `check_models.py`: Verifies presence of Black Forest Labs Flux 3 Klein diffusion weights, text encoders, and VAE in `~/ComfyUI/models/`.
-- `render_sheets.py`: Batch renders NPC sheets (portrait, home, favored items, aspirations, cutout) via ComfyUI using Black Forest Labs' Flux 3 Klein.
-- `test_render_sheets.py`: Unit test suite for the Flux 3 Klein graph builder and sheet renderer.
+- `check_models.py`: Verifies presence of MOSS-Image-SFT diffusion weights, text encoders, and VAE in `~/ComfyUI/models/`.
+- `render_sheets.py`: Batch renders NPC sheets (portrait, home, favored items, aspirations, cutout) via ComfyUI using MOSS-Image-SFT.
+- `test_render_sheets.py`: Unit test suite for the MOSS-Image-SFT graph builder and sheet renderer.
+- `workflows/comfyui/`: Versioned snapshots of generated ComfyUI JSON workflows for characters, assets, and maps.
 - `floorplan.py`: Scene floor plan validator, traversal metrics calculator, and stagecraft blockout renderer (including `--render-ortho`).
 - `test_floorplans.py`: Unit test suite for floor plan validation and metrics.
 - `terrain_mesh.py`: 2.5D topological terrain heightfield compiler, slope and 45° overhang analyzer, elevation strata slicer, and binary STL 3D mesh exporter.
 - `terrain_lighting.py`: Horizon raymarch directional shadow caster, interactive cursor depth probe light, and player-centric Line-of-Sight / Fog-of-War raymarcher.
 - `test_terrain.py`: Automated unit test suite for terrain geometry, STL export, and lighting raymarchers.
 - `export_web_preview.py`: Generates a standalone, hardware-accelerated CSS 3D parallax web preview with player-tracking perspective and live cursor depth probing.
-- `ortho_floorplan.py`: Top-down orthographic 3D `.glb` asset rasterizer (`OrthoCamera`, software z-buffer + normal/elevation shading), room-scale 2D map composer (`composite_map.png`, `blueprint_map.png`, `depth_map.png`, `ids.png`, `sprites_contact_sheet.png`), Flux 3 Klein `<obj_N>` layout prompt builder, and spatial adherence evaluator.
+- `ortho_floorplan.py`: Top-down orthographic 3D `.glb` asset rasterizer (`OrthoCamera`, software z-buffer + normal/elevation shading), room-scale 2D map composer (`composite_map.png`, `blueprint_map.png`, `depth_map.png`, `ids.png`, `sprites_contact_sheet.png`), MOSS-Image-SFT / Flux `<obj_N>` layout prompt builder, and spatial adherence evaluator.
 - `test_ortho_floorplan.py`: Unit test suite for orthographic 3D projection, room map composition, and spatial adherence metrics.
-- `run_floorplan_diffusion_tests.py`: Empirical benchmark testing 5 degrees of spatial conditioning with Black Forest Labs' Flux 3 Klein on room-scale 2D floor plans.
+- `run_floorplan_diffusion_tests.py`: Empirical benchmark testing 5 degrees of spatial conditioning with MOSS-Image-SFT on room-scale 2D floor plans.
 - `npcs/`: Character declaration JSON files.
 - `cards/`: Compiled Tavern v2 character cards with embedded lorebooks.
 - `worldpack.json`: World identifiers and register metadata.
@@ -52,7 +53,7 @@ python3 companion/test_forge_service.py
 # Test the faction compiler and faction templates
 python3 companion/test_faction_compiler.py
 
-# Test the Flux 3 Klein renderer and graph builder
+# Test the MOSS-Image-SFT renderer and graph builder
 python3 companion/test_render_sheets.py
 
 # Test Scene Floor Plans and stagecraft geometry
@@ -80,8 +81,8 @@ python3 companion/test_floorplans.py
 # Render 16 3D .glb furniture meshes orthographically onto a room-scale 2D map
 .venv/bin/python companion/ortho_floorplan.py library/floorplans/furniture-room.json --out renders/floorplans/furniture-room/ortho_gt
 
-# Run the 5-condition Flux 3 Klein spatial control benchmark
-.venv/bin/python companion/run_floorplan_diffusion_tests.py --steps 6
+# Run the 5-condition MOSS-Image-SFT spatial control benchmark
+.venv/bin/python companion/run_floorplan_diffusion_tests.py --steps 25
 
 ### Inspect Scene Floor Plans & Stagecraft
 ```bash
@@ -96,7 +97,7 @@ python3 companion/floorplan.py customs-house --ascii --metrics
 python3 companion/floorplan.py glass-cathedral --stagecraft
 ```
 
-### Render NPC Sheets with Flux 3 Klein
+### Render NPC Sheets with MOSS-Image-SFT
 ```bash
 # Verify model files in ComfyUI models directory
 python3 companion/check_models.py

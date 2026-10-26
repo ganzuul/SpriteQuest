@@ -5,7 +5,7 @@
   "graph": {
     "id": "asset-forge",
     "name": "The Asset Forge & Fragment Compiler",
-    "description": "Compiles scene lore fragments and physical asset specifications into cohesive, world-anchored diffusion prompts for Black Forest Labs Flux 3 Klein. On asset selection, the Fragment Compiler resolves world materials, physical bounding volume, mass, and doctrine rules. The Prompt Rewriter refines the compiled brief into an isolated 2.5D orthographic game asset prompt, which is then dispatched to the ComfyUI asset forge.",
+    "description": "Compiles scene lore fragments and physical asset specifications into cohesive, world-anchored diffusion prompts for MOSS-Image-SFT. On asset selection, the Fragment Compiler resolves world materials, physical bounding volume, mass, and doctrine rules. The Prompt Rewriter refines the compiled brief into an isolated 2.5D orthographic game asset prompt, which is then dispatched to the ComfyUI asset forge.",
     "schema": 3,
     "runtime": 2,
     "mode": "native-unified",
@@ -160,10 +160,10 @@
         "profileId": null,
         "model": null,
         "modelRole": null,
-        "alias": "Compose · Flux 3 Klein Graph Parameters",
+        "alias": "Compose · MOSS-Image-SFT Graph Parameters",
         "mode": "template",
         "outputKind": "text",
-        "template": "{\n  \"prompt\": \"{{section:prompt}}\",\n  \"depth_map\": \"{{section:depth_template}}\",\n  \"negative\": \"ugly, blurry, low quality, artifacts, watermark, photographic background, cutoff silhouette\",\n  \"steps\": 16,\n  \"cfg\": 1.0,\n  \"sampler\": \"euler\",\n  \"scheduler\": \"simple\",\n  \"dimensions\": [1024, 1024]\n}",
+        "template": "{\n  \"prompt\": \"{{section:prompt}}\",\n  \"depth_map\": \"{{section:depth_template}}\",\n  \"negative\": \"ugly, blurry, low quality, artifacts, watermark, photographic background, cutoff silhouette\",\n  \"steps\": 25,\n  \"cfg\": 3.0,\n  \"sampler\": \"euler\",\n  \"scheduler\": \"simple\",\n  \"dimensions\": [1024, 1024]\n}",
         "sections": [
           { "name": "prompt", "text": "", "kind": "text", "required": false, "onSkipped": "fallback" },
           { "name": "depth_template", "text": "", "kind": "text", "required": false, "onSkipped": "fallback" }
@@ -399,7 +399,7 @@
       },
       "diffusion-conditioning-layer": {
         "id": "diffusion-conditioning-layer",
-        "title": "IV. Flux 3 Klein Graph Conditioning",
+        "title": "IV. MOSS-Image-SFT Graph Conditioning",
         "x": 1220,
         "y": 320,
         "w": 360,

@@ -286,7 +286,7 @@ export function initViewer(config) {
         interactive_verbs: ['examine'],
         lore_snippet: `Interior furniture item (${p.label}) positioned on customs floorplan.`,
         image_url: img,
-        diffusion_prompt: `orthographic 2D top-down game asset of ${p.label}, clean timber joinery, Flux 3 Klein matte`,
+        diffusion_prompt: `orthographic 2D top-down game asset of ${p.label}, clean timber joinery, image diffusion matte`,
         tokenEl: null,
       });
     }
@@ -1886,7 +1886,7 @@ export function initViewer(config) {
       </defs>
       <rect width="400" height="300" fill="url(#bgGrad)"/>
       <rect x="6" y="6" width="388" height="288" rx="6" fill="none" stroke="#332d27" stroke-width="1.5"/>
-      <text x="14" y="24" fill="#a8947f" font-size="9" font-family="monospace">BLACK FOREST LABS · FLUX 3 KLEIN</text>
+      <text x="14" y="24" fill="#a8947f" font-size="9" font-family="monospace">IMAGE DIFFUSION</text>
       <text x="386" y="24" fill="#38bdf8" font-size="9" font-family="monospace" text-anchor="end">SEED: ${seed}</text>
       ${graphicSvg}
       <rect x="6" y="268" width="388" height="26" fill="#120f0d" opacity="0.95"/>
@@ -1965,7 +1965,7 @@ export function initViewer(config) {
         fragment_id: defaultFrag,
         salience: 'major',
         image_url: assetImages.get(a.id) || a.image_url || null,
-        diffusion_prompt: portraitBrief?.rewritten_prompt || a.diffusion_prompt || `${a.name}, 2.5D character portrait rendered via Flux 3 Klein`,
+        diffusion_prompt: portraitBrief?.rewritten_prompt || a.diffusion_prompt || `${a.name}, 2.5D character portrait rendered via image diffusion`,
         compiled_brief: portraitBrief?.compiled_brief || a.lore_snippet || `${a.name} (${a.role || 'Actor'})`,
         fragments_used: frags,
         world_setting: portraitBrief?.zone_context?.zone_name || 'Border March Customs House',
@@ -2071,11 +2071,11 @@ export function initViewer(config) {
     if (badgeEl) {
       if (selectedAsset.forged) {
         if (selectedAsset.pipelineSource === 'comfyui_diffusion') {
-          badgeEl.textContent = '[FORGED · FLUX 3 LIVE]';
+          badgeEl.textContent = '[FORGED · LIVE DIFFUSION]';
           badgeEl.style.color = '#34d399';
           badgeEl.style.borderColor = '#059669';
         } else {
-          badgeEl.textContent = '[FORGED · FLUX 3 KLEIN]';
+          badgeEl.textContent = '[FORGED · IMAGE DIFFUSION]';
           badgeEl.style.color = '#38bdf8';
           badgeEl.style.borderColor = '#0284c7';
         }
@@ -2153,10 +2153,10 @@ export function initViewer(config) {
         cap.className = 'asset-img-caption';
         if (selectedAsset.forged) {
           cap.textContent = selectedAsset.pipelineSource === 'comfyui_diffusion'
-            ? '✨ Forged via ComfyUI (Live GPU) · Black Forest Labs Flux 3 Klein'
-            : '✨ Vector Blueprint Draft · Black Forest Labs Flux 3 Klein';
+            ? '✨ Forged via ComfyUI (Live GPU) · Image Diffusion'
+            : '✨ Vector Blueprint Draft · Image Diffusion';
         } else {
-          cap.textContent = 'Black Forest Labs Flux 3 Klein · Orthographic Matte';
+          cap.textContent = 'Image Diffusion · Orthographic Matte';
         }
 
         wrapper.appendChild(img);
@@ -2440,7 +2440,7 @@ export function initViewer(config) {
       }
       selectedAsset.compiled_brief = briefBase + warrantText + (criticismsText ? ` [Criticisms: ${selectedAsset.active_criticisms.length}]` : '');
 
-      selectedAsset.diffusion_prompt = `Retro JRPG character art, sword and sorcery, 16-bit pixel aesthetic with painterly shading. character portrait bust, front three-quarter angle displaying primary visible face, ${selectedAsset.compiled_brief}, grounded in ${zoneName} upon ${substrate}.${criticismsText} expressive character visage, fine facial details, atmospheric cinematic rim lighting, 16-bit painterly texture, Black Forest Labs Flux 3 Klein render, 1024x1024.`;
+      selectedAsset.diffusion_prompt = `Retro JRPG character art, sword and sorcery, 16-bit pixel aesthetic with painterly shading. character portrait bust, front three-quarter angle displaying primary visible face, ${selectedAsset.compiled_brief}, grounded in ${zoneName} upon ${substrate}.${criticismsText} expressive character visage, fine facial details, atmospheric cinematic rim lighting, 16-bit painterly texture, image diffusion render, 1024x1024.`;
     } else if (physicalPropsMap.has(id)) {
       const p = physicalPropsMap.get(id);
       visualFrags = selectedAsset.fragments_used?.length
@@ -2456,7 +2456,7 @@ export function initViewer(config) {
       const briefBase = p.compiled_brief || `${p.label}, physical prop in scene.`;
       selectedAsset.compiled_brief = `${briefBase} Admitted fragments: ${visualFrags.join(', ')}.${warrantText}${criticismsText ? ' ' + criticismsText : ''}`;
 
-      selectedAsset.diffusion_prompt = `orthographic top-down 2.5D isometric game asset cutout, single front isometric elevation displaying primary visible face, ${p.label}, ${selectedAsset.compiled_brief}, grounded upon ${substrate} in ${zoneName}, isolated on neutral solid grey background (#707070), no background walls, no room floors, perfectly clean silhouette, ready for alpha matting, subtle directional studio lighting from top-left, soft ground contact occlusion shadow beneath base, crisp 16-bit painterly texture, highly detailed tactile physical prop, Black Forest Labs Flux 3 Klein render, 1024x1024`;
+      selectedAsset.diffusion_prompt = `orthographic top-down 2.5D isometric game asset cutout, single front isometric elevation displaying primary visible face, ${p.label}, ${selectedAsset.compiled_brief}, grounded upon ${substrate} in ${zoneName}, isolated on neutral solid grey background (#707070), no background walls, no room floors, perfectly clean silhouette, ready for alpha matting, subtle directional studio lighting from top-left, soft ground contact occlusion shadow beneath base, crisp 16-bit painterly texture, highly detailed tactile physical prop, image diffusion render, 1024x1024`;
 
       p.diffusion_prompt = selectedAsset.diffusion_prompt;
       p.compiled_brief = selectedAsset.compiled_brief;
@@ -2494,7 +2494,7 @@ export function initViewer(config) {
         ? 'weathered cyclopean limestone masonry with asymmetric alpine lichen patina, 45-degree cantilever granite blocks, dry-stone cairn slate, alpine scree'
         : 'weathered stone, rough timber, forged iron fittings';
 
-      selectedAsset.diffusion_prompt = `orthographic top-down 2.5D isometric game asset cutout, single front isometric elevation displaying primary visible face, ${prim.name || prim.label || id}, ${physicalDerivs}, crafted with ${worldMaterials}, grounded upon ${substrate} in ${worldSetting}, isolated on neutral solid grey background (#707070), no background walls, no room floors, perfectly clean silhouette, ready for alpha matting, subtle directional studio lighting from top-left, soft ground contact occlusion shadow beneath base, crisp 16-bit painterly texture, highly detailed tactile physical prop, Black Forest Labs Flux 3 Klein render, 1024x1024`;
+      selectedAsset.diffusion_prompt = `orthographic top-down 2.5D isometric game asset cutout, single front isometric elevation displaying primary visible face, ${prim.name || prim.label || id}, ${physicalDerivs}, crafted with ${worldMaterials}, grounded upon ${substrate} in ${worldSetting}, isolated on neutral solid grey background (#707070), no background walls, no room floors, perfectly clean silhouette, ready for alpha matting, subtle directional studio lighting from top-left, soft ground contact occlusion shadow beneath base, crisp 16-bit painterly texture, highly detailed tactile physical prop, image diffusion render, 1024x1024`;
 
       if (prim.diffusion_prompt !== undefined) prim.diffusion_prompt = selectedAsset.diffusion_prompt;
       if (prim.compiled_brief !== undefined) prim.compiled_brief = selectedAsset.compiled_brief;
@@ -2542,6 +2542,12 @@ export function initViewer(config) {
           selectedAsset.fragments_used = remote.fragments_used;
           selectedAsset.standing_tier = remote.standing_tier;
           selectedAsset.standing_score = remote.standing_score;
+          if (remote.workflow_snapshot) {
+            selectedAsset.workflow_snapshot = remote.workflow_snapshot;
+          }
+          if (remote.comfyui_workflow) {
+            selectedAsset.comfyui_workflow = remote.comfyui_workflow;
+          }
           if (itemInScene) {
             itemInScene.diffusion_prompt = remote.diffusion_prompt;
             itemInScene.compiled_brief = remote.compiled_brief;
@@ -2581,7 +2587,7 @@ export function initViewer(config) {
     log('LATTICE', `[compile-world-brief] Fragment Compiler assembled brief from ${selectedAsset.fragments_used.length} fragments.`);
     log('LATTICE', `[rewrite-prompt] Lattice prompt rewriter refined prompt (${(selectedAsset.diffusion_prompt || '').length} chars).`);
     log('LATTICE', `[gemma4-orion] Calling gemma4-orion prompt rewriter...`);
-    log('LATTICE', `[format-flux3-conditioning] Conditioned for Black Forest Labs Flux 3 Klein (1024x1024).`);
+    log('LATTICE', `[format-flux3-conditioning] Conditioned for image diffusion (1024x1024).`);
 
     playAudioCue('click');
 
@@ -2741,7 +2747,7 @@ export function initViewer(config) {
       setTimeout(reset3DButtons, 600);
     }
 
-    log('LATTICE', `[3D Pipeline] High-detail depth template ready: ${depthUrl}. Conditioning Black Forest Labs Flux 3 Klein.`);
+    log('LATTICE', `[3D Pipeline] High-detail depth template ready: ${depthUrl}. Conditioning image diffusion.`);
     playAudioCue('click');
 
     renderSidebarPreviewDOM(itemInScene || getSelectedScenePrimitive());
@@ -2795,7 +2801,7 @@ export function initViewer(config) {
     const btnRender = typeof document !== 'undefined' ? document.getElementById('btn-forge-render') : null;
     if (btnRender) {
       btnRender.disabled = true;
-      btnRender.innerText = '⏳ Forging (Flux 3 Klein)...';
+      btnRender.innerText = '⏳ Forging (Image Diffusion)...';
     }
 
     const imgContainer = typeof document !== 'undefined' ? document.getElementById('asset-viewer-image-container') : null;
@@ -2804,7 +2810,7 @@ export function initViewer(config) {
         <div class="asset-no-img-box" style="padding: 16px;">
           <div style="font-size: 20px;">⚙️</div>
           <div id="forge-status-label" class="asset-no-img-text" style="color: #38bdf8;">Connecting to Render Pipeline...</div>
-          <div id="forge-status-sub" style="font-size: 9px; color: #a8947f; margin-top: 4px;">Target: Black Forest Labs Flux 3 Klein</div>
+          <div id="forge-status-sub" style="font-size: 9px; color: #a8947f; margin-top: 4px;">Target: Image Diffusion</div>
           <div class="forge-progress-bar"><div id="forge-progress-fill" class="forge-progress-fill" style="width: 20%;"></div></div>
         </div>
       `;
@@ -2830,46 +2836,152 @@ export function initViewer(config) {
     } else {
       const server = options.server || comfyServerUrl;
       log('COMFYUI', `Probing ComfyUI endpoint at ${server}...`);
-      setProgress(25, 'Probing ComfyUI Server...', server);
+      setProgress(25, 'Connecting to ComfyUI...', 'Contacting GPU manager (llama-swap)...');
 
       let comfyOnline = false;
-      try {
-        if (typeof fetch !== 'undefined') {
-          const statsRes = await fetch(`${server}/system_stats`, { signal: AbortSignal.timeout(3000) });
-          if (statsRes.ok) {
-            const stats = await statsRes.json();
-            comfyOnline = true;
-            const device = stats?.devices?.[0]?.name || 'GPU';
-            const vramFree = stats?.devices?.[0]?.vram_free ? (stats.devices[0].vram_free / 1024 / 1024 / 1024).toFixed(2) + ' GB' : 'active';
-            log('COMFYUI', `Connected to ComfyUI. Device: ${device} · VRAM free: ${vramFree}.`);
+      const probeDeadline = Date.now() + 45000;
+      let probeAttempt = 0;
+      while (Date.now() < probeDeadline) {
+        probeAttempt++;
+        try {
+          if (typeof fetch !== 'undefined') {
+            const statsRes = await fetch(`${server}/system_stats`, { signal: AbortSignal.timeout(6000) });
+            if (statsRes.ok) {
+              const stats = await statsRes.json();
+              comfyOnline = true;
+              const device = stats?.devices?.[0]?.name || 'GPU';
+              const vramFree = stats?.devices?.[0]?.vram_free ? (stats.devices[0].vram_free / 1024 / 1024 / 1024).toFixed(2) + ' GB' : 'active';
+              log('COMFYUI', `Connected to ComfyUI. Device: ${device} · VRAM free: ${vramFree}.`);
+              break;
+            }
           }
+        } catch (err) {
+          if (probeAttempt === 1) {
+            log('COMFYUI', `llama-swap initializing ComfyUI upstream... (${err.message}). Waiting for swap-in.`);
+          }
+          setProgress(25 + Math.min(15, probeAttempt * 2), 'Swapping ComfyUI into VRAM...', `llama-swap booting instance (${probeAttempt * 2}s)`);
+          await new Promise(r => setTimeout(r, 2000));
         }
-      } catch (err) {
-        log('COMFYUI', `Server probe failed: ${err.message}. ComfyUI offline.`, 'warn');
       }
 
       if (comfyOnline) {
         try {
-          setProgress(40, 'Assembling Flux 3 Klein Graph...', 'Loading unet + clip + vae');
+          setProgress(40, 'Assembling Image Diffusion Graph...', 'Loading unet + clip + vae');
           const seed = options.seed || Math.floor(Math.random() * 2147483647);
-          const steps = options.steps || 8;
+          const steps = options.steps || 25;
           const promptText = selectedAsset.diffusion_prompt || `Orthographic asset for ${selectedAsset.label}`;
           const negPrompt = options.negativePrompt || 'ugly, blurry, low quality, artifacts, watermark, distorted';
+
+          let workflow = selectedAsset.comfyui_workflow;
+          if (!workflow || !workflow['1']) {
+            let unetLoaderClass = 'UnetLoaderGGUF';
+            let unetName = 'flux3_image_klein_sd_Q4_K_M.gguf';
+            let clipName = 'qwen3vl_4b_int8_convrot.safetensors';
+            let clipType = 'flux3';
+            let vaeName = 'flux2-vae.safetensors';
+
+            try {
+              const [unetGgufRes, unetRes, clipRes, vaeRes] = await Promise.all([
+                fetch(`${server}/object_info/UnetLoaderGGUF`).then(r => r.ok ? r.json() : null).catch(() => null),
+                fetch(`${server}/object_info/UNETLoader`).then(r => r.ok ? r.json() : null).catch(() => null),
+                fetch(`${server}/object_info/CLIPLoader`).then(r => r.ok ? r.json() : null).catch(() => null),
+                fetch(`${server}/object_info/VAELoader`).then(r => r.ok ? r.json() : null).catch(() => null),
+              ]);
+
+              const ggufCandidates = unetGgufRes?.UnetLoaderGGUF?.input?.required?.unet_name?.[0] || [];
+              const safetensorCandidates = unetRes?.UNETLoader?.input?.required?.unet_name?.[0] || [];
+              const clipCandidates = clipRes?.CLIPLoader?.input?.required?.clip_name?.[0] || [];
+              const vaeCandidates = vaeRes?.VAELoader?.input?.required?.vae_name?.[0] || [];
+
+              const mossUnet = safetensorCandidates.find(u => u.toLowerCase().includes('moss'));
+              const flux3Gguf = ggufCandidates.find(u => u.toLowerCase().includes('flux3') || u.toLowerCase().includes('klein'));
+              const anyGguf = ggufCandidates[0];
+              const anyUnet = safetensorCandidates[0];
+
+              if (mossUnet) {
+                unetLoaderClass = 'UNETLoader';
+                unetName = mossUnet;
+                clipType = 'moss_image';
+              } else if (flux3Gguf) {
+                unetLoaderClass = 'UnetLoaderGGUF';
+                unetName = flux3Gguf;
+                clipType = 'flux3';
+              } else if (anyGguf) {
+                unetLoaderClass = 'UnetLoaderGGUF';
+                unetName = anyGguf;
+                clipType = anyGguf.toLowerCase().includes('moss') ? 'moss_image' : 'flux3';
+              } else if (anyUnet) {
+                unetLoaderClass = 'UNETLoader';
+                unetName = anyUnet;
+                clipType = anyUnet.toLowerCase().includes('moss') ? 'moss_image' : (anyUnet.toLowerCase().includes('qwen') ? 'qwen_image' : 'flux3');
+              }
+
+              if (clipCandidates.length > 0) {
+                const preferredClip = clipCandidates.find(c => c.toLowerCase().includes('qwen3vl') || c.toLowerCase().includes('qwen3.5')) || clipCandidates[0];
+                clipName = preferredClip;
+              }
+
+              if (vaeCandidates.length > 0) {
+                const preferredVae = vaeCandidates.find(v => v.toLowerCase().includes('flux') || v.toLowerCase().includes('ae')) || vaeCandidates[0];
+                vaeName = preferredVae;
+              }
+            } catch (_) {}
+
+            workflow = {
+              '1': {
+                'class_type': unetLoaderClass,
+                'inputs': unetLoaderClass === 'UNETLoader' ? { 'unet_name': unetName, 'weight_dtype': 'default' } : { 'unet_name': unetName }
+              },
+              '2': {
+                'class_type': 'CLIPLoader',
+                'inputs': { 'clip_name': clipName, 'type': clipType, 'device': 'default' }
+              },
+              '3': {
+                'class_type': 'VAELoader',
+                'inputs': { 'vae_name': vaeName }
+              },
+              '4': {
+                'class_type': 'CLIPTextEncode',
+                'inputs': { 'clip': ['2', 0], 'text': promptText }
+              },
+              '5': {
+                'class_type': 'CLIPTextEncode',
+                'inputs': { 'clip': ['2', 0], 'text': negPrompt }
+              },
+              '6': {
+                'class_type': 'EmptyFlux2LatentImage',
+                'inputs': { 'width': 512, 'height': 512, 'batch_size': 1 }
+              },
+              '7': {
+                'class_type': 'KSampler',
+                'inputs': { 'model': ['1', 0], 'positive': ['4', 0], 'negative': ['5', 0], 'latent_image': ['6', 0], 'seed': seed, 'steps': steps, 'cfg': 3.0, 'sampler_name': 'euler', 'scheduler': 'simple', 'denoise': 1.0 }
+              },
+              '8': {
+                'class_type': 'VAEDecode',
+                'inputs': { 'samples': ['7', 0], 'vae': ['3', 0] }
+              },
+              '9': {
+                'class_type': 'SaveImage',
+                'inputs': { 'images': ['8', 0], 'filename_prefix': 'spritequest_forge' }
+              }
+            };
+          }
 
           log('COMFYUI', `Assembled workflow. Seed: ${seed}, Steps: ${steps}, Prompt: "${promptText.slice(0, 50)}..."`);
           setProgress(55, 'Submitting Prompt to Queue...', `Seed: ${seed}`);
 
-          const workflow = {
-            '1': { 'class_type': 'UnetLoaderGGUF', 'inputs': { 'unet_name': 'flux3_image_klein_sd_Q4_K_M.gguf' } },
-            '2': { 'class_type': 'CLIPLoader', 'inputs': { 'clip_name': 'qwen3vl_4b_int8_convrot.safetensors', 'type': 'flux3', 'device': 'default' } },
-            '3': { 'class_type': 'VAELoader', 'inputs': { 'vae_name': 'flux2-vae.safetensors' } },
-            '4': { 'class_type': 'CLIPTextEncode', 'inputs': { 'clip': ['2', 0], 'text': promptText } },
-            '5': { 'class_type': 'CLIPTextEncode', 'inputs': { 'clip': ['2', 0], 'text': negPrompt } },
-            '6': { 'class_type': 'EmptyFlux2LatentImage', 'inputs': { 'width': 512, 'height': 512, 'batch_size': 1 } },
-            '7': { 'class_type': 'KSampler', 'inputs': { 'model': ['1', 0], 'positive': ['4', 0], 'negative': ['5', 0], 'latent_image': ['6', 0], 'seed': seed, 'steps': steps, 'cfg': 1.0, 'sampler_name': 'euler', 'scheduler': 'simple', 'denoise': 1.0 } },
-            '8': { 'class_type': 'VAEDecode', 'inputs': { 'samples': ['7', 0], 'vae': ['3', 0] } },
-            '9': { 'class_type': 'SaveImage', 'inputs': { 'images': ['8', 0], 'filename_prefix': 'spritequest_forge' } }
-          };
+          selectedAsset.comfyui_workflow = workflow;
+          selectedAsset.workflow_snapshot = `workflows/comfyui/${id}.json`;
+          if (typeof postForgeJson === 'function') {
+            postForgeJson('/forge/workflow/snapshot', {
+              asset_id: id,
+              workflow: workflow,
+            }).then(snapRes => {
+              if (snapRes && snapRes.ok) {
+                log('FORGE', `Saved ComfyUI workflow snapshot to ${snapRes.workflow_snapshot}.`);
+              }
+            }).catch(() => {});
+          }
 
           const clientId = 'sq-' + Math.random().toString(36).substring(2, 9);
           const queueRes = await fetch(`${server}/prompt`, {
@@ -2884,7 +2996,7 @@ export function initViewer(config) {
           const queueData = await queueRes.json();
           const promptId = queueData.prompt_id;
           log('COMFYUI', `Prompt queued with ID: ${promptId}. Executing sampler on GPU...`);
-          setProgress(70, 'Sampling (Flux 3 Klein on GPU)...', `Prompt ID: ${promptId.slice(0, 8)}...`);
+          setProgress(70, 'Sampling (Image Diffusion on GPU)...', `Prompt ID: ${promptId.slice(0, 8)}...`);
 
           // Poll history (up to 45s)
           const deadline = Date.now() + 45000;
@@ -2952,7 +3064,7 @@ export function initViewer(config) {
 
     if (!renderedUrl) {
       if (!options.immediate) {
-        log('FORGE', 'Generating vector blueprint draft (Flux 3 Klein specification).');
+        log('FORGE', 'Generating vector blueprint draft (image diffusion specification).');
       }
       renderedUrl = synthesizeForgeRender(selectedAsset);
       pipelineSource = 'vector_blueprint';
@@ -2998,6 +3110,32 @@ export function initViewer(config) {
 
   function renderSelectedAssetInForge() {
     return selectedAsset ? renderAssetInForge(selectedAsset.id) : null;
+  }
+
+  function viewWorkflowSnapshot(assetId) {
+    const id = assetId || (selectedAsset ? selectedAsset.id : null);
+    if (!id) return;
+    const snapPath = selectedAsset?.workflow_snapshot || `workflows/comfyui/${id}.json`;
+    log('FORGE', `Inspecting workflow snapshot: ${snapPath}`);
+    if (selectedAsset?.comfyui_workflow) {
+      const jsonStr = JSON.stringify(selectedAsset.comfyui_workflow, null, 2);
+      log('COMFYUI', `Workflow Snapshot [${snapPath}]: ${Object.keys(selectedAsset.comfyui_workflow).length} nodes, ${jsonStr.length} bytes.`);
+    } else if (typeof fetch === 'function') {
+      fetch(`${getForgeServiceUrl()}/forge/workflow/snapshot?asset_id=${encodeURIComponent(id)}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.workflow) {
+            selectedAsset.comfyui_workflow = data.workflow;
+            selectedAsset.workflow_snapshot = data.path;
+            log('FORGE', `Loaded workflow snapshot (${Object.keys(data.workflow).length} nodes) from ${data.path}.`);
+          } else {
+            log('FORGE', `Workflow snapshot file: ${snapPath}. Compile or render in Forge to build.`, 'info');
+          }
+        })
+        .catch(() => {
+          log('FORGE', `Workflow snapshot path: ${snapPath}.`, 'info');
+        });
+    }
   }
 
   // --- Cartographers' Scene-Coherence & Epistemic Curation Engine (Client Runtime) ---
@@ -4570,13 +4708,13 @@ export function initViewer(config) {
       </div>
       <div class="lightbox-desc">${escapeHtml(prim.description)}</div>
       <div class="lightbox-prompt-box">
-        <div class="prompt-box-label">BLACK FOREST LABS FLUX 3 KLEIN DIFFUSION PROMPT SPECIFICATION:</div>
+        <div class="prompt-box-label">IMAGE DIFFUSION PROMPT SPECIFICATION:</div>
         <div class="prompt-box-content">${escapeHtml(prim.diffusion_prompt || (selectedAsset?.diffusion_prompt) || 'Awaiting compile...')}</div>
       </div>
       <div class="lightbox-actions" style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;">
         <button class="header-btn" style="background: #1e1b4b; color: #a5b4fc; border: 1px solid #4338ca;" onclick="window.viewer && window.viewer.compileAssetBrief && window.viewer.compileAssetBrief('${escapeHtml(prim.id)}')">⚡ Compile (Gemma4-Orion)</button>
         <button class="header-btn" style="background: #0f172a; color: #38bdf8; border: 1px solid #0284c7;" onclick="window.viewer && window.viewer.runPrimitive3DPipeline && window.viewer.runPrimitive3DPipeline('${escapeHtml(prim.id)}')">📐 3D Pipeline</button>
-        <button class="header-btn" onclick="window.viewer && window.viewer.forgeScenePrimitive && window.viewer.forgeScenePrimitive('${escapeHtml(prim.id)}')">✨ Dispatch to Asset Forge (Flux 3 Klein)</button>
+        <button class="header-btn" onclick="window.viewer && window.viewer.forgeScenePrimitive && window.viewer.forgeScenePrimitive('${escapeHtml(prim.id)}')">✨ Dispatch to Asset Forge (Image Diffusion)</button>
         <button class="header-btn" style="background: #2a241e; color: #e6dfd5;" onclick="window.viewer && window.viewer.closePrimitiveLightbox && window.viewer.closePrimitiveLightbox()">✕ Close Inspection</button>
       </div>
     `;
@@ -4608,7 +4746,7 @@ export function initViewer(config) {
         fragment_id: prim.fragment_id,
         salience: 'major',
         lore_snippet: prim.description,
-        diffusion_prompt: `orthographic top-down 2.5D isometric game asset cutout, ${prim.name}, ${prim.description}, source fragment: ${prim.fragment_id}, isolated on neutral solid grey background (#707070), subtle directional studio lighting, soft ground contact occlusion shadow, crisp 16-bit painterly texture, highly detailed tactile physical prop, Black Forest Labs Flux 3 Klein render, 1024x1024`,
+        diffusion_prompt: `orthographic top-down 2.5D isometric game asset cutout, ${prim.name}, ${prim.description}, source fragment: ${prim.fragment_id}, isolated on neutral solid grey background (#707070), subtle directional studio lighting, soft ground contact occlusion shadow, crisp 16-bit painterly texture, highly detailed tactile physical prop, image diffusion render, 1024x1024`,
       });
       return renderAssetInForge(prim.id);
     }
@@ -4706,7 +4844,7 @@ export function initViewer(config) {
     tokenEl: playerEl,
     balloonEl: null,
     image_url: '../../terrain/lighting-demo/player_in_pass.png',
-    diffusion_prompt: 'Pell the Underwritten, traveler in heavy wool cloak standing on frosted mountain pass road, Flux 3 Klein portrait',
+    diffusion_prompt: 'Pell the Underwritten, traveler in heavy wool cloak standing on frosted mountain pass road, image diffusion portrait',
     lore_snippet: 'Understudy traveling with unwritten standing, bearing cargo slips toward the frontier.',
   });
 
@@ -4760,8 +4898,8 @@ export function initViewer(config) {
       ? '../../terrain/lighting-demo/player_in_pass.png'
       : (id === 'hollis' ? '../../terrain/lighting-demo/player_center_plateau.png' : null);
     const defaultPrompt = id === 'player'
-      ? 'Pell the Underwritten, traveler in heavy wool cloak standing on frosted mountain pass road, Flux 3 Klein portrait'
-      : (id === 'hollis' ? 'Hollis the Twice-Written, stern imperial customs quartermaster in official robes inspecting freight at dais, Flux 3 Klein portrait' : `${name}, 2.5D character portrait rendered via Flux 3 Klein`);
+      ? 'Pell the Underwritten, traveler in heavy wool cloak standing on frosted mountain pass road, image diffusion portrait'
+      : (id === 'hollis' ? 'Hollis the Twice-Written, stern imperial customs quartermaster in official robes inspecting freight at dais, image diffusion portrait' : `${name}, 2.5D character portrait rendered via image diffusion`);
 
     const actor = {
       id,
@@ -5487,6 +5625,7 @@ export function initViewer(config) {
     compileSelectedAssetBrief,
     renderAssetInForge,
     renderSelectedAssetInForge,
+    viewWorkflowSnapshot,
     surveyAssetCoherence,
     curateAssetFragment,
     criticizeAssetFragment,
@@ -5594,6 +5733,7 @@ export function initViewer(config) {
     globalRoot.compileSelectedAssetBrief = compileSelectedAssetBrief;
     globalRoot.renderAssetInForge = renderAssetInForge;
     globalRoot.renderSelectedAssetInForge = renderSelectedAssetInForge;
+    globalRoot.viewWorkflowSnapshot = viewWorkflowSnapshot;
     globalRoot.surveyAssetCoherence = surveyAssetCoherence;
     globalRoot.curateAssetFragment = curateAssetFragment;
     globalRoot.criticizeAssetFragment = criticizeAssetFragment;

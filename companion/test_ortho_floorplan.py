@@ -3,7 +3,7 @@
 companion/test_ortho_floorplan.py
 
 Unit tests for top-down orthographic 3D asset rendering, room-scale 2D map
-composition, Flux 3 Klein layout prompt formatting, and spatial adherence metrics.
+composition, image diffusion layout prompt formatting, and spatial adherence metrics.
 """
 
 from __future__ import annotations

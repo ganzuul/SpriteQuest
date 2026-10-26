@@ -4,7 +4,7 @@
   "name": "The Quartermaster's Furnished Lodge (16-Asset Room-Scale Plan)",
   "scene_id": "common-quarters",
   "refinement_level": "floor_plan",
-  "description": "A 10m x 10m timber-and-stone domestic lodge room containing sixteen metric 3D furniture assets arranged into three functional zones: a northern storage wall, a central dining and dressing parlor, and a southern sleeping alcove. Serves as the canonical room-scale benchmark for top-down orthographic 3D asset projection and Flux 3 Klein diffusion layout control.",
+  "description": "A 10m x 10m timber-and-stone domestic lodge room containing sixteen metric 3D furniture assets arranged into three functional zones: a northern storage wall, a central dining and dressing parlor, and a southern sleeping alcove. Serves as the canonical room-scale benchmark for top-down orthographic 3D asset projection and image diffusion layout control.",
   "scale": {
     "unit": "meter",
     "grid_step": 1.0,
