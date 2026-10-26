@@ -1,87 +1,70 @@
-<p align="center">
-  <img src="docs/images/lattice-banner.png" alt="Lattice" width="720">
-</p>
-
-<p align="center"><strong>A visual story workshop for SillyTavern.</strong></p>
+# SpriteQuest
 
 <p align="center">
-  <a href="#install-and-try-it">Install</a> ·
-  <a href="docs/operators-manual.md">Operator’s manual</a> ·
-  <a href="docs/developer-guide.md">Developer guide</a> ·
-  <a href="LICENSE">MIT license</a>
+  <a href="https://github.com/ganzuul/SpriteQuest/actions/workflows/ci.yml">
+    <img alt="CI" src="https://github.com/ganzuul/SpriteQuest/actions/workflows/ci.yml/badge.svg" />
+  </a>
+  <a href="LICENSE">
+    <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-blue.svg" />
+  </a>
+  <a href="https://nodejs.org/">
+    <img alt="Node 24" src="https://img.shields.io/badge/Node-24.x-339933?logo=node.js&logoColor=white" />
+  </a>
 </p>
 
-Lattice lets you connect small tools to shape a roleplay: prepare the next scene, give a character their own perspective, edit a reply, or keep track of events your story has established. Start with a working example and change it to suit your world.
+> SpriteQuest is in the very early stages of a years-long ambition: a Lattice-based toolkit for SillyTavern that turns narrative consistency, scene orchestration, and worldbuilding into actual systems instead of one-off prompts.
 
-Your usual SillyTavern model writes the reply. Lattice can prepare guidance for it, ask other models to handle particular jobs, and process the result. You review the proposed reply and story changes before accepting them.
+SpriteQuest is a fork and continuation of the Lattice workflow extension, built to help storytellers construct and operate narrative systems inside SillyTavern. The project is intentionally ambitious: it aims to combine workflow authoring, roster and ledger state tracking, asset provenance, map and sprite generation, and review-oriented scene logic into a single creative stack.
 
-![Wand, weather, and relationship systems connected to one SillyTavern reply](docs/images/beta-overview.png)
+This is early-stage work, but the direction is clear: build practical infrastructure for story-world tools that can grow over time without losing the architecture underneath them.
 
-*Several story systems can share one workflow. Open a system to inspect its rules, edit it, or switch it off.*
+## What we are building
 
-## What could you build?
+At its core, SpriteQuest treats story tools as systems rather than isolated AI chat outputs. It combines:
 
-**A broken wand with a 10% chance of chaos magic.** Give ordinary magic a weight of 90 and fixed chaos effects a combined weight of 10: butterflies, sudden frost, whispering shadows. After an actual use is confirmed, Random Pick chooses an effect. The weighted choice needs no model request; models can recognize the action and narrate the consequence. A retained draw is reused for the same event. [Build this version](docs/story-systems.md#a-wand-with-a-10-chaos-chance).
+- node-based workflow orchestration inherited from Lattice
+- narrative state tracking, including standing, ledgers, and guidance loops
+- an optional companion service for structured event handling and state management
+- workflow-driven scene review and publish stages
+- generated or curated world assets, including maps, terrain, sprites, and NPC sheets
 
-| Story idea | How it works |
-| --- | --- |
-| **A relationship that develops over weeks** | Track separate trust, desire, tension, and excitement values. Set limits and cooldowns so one warm conversation has a modest effect. Use accepted story time to let temporary feelings settle. |
-| **One moment, two private perspectives** | Give each present character their own context and memories when reflecting on a reunion, disagreement, or promise. Keep their private interpretations separate. |
-| **Weather and routines on story time** | Advance a clock after an agreed journey or rest. Trigger rain, a curse, or a routine when the story crosses its scheduled time. |
-| **A campaign notebook of accepted scenes** | Propose a recap or clue record alongside the reply. Save it when you accept that result, keeping rejected drafts out of the notebook. |
-| **A narrator with an editorial team** | Have a model plan the scene, let SillyTavern write it, then ask an editor to polish the prose or add useful notes. Choose a connection for each job. |
-| **Memories you can bring back deliberately** | Queue a character’s stored memories from the canvas or a shortcut, or use an authored story trigger. Inspect what reached the reply. |
+The project deliberately blurs the line between engineering reality and in-world fiction. The “Forge,” ledger systems, and world assets are both practical software features and part of the project’s lore and design language.
 
-These are systems you can author with the supplied tools and lessons. [Story systems](docs/story-systems.md) explains the setup and limits; [30 example workflows](docs/examples.md) offer editable starting points.
+## Building on Lattice
 
-## Build it by connecting the pieces
+SpriteQuest sits in the Lattice lineage, but it is not just a copy of the original extension. Recent work points toward a deeper layer of narrative and world-building support:
 
-Each box, called a **node**, does one job. Search for a tool and drag it onto the canvas. Available tools place immediately. Select the node to edit its settings in **Details**; a wrench and **Setup Required** identify missing settings, while **Input Required** identifies missing connections. Connect its output to the next tool’s input. A workflow might read scene context, compose instructions, ask a model a question, edit text, or propose a saved story change.
+- character standing and story-state continuity
+- event-ledger and roster guidance loops
+- generated art and asset pipelines
+- 3D and map tooling for terrain, floorplans, and rendered previews
+- companion tooling that supports SillyTavern workflows outside the browser UI
 
-![Searching for Text Rules and placing it on the canvas](docs/images/search-and-place.gif)
+The long-term intent is to make a serious story operating system for roleplay worlds: tools for scenes, characters, continuity, generation, and review as a connected toolkit rather than isolated prompts.
 
-*Search and drag to place a node, then edit its settings in Details.*
+## Current repository shape
 
-Click a node’s **?** button for an illustrated guide to its purpose, settings, connections, and examples. Preview shows recorded results along the way. **Run to here** tests a supported part of the workflow; a test that includes model tools can make additional requests.
+- `src/` and `ui/` — workflow engine and editor logic
+- `workflows/` — example and reusable Lattice-style workflows
+- `companion/` — Python service, NPC tooling, forge logic, and render pipeline
+- `library/` and `assets/` — world definitions, manifests, assets, and generated artifacts
+- `docs/` — documentation and operator guides
+- `tests/` and `test/` — validation and integration checks
 
-When a useful sequence takes up too much space, turn it into a **subgraph**: one box that opens into its own editable tab. Save it to the shelf to reuse it in another workflow.
+## Early-stage roadmap
 
-![Selecting a connected sequence and turning it into a reusable subgraph](docs/images/create-subgraph.gif)
+This is a long-horizon project with several major directions already underway:
 
-*Keep a working process together and reuse it without rebuilding its connections.*
+- narrative workflow authoring in SillyTavern
+- scene and world-state management through ledger-like systems
+- generated and reviewed props, sheets, terrain, and map outputs
+- reproducible asset provenance and composition workflows
+- a foundation for future visual and narrative tooling without locking the project into a single prototype
 
-## Review the result
+## Development
 
-The usual path is **Send → prepare guidance → SillyTavern reply → process → review**. Select **Review / Publish** and inspect its **Host result** in Preview. **Apply reviewed reply** adds the reviewed version as a new swipe, preserving the original, and accepts that result’s staged story changes. **Reject reply** leaves those proposals unaccepted.
-
-![Reply Preview with Apply reviewed reply and Reject reply controls](docs/images/review-candidate.png)
-
-*Reading Preview or using Run to here does not accept story changes. If a save fails, inspect its status before continuing.*
-
-## Install and try it
-
-With SillyTavern installed and your usual model connection working:
-
-1. Open **Extensions → Install extension** in SillyTavern.
-2. Enter `https://github.com/MentallyQuill/Lattice`. Leave the branch blank to install `main`, then reload SillyTavern.
-3. Click the Lattice logo beside the chat bar, or type `/lattice`. A fresh installation opens **Unified story workflow** with Lattice disabled.
-4. Select **Enable Lattice**, then send a player message normally. The starter uses your usual SillyTavern generation and makes no extra model requests.
-5. Select **Review / Publish**, choose **Host result** in Preview, and apply or reject the reviewed reply.
-
-Next, choose **File → Open examples…**. Try **Give this scene one clear direction** for a simple editable instruction, or choose a lesson that fits your story. Each lesson explains its setup and model request budget. Model-based lessons need their connections configured; some also need story documents in Workflow Data.
-
-Lattice is in beta. Save your workflows and try substantial systems in a separate chat first. Update through SillyTavern’s **Manage Extensions**, then reload.
-
-## Keep exploring
-
-- [Quick start](docs/lattice-workspace.md) — installation, your first reply, and saving your work.
-- [Operator’s manual](docs/operators-manual.md) — illustrated instructions for the editor and day-to-day use.
-- [Example workflows](docs/examples.md) — choose among 30 lessons.
-- [Unified workflows](docs/unified-workflows.md) — combine models, memories, documents, clocks, and story rules.
-- [Model setup and troubleshooting](docs/native-workflows.md) — connections, request limits, and save status.
-- [Documentation](docs/README.md) — routes for readers, workflow authors, and developers, including the detailed [node reference](docs/node-reference.md).
-- [Developer guide](docs/developer-guide.md) — architecture, rendering, builds, and contributing.
-
-Lattice is released under the [MIT license](LICENSE) so the AI roleplay community can use, adapt, and build on this technology, in part or as a whole. See [third-party notices](THIRD_PARTY_NOTICES.md) for included dependencies.
-
-Screenshots and animations show the real editor on a local demonstration host with synthetic story material. The captures make no provider requests; model profiles shown are illustrative.
+```bash
+npm install
+npm test
+npm run check:types
+npm run build
