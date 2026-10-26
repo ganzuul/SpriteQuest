@@ -2161,6 +2161,26 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
       border-color: var(--accent);
       color: #ffffff;
     }}
+    .btn-save-state {{
+      background: linear-gradient(135deg, #13241b 0%, #064e3b 100%) !important;
+      border-color: #059669 !important;
+      color: #6ee7b7 !important;
+    }}
+    .btn-save-state:hover {{
+      background: linear-gradient(135deg, #064e3b 0%, #047857 100%) !important;
+      border-color: #34d399 !important;
+      color: #ecfdf5 !important;
+    }}
+    .btn-clear-save {{
+      background: #201313 !important;
+      border-color: #5c1d1d !important;
+      color: #f87171 !important;
+    }}
+    .btn-clear-save:hover:not(:disabled) {{
+      background: #3b1111 !important;
+      border-color: #ef4444 !important;
+      color: #fecaca !important;
+    }}
 
     /* Lightbox Modal */
     .primitive-lightbox {{
@@ -2289,8 +2309,14 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
       <button class="view-tab" id="tab-depth" onclick="setLayerMode('depth')" title="Topographic Z-Depth Map">⛰️ Z-Depth Map</button>
       <button class="view-tab" id="tab-relief" onclick="setLayerMode('relief')" title="Hillshade & Contour Relief">📐 Topo Relief</button>
     </div>
-    <div class="controls-hint">
-      WASD / Arrows / Click to Move • Hover probes elevation
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <div class="header-save-actions" style="display: flex; align-items: center; gap: 6px;">
+        <button class="header-btn btn-save-state" id="btn-save-state" onclick="(window.saveState ? window.saveState() : (window.viewer && window.viewer.saveState && window.viewer.saveState()))" title="Save current scene, player position, and forged assets to local storage">💾 Save</button>
+        <button class="header-btn btn-clear-save" id="btn-clear-save" onclick="(window.clearSaveState ? window.clearSaveState() : (window.viewer && window.viewer.clearSaveState && window.viewer.clearSaveState()))" title="Guarded: Clear saved state from local storage" style="opacity: 0.5;">🗑️ Clear Save</button>
+      </div>
+      <div class="controls-hint">
+        WASD / Arrows / Click to Move • Hover probes elevation
+      </div>
     </div>
   </header>
 
@@ -2756,6 +2782,19 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
     initialPlayerY: {player_y},
     features: {features_json},
   }});
+
+  window.saveState = function() {{
+    return (window.viewer && window.viewer.saveState) ? window.viewer.saveState() : null;
+  }};
+  window.loadState = function(savedJson) {{
+    return (window.viewer && window.viewer.loadState) ? window.viewer.loadState(savedJson) : null;
+  }};
+  window.clearSaveState = function(force) {{
+    return (window.viewer && window.viewer.clearSaveState) ? window.viewer.clearSaveState(force) : null;
+  }};
+  window.hasSavedState = function() {{
+    return (window.viewer && window.viewer.hasSavedState) ? window.viewer.hasSavedState() : false;
+  }};
   </script>
 </body>
 </html>

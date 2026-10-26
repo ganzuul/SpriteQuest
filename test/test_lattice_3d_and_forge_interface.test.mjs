@@ -70,6 +70,7 @@ describe('Lattice 3D & Forge Pipeline Interface Guard (TDD)', () => {
     const rawHtml = fs.readFileSync(htmlPath, 'utf8');
 
     dom = new JSDOM(rawHtml, {
+      url: 'http://localhost/',
       runScripts: 'dangerously',
       resources: 'usable',
       pretendToBeVisual: true,
@@ -436,5 +437,44 @@ describe('Lattice 3D & Forge Pipeline Interface Guard (TDD)', () => {
     assert.equal(parsed.watertight, false);
     assert.equal(parsed.overhang_conforming, false);
     assert.equal(parsed.gate_verdict, 'refused');
+  });
+
+  test('7. State Persistence: Save Button and Guarded Clear-Save Operations', async () => {
+    try {
+      // 1. Verify buttons exist in DOM
+      const btnSave = document.getElementById('btn-save-state');
+      const btnClear = document.getElementById('btn-clear-save');
+      assert.ok(btnSave, 'Save State button must exist in header DOM');
+      assert.ok(btnClear, 'Clear Save button must exist in header DOM');
+
+      // 2. Initially clear any save
+      viewer.clearSaveState(true);
+      assert.equal(viewer.hasSavedState(), false, 'Save state should not exist initially');
+
+      // 3. Move player and select primitive
+      viewer.tryMoveActor('player', 42.0, 55.0);
+      viewer.selectScenePrimitive('ancient-bastion');
+
+      // 4. Execute saveState
+      const saveRes = viewer.saveState();
+      assert.ok(saveRes, 'saveState must return result');
+      assert.equal(saveRes.success, true, 'saveState must succeed');
+      assert.equal(viewer.hasSavedState(), true, 'hasSavedState must report true after save');
+
+      // 5. Guarded clear: refusing without confirm
+      window.confirm = () => false;
+      const cancelRes = viewer.clearSaveState(false);
+      assert.equal(cancelRes, false, 'clearSaveState must abort when user cancels confirm');
+      assert.equal(viewer.hasSavedState(), true, 'Save must remain intact after cancelled clear');
+
+      // 6. Guarded clear: user confirms
+      window.confirm = () => true;
+      const clearRes = viewer.clearSaveState(false);
+      assert.equal(clearRes, true, 'clearSaveState must succeed when confirmed');
+      assert.equal(viewer.hasSavedState(), false, 'hasSavedState must report false after clear');
+    } catch (err) {
+      console.error('TEST 7 ERROR:', err);
+      throw err;
+    }
   });
 });

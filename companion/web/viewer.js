@@ -75,6 +75,37 @@ export function initViewer(config) {
   const MAX_LOGS = 300;
   let comfyServerUrl = 'http://127.0.0.1:8080/upstream/comfyui';
 
+  const _memoryStorage = new Map();
+  function safeGetStorage(key) {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        return window.localStorage.getItem(key);
+      }
+    } catch (_) {}
+    return _memoryStorage.get(key) || null;
+  }
+
+  function safeSetStorage(key, val) {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.setItem(key, val);
+        return true;
+      }
+    } catch (_) {}
+    _memoryStorage.set(key, val);
+    return true;
+  }
+
+  function safeRemoveStorage(key) {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.removeItem(key);
+      }
+    } catch (_) {}
+    _memoryStorage.delete(key);
+    return true;
+  }
+
   function getForgeServiceUrl() {
     if (typeof window !== 'undefined' && window.FORGE_SERVICE_URL) {
       return window.FORGE_SERVICE_URL;
@@ -87,7 +118,7 @@ export function initViewer(config) {
     return 'http://127.0.0.1:8788';
   }
 
-  async function postForgeJson(route, payload, timeoutMs = 30000) {
+  async function postForgeJson(route, payload, timeoutMs = 120000) {
     if (typeof fetch !== 'function') return null;
     const base = getForgeServiceUrl();
     const url = `${base}${route}`;
@@ -2681,7 +2712,7 @@ export function initViewer(config) {
         primitive_id: pid,
         scene_id: currentSceneId || 'border-march',
         force: options.force || false,
-      }, 300000).then((res) => {
+      }, 600000).then((res) => {
         resetWaterfallButtons();
         if (res && res.ok) {
           const bust = `?t=${Date.now()}`;
@@ -5565,7 +5596,10 @@ export function initViewer(config) {
     bubble.style.display = 'none';
   }
 
+  let currentVantage = 'macro_exploration';
+
   function setCameraVantage(vantageId) {
+    currentVantage = vantageId || 'macro_exploration';
     if (!viewport || !world) return;
     const rect = world.getBoundingClientRect ? world.getBoundingClientRect() : { left: 0, top: 0, width: 600, height: 700 };
     const vpRect = viewport.getBoundingClientRect ? viewport.getBoundingClientRect() : { left: 0, top: 0, width: 600, height: 700 };
@@ -5730,6 +5764,262 @@ export function initViewer(config) {
     return await playCutscene(script, options);
   }
 
+  // -------------------------------------------------------------------------
+  // State Persistence: Save State & Guarded Clear-Save
+  // -------------------------------------------------------------------------
+  const SAVE_STORAGE_KEY = 'spritequest_save_state';
+  let clearConfirmPending = false;
+  let clearConfirmTimer = null;
+
+  function getSaveStateData() {
+    const assetOverrides = {};
+    assetImages.forEach((val, key) => {
+      assetOverrides[key] = val;
+    });
+
+    const primUpdates = {};
+    if (scenesManifest && scenesManifest.scenes_by_id) {
+      Object.entries(scenesManifest.scenes_by_id).forEach(([sId, sc]) => {
+        (sc.primitives || []).forEach((p) => {
+          if (p.sheet_url || p.depth_url || p.mesh_glb || (p.triangle_count && p.triangle_count > 1000)) {
+            primUpdates[p.id] = {
+              sheet_url: p.sheet_url,
+              collage_url: p.collage_url,
+              depth_url: p.depth_url,
+              mesh_glb: p.mesh_glb,
+              source_glb: p.source_glb,
+              collider_url: p.collider_url,
+              triangle_count: p.triangle_count,
+              coacd_pieces: p.coacd_pieces,
+            };
+          }
+        });
+      });
+    }
+
+    const smashedPropIds = [];
+    physicalPropsMap.forEach((p, id) => {
+      if (p.is_smashed) smashedPropIds.push(id);
+    });
+
+    return {
+      version: 1,
+      timestamp: Date.now(),
+      savedAt: new Date().toISOString(),
+      player: {
+        x: playerX,
+        y: playerY,
+        facing: 0,
+        written: actorWritten,
+        strength: playerStrength,
+      },
+      campaign: {
+        campaignId: currentCampaignId,
+        actId: currentActId,
+        sceneId: currentSceneId,
+      },
+      selectedAssetId: selectedAsset ? (selectedAsset.id || selectedAsset.asset_id) : null,
+      selectedPrimitiveId: selectedPrimitiveId,
+      previewFacet: currentPreviewFacet,
+      atmosphereMode: currentAtmosphere,
+      cameraVantage: currentVantage,
+      exploredGrid: Array.from(explored),
+      smashedProps: smashedPropIds,
+      assetImages: assetOverrides,
+      primitiveUpdates: primUpdates,
+    };
+  }
+
+  function hasSavedState() {
+    try {
+      const raw = safeGetStorage(SAVE_STORAGE_KEY);
+      return Boolean(raw && raw.length > 10);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function updateSaveButtonsUI() {
+    if (typeof document === 'undefined') return;
+    const exists = hasSavedState();
+    const btnSave = document.getElementById('btn-save-state');
+    const btnClear = document.getElementById('btn-clear-save');
+
+    if (btnSave) {
+      btnSave.title = exists
+        ? 'Update existing saved state in local storage'
+        : 'Save current scene, player position, and forged assets to local storage';
+    }
+    if (btnClear) {
+      btnClear.disabled = !exists;
+      btnClear.style.opacity = exists ? '1' : '0.4';
+      btnClear.style.cursor = exists ? 'pointer' : 'not-allowed';
+      if (!clearConfirmPending) {
+        btnClear.innerText = '🗑️ Clear Save';
+        btnClear.style.borderColor = '';
+        btnClear.style.color = '';
+      }
+    }
+  }
+
+  function saveState() {
+    try {
+      const data = getSaveStateData();
+      safeSetStorage(SAVE_STORAGE_KEY, JSON.stringify(data));
+      updateSaveButtonsUI();
+      log('SAVE', `Game state saved to local storage (${new Date().toLocaleTimeString()}).`);
+      playAudioCue('seal_stamp');
+
+      // Temporary visual confirmation on save button
+      const btn = typeof document !== 'undefined' ? document.getElementById('btn-save-state') : null;
+      if (btn) {
+        const orig = btn.innerHTML;
+        btn.innerHTML = '✓ Saved!';
+        btn.style.borderColor = '#34d399';
+        btn.style.color = '#34d399';
+        setTimeout(() => {
+          btn.innerHTML = orig;
+          btn.style.borderColor = '';
+          btn.style.color = '';
+        }, 1800);
+      }
+
+      return { success: true, timestamp: data.timestamp };
+    } catch (err) {
+      log('SAVE', `Failed to save game state: ${err.message}`, 'error');
+      return { success: false, error: err.message };
+    }
+  }
+
+  function loadState(savedJson) {
+    let data = null;
+    if (typeof savedJson === 'string') {
+      try { data = JSON.parse(savedJson); } catch (_) { return false; }
+    } else if (typeof savedJson === 'object' && savedJson !== null) {
+      data = savedJson;
+    } else {
+      const raw = safeGetStorage(SAVE_STORAGE_KEY);
+      if (raw) {
+        try { data = JSON.parse(raw); } catch (_) { return false; }
+      }
+    }
+
+    if (!data) return false;
+
+    try {
+      if (data.campaign) {
+        if (data.campaign.campaignId && data.campaign.campaignId !== currentCampaignId) {
+          selectCampaign(data.campaign.campaignId);
+        }
+        if (data.campaign.actId && data.campaign.actId !== currentActId) {
+          selectAct(data.campaign.actId);
+        }
+        if (data.campaign.sceneId && data.campaign.sceneId !== currentSceneId) {
+          selectScene(data.campaign.sceneId);
+        }
+      }
+
+      if (data.player) {
+        playerX = data.player.x;
+        playerY = data.player.y;
+        actorWritten = Boolean(data.player.written);
+        if (typeof data.player.strength === 'number') {
+          playerStrength = data.player.strength;
+        }
+        updatePlayerPosition(playerX, playerY);
+      }
+
+      if (Array.isArray(data.exploredGrid)) {
+        for (let i = 0; i < Math.min(explored.length, data.exploredGrid.length); i++) {
+          explored[i] = data.exploredGrid[i];
+        }
+      }
+
+      if (Array.isArray(data.smashedProps)) {
+        data.smashedProps.forEach((id) => smashProp(id));
+      }
+
+      if (data.assetImages && typeof data.assetImages === 'object') {
+        Object.entries(data.assetImages).forEach(([k, v]) => assetImages.set(k, v));
+      }
+      if (data.primitiveUpdates && typeof data.primitiveUpdates === 'object') {
+        Object.entries(data.primitiveUpdates).forEach(([pid, up]) => {
+          updatePrimitiveRecord(pid, up);
+        });
+      }
+
+      if (data.selectedPrimitiveId) {
+        selectScenePrimitive(data.selectedPrimitiveId);
+      } else if (data.selectedAssetId) {
+        selectAsset(data.selectedAssetId);
+      }
+      if (data.previewFacet) {
+        setPreviewFacet(data.previewFacet);
+      }
+      if (data.atmosphereMode) {
+        setAtmosphereMode(data.atmosphereMode);
+      }
+      if (data.cameraVantage) {
+        setCameraVantage(data.cameraVantage);
+      }
+
+      updateSaveButtonsUI();
+      log('SAVE', `Restored saved state from ${new Date(data.timestamp || Date.now()).toLocaleTimeString()}.`);
+      return true;
+    } catch (err) {
+      log('SAVE', `Error loading saved state: ${err.message}`, 'error');
+      return false;
+    }
+  }
+
+  function clearSaveState(force = false) {
+    if (!hasSavedState()) {
+      log('SAVE', 'No saved state to clear.');
+      return false;
+    }
+
+    const btnClear = typeof document !== 'undefined' ? document.getElementById('btn-clear-save') : null;
+
+    if (!force) {
+      if (typeof confirm === 'function') {
+        const ok = confirm('⚠️ Guarded Action: Are you sure you want to clear your saved state?\n\nThis will remove your saved position, scene state, and forged asset cache from local storage.');
+        if (!ok) {
+          log('SAVE', 'Clear save cancelled by user.');
+          return false;
+        }
+      } else {
+        if (!clearConfirmPending) {
+          clearConfirmPending = true;
+          if (btnClear) {
+            btnClear.innerText = '⚠️ Confirm Clear?';
+            btnClear.style.borderColor = '#ef4444';
+            btnClear.style.color = '#ef4444';
+          }
+          if (clearConfirmTimer) clearTimeout(clearConfirmTimer);
+          clearConfirmTimer = setTimeout(() => {
+            clearConfirmPending = false;
+            updateSaveButtonsUI();
+          }, 4000);
+          log('SAVE', 'Guarded action: Click Clear Save again within 4 seconds to confirm.');
+          return false;
+        }
+        clearConfirmPending = false;
+        if (clearConfirmTimer) clearTimeout(clearConfirmTimer);
+      }
+    }
+
+    try {
+      safeRemoveStorage(SAVE_STORAGE_KEY);
+      updateSaveButtonsUI();
+      log('SAVE', 'Guarded action completed: Saved state has been cleared.');
+      playAudioCue('collapse');
+      return true;
+    } catch (err) {
+      log('SAVE', `Failed to clear saved state: ${err.message}`, 'error');
+      return false;
+    }
+  }
+
   // Initial setup
   renderFeaturesDOM();
   updatePlayerPosition(playerX, playerY);
@@ -5755,6 +6045,26 @@ export function initViewer(config) {
         syncWaterfallPipeline();
       });
     }
+
+    const btnSave = document.getElementById('btn-save-state');
+    if (btnSave) {
+      btnSave.addEventListener('click', (e) => {
+        if (e && e.preventDefault) e.preventDefault();
+        saveState();
+      });
+    }
+    const btnClear = document.getElementById('btn-clear-save');
+    if (btnClear) {
+      btnClear.addEventListener('click', (e) => {
+        if (e && e.preventDefault) e.preventDefault();
+        clearSaveState();
+      });
+    }
+  }
+
+  updateSaveButtonsUI();
+  if (hasSavedState()) {
+    loadState();
   }
 
   if (typeof fetch !== 'undefined') {
@@ -5872,6 +6182,11 @@ export function initViewer(config) {
     render3DModel,
     getFacet3DModelForItem,
     updatePrimitiveRecord,
+    saveState,
+    loadState,
+    clearSaveState,
+    hasSavedState,
+    updateSaveButtonsUI,
   };
 
   const globalRoot = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this);
@@ -5979,6 +6294,11 @@ export function initViewer(config) {
     globalRoot.render3DModel = render3DModel;
     globalRoot.getFacet3DModelForItem = getFacet3DModelForItem;
     globalRoot.updatePrimitiveRecord = updatePrimitiveRecord;
+    globalRoot.saveState = saveState;
+    globalRoot.loadState = loadState;
+    globalRoot.clearSaveState = clearSaveState;
+    globalRoot.hasSavedState = hasSavedState;
+    globalRoot.updateSaveButtonsUI = updateSaveButtonsUI;
     globalRoot.onCampaignSelectChange = (val) => selectCampaign(val);
     globalRoot.onActSelectChange = (val) => selectAct(val);
     globalRoot.onSceneSelectChange = (val) => selectScene(val);
