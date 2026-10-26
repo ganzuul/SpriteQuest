@@ -2060,6 +2060,11 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
       margin-bottom: 2px;
       letter-spacing: 0.02em;
     }}
+    .sidebar-prompt-status {{
+      color: #fbbf24;
+      font-size: 8px;
+      font-weight: 600;
+    }}
     .sidebar-prompt-text {{
       color: #cbd5e1;
       line-height: 1.3;
@@ -2071,12 +2076,14 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
     }}
     .sidebar-preview-actions {{
       display: flex;
+      flex-wrap: wrap;
       gap: 4px;
       margin-top: 2px;
       min-width: 0;
     }}
     .sidebar-preview-actions .prim-act-btn {{
-      flex: 1;
+      flex: 1 1 calc(33.333% - 4px);
+      min-width: 0;
       padding: 5px 4px;
       font-size: 10px;
       white-space: nowrap;
@@ -2428,11 +2435,14 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
           <div class="sidebar-prompt-box" id="sidebar-prompt-box">
             <div class="sidebar-prompt-header">
               <span>⚡ Lattice Refined Prompt</span>
+              <span class="sidebar-prompt-status" id="sidebar-prompt-status">Draft</span>
             </div>
             <div class="sidebar-prompt-text" id="sidebar-preview-prompt">Awaiting compilation...</div>
           </div>
           <div class="sidebar-preview-actions">
             <button class="prim-act-btn prim-btn-blueprint" onclick="window.viewer && window.viewer.focusSceneAssetOnMap && window.viewer.focusSceneAssetOnMap()" title="Pan & move probe to this asset on the map">📍 Focus Map</button>
+            <button class="prim-act-btn" id="btn-preview-compile" onclick="window.viewer && window.viewer.compileSelectedAssetBriefAndWait && window.viewer.compileSelectedAssetBriefAndWait()" title="Compile the selected asset brief and wait for the Companion prompt rewrite">⚡ Rewrite Prompt</button>
+            <button class="prim-act-btn prim-btn-forge" id="btn-preview-render" onclick="window.viewer && window.viewer.renderSelectedAssetInForge && window.viewer.renderSelectedAssetInForge()" title="Generate an image asset from the rewritten prompt">✨ Render Asset</button>
             <button class="prim-act-btn prim-btn-forge" id="btn-sidebar-sync-waterfall" onclick="(window.syncWaterfallPipeline ? window.syncWaterfallPipeline() : (window.viewer && window.viewer.syncWaterfallPipeline && window.viewer.syncWaterfallPipeline()))" title="Synchronize full waterfall pipeline from fragments to 3D STL (checks checksums)">⚒️ Synchronize</button>
             <button class="prim-act-btn" id="btn-sidebar-save-asset" style="border-color: #059669; color: #34d399;" onclick="(window.saveCurrentAsset ? window.saveCurrentAsset() : (window.viewer && window.viewer.saveCurrentAsset && window.viewer.saveCurrentAsset()))" title="Save this asset's parameters, prompt, and manifest record">💾 Save</button>
             <button class="prim-act-btn" id="btn-sidebar-clear-asset" style="border-color: #dc2626; color: #f87171;" onclick="(window.clearCurrentAsset ? window.clearCurrentAsset() : (window.viewer && window.viewer.clearCurrentAsset && window.viewer.clearCurrentAsset()))" title="Guarded: Clear saved artifacts and manifest checksums for this asset to force a full rebuild from fragments">🗑️ Clear</button>
@@ -2547,10 +2557,10 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
           </div>
           <!-- Compatibility hooks for automated tests & legacy workflows -->
           <div style="display: none;" aria-hidden="true">
-            <button id="btn-forge-compile" onclick="window.viewer && window.viewer.compileSelectedAssetBrief && window.viewer.compileSelectedAssetBrief()">⚡ Compile (Lattice)</button>
+            <button id="btn-forge-compile" onclick="window.viewer && window.viewer.compileSelectedAssetBriefAndWait && window.viewer.compileSelectedAssetBriefAndWait()">⚡ Compile (Lattice)</button>
             <button id="btn-forge-render" onclick="window.viewer && window.viewer.renderSelectedAssetInForge && window.viewer.renderSelectedAssetInForge()">✨ Render in Asset Forge</button>
             <button id="btn-forge-2d-to-3d" onclick="window.viewer && window.viewer.runPrimitive3DPipeline && window.viewer.runPrimitive3DPipeline()">📐 2D → 3D</button>
-            <button id="btn-sidebar-compile" onclick="window.viewer && window.viewer.compileSelectedAssetBrief && window.viewer.compileSelectedAssetBrief()">⚡ Compile</button>
+            <button id="btn-sidebar-compile" onclick="window.viewer && window.viewer.compileSelectedAssetBriefAndWait && window.viewer.compileSelectedAssetBriefAndWait()">⚡ Compile</button>
             <button id="btn-sidebar-3d-pipeline" onclick="window.viewer && window.viewer.runPrimitive3DPipeline && window.viewer.runPrimitive3DPipeline()">📐 3D Pipeline</button>
           </div>
           <div class="cartographer-actions" style="display: flex; gap: 6px;">

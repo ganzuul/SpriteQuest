@@ -165,13 +165,13 @@ describe('Interface Connection with Lattice & Prompt Rewrite Pipeline (TDD)', ()
     assert.match(outputArtifact.value.text, /Host Zone: Weigh & Inspection Hall/);
   });
 
-  test('3. Interface Triggers Dynamic Recompile & Prompt Rewrite upon State Changes', () => {
+  test('3. Interface Triggers Dynamic Recompile & Prompt Rewrite upon State Changes', async () => {
     // 1. Select unrendered prop
     const asset = viewer.selectAsset('r6_ship_crate_standard');
     assert.ok(asset);
 
     // 2. Initial compile
-    const initialCompile = viewer.compileSelectedAssetBrief();
+    const initialCompile = await viewer.compileSelectedAssetBrief();
     assert.equal(initialCompile.success, true);
     assert.equal(initialCompile.status, 'compiled');
     const initialPrompt = initialCompile.prompt;
@@ -189,7 +189,7 @@ describe('Interface Connection with Lattice & Prompt Rewrite Pipeline (TDD)', ()
     assert.equal(curateRes.standing_tier, 'warranted');
 
     // 4. Re-trigger compilation via the interface
-    const recompileRes = viewer.compileSelectedAssetBrief();
+    const recompileRes = await viewer.compileSelectedAssetBrief();
     assert.equal(recompileRes.success, true);
     assert.notEqual(recompileRes.prompt, initialPrompt, 'Prompt must dynamically update after curation');
     assert.match(recompileRes.prompt, /Canon warrant:/i, 'Recompiled prompt must reflect the Canon Warrant');
@@ -203,15 +203,15 @@ describe('Interface Connection with Lattice & Prompt Rewrite Pipeline (TDD)', ()
     assert.equal(critRes.success, true);
 
     // 6. Re-trigger compilation again
-    const postCritCompile = viewer.compileSelectedAssetBrief();
+    const postCritCompile = await viewer.compileSelectedAssetBrief();
     assert.notEqual(postCritCompile.prompt, recompileRes.prompt, 'Prompt must dynamically update after criticism');
     assert.match(postCritCompile.prompt, /Authorial criticisms:/i, 'Recompiled prompt must incorporate criticisms');
   });
 
-  test('4. Actor Recompile Pipeline Authentically Compiles Hollis and Pell', () => {
+  test('4. Actor Recompile Pipeline Authentically Compiles Hollis and Pell', async () => {
     // 1. Hollis the Twice-Written
     viewer.selectAsset('hollis');
-    const hollisRes = viewer.compileSelectedAssetBrief();
+    const hollisRes = await viewer.compileSelectedAssetBrief();
     assert.equal(hollisRes.success, true);
     assert.match(hollisRes.prompt, /quartermaster/i);
     assert.match(hollisRes.prompt, /ledger/i);
@@ -219,7 +219,7 @@ describe('Interface Connection with Lattice & Prompt Rewrite Pipeline (TDD)', ()
 
     // 2. Pell the Underwritten
     viewer.selectAsset('pell');
-    const pellRes = viewer.compileSelectedAssetBrief();
+    const pellRes = await viewer.compileSelectedAssetBrief();
     assert.equal(pellRes.success, true);
     assert.match(pellRes.prompt, /understudy/i);
     assert.match(pellRes.prompt, /rehearsal/i);
@@ -279,7 +279,7 @@ describe('Interface Connection with Lattice & Prompt Rewrite Pipeline (TDD)', ()
     assert.ok(styleCode.includes('.sq-map-overlay'), 'style.css must style sq-map-overlay modal');
   });
 
-  test('8. Outdoor Ruin Primitives Trigger Dynamic Lattice Prompt Refinement', () => {
+  test('8. Outdoor Ruin Primitives Trigger Dynamic Lattice Prompt Refinement', async () => {
     // 1. Switch to Overhang Bastion scene
     viewer.selectScene('consignment-overhang-bastion');
     const sc = viewer.getCurrentScene();
@@ -290,7 +290,7 @@ describe('Interface Connection with Lattice & Prompt Rewrite Pipeline (TDD)', ()
     assert.ok(item, 'Must select ancient-bastion primitive');
 
     // 3. Compile asset brief via Lattice
-    const compRes = viewer.compileSelectedAssetBrief();
+    const compRes = await viewer.compileSelectedAssetBrief();
     assert.equal(compRes.success, true);
     assert.ok(compRes.prompt.includes('45-degree cantilever overhang rule'), 'Must weave 45-degree cantilever rule');
     assert.ok(compRes.prompt.includes('cyclopean'), 'Must weave cyclopean masonry');
@@ -388,11 +388,11 @@ describe('Interface Connection with Lattice & Prompt Rewrite Pipeline (TDD)', ()
     assert.equal(typeof viewer.compileSelectedAssetBrief, 'function');
     assert.equal(typeof viewer.compileAssetBrief, 'function');
 
-    const compileResult = viewer.compileSelectedAssetBrief();
+    const compileResult = await viewer.compileSelectedAssetBrief();
     assert.ok(compileResult, 'Compile result must not be null');
     assert.equal(compileResult.success, true);
     assert.equal(compileResult.status, 'compiled');
-    assert.equal(compileResult.rewriter, 'gemma4-orion');
+    assert.equal(compileResult.rewriter, 'local-draft');
 
     // Verify fragment gathering (both visual fragments and doctrine fragments where for: gemma4-orion)
     assert.ok(Array.isArray(compileResult.fragments_used), 'Fragments used must be an array');

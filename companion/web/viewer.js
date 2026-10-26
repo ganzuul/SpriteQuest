@@ -2123,7 +2123,19 @@ export function initViewer(config) {
       const npc = npcs[assetId] || npcs[cleanId] || npcs[npcKey] || null;
       const portraitBrief = npc?.compiled_portrait || null;
       const defaultFrag = npcKey === 'pell' ? 'scaffolded-kingdom/understudy' : (npcKey === 'hollis' ? 'customs-house/hollis-ledger' : 'shared/actor-roster');
-      const frags = portraitBrief?.fragments_used?.length ? [...portraitBrief.fragments_used] : [defaultFrag, 'shared/brief-faces-are-themes'];
+      const frags = portraitBrief?.fragments_used?.length
+        ? [...portraitBrief.fragments_used]
+        : [item?.fragment_id || defaultFrag, 'shared/brief-faces-are-themes'];
+      const sceneCastSheet = item
+        ? {
+            ...(npc || {}),
+            name: item.name || npc?.name || assetId,
+            role: item.role || npc?.role || 'Actor',
+            portrait: [npc?.portrait, item.description].filter(Boolean).join('. '),
+            world_id: npc?.world_id || sc?.world_id || 'scaffolded-kingdom',
+            written: npc?.written ?? (item.standing === 'verified'),
+          }
+        : npc;
 
       let a = actors.get(assetId) || actors.get(cleanId);
       if (!a) {
@@ -2138,7 +2150,7 @@ export function initViewer(config) {
           balloonEl: null,
           image_url: null,
           diffusion_prompt: portraitBrief?.rewritten_prompt || '',
-          lore_snippet: npc?.portrait || `${item?.name || npc?.name || assetId}`,
+          lore_snippet: npc?.portrait || item?.description || `${item?.name || npc?.name || assetId}`,
           written: npc?.written !== undefined ? npc.written : (npcKey === 'hollis'),
         };
         actors.set(assetId, a);
@@ -2151,7 +2163,7 @@ export function initViewer(config) {
         _kind: 'actor',
         label: a.name || npc?.name || a.id,
         name: a.name || npc?.name || a.id,
-        fragment_id: defaultFrag,
+        fragment_id: item?.fragment_id || defaultFrag,
         salience: 'major',
         image_url: assetImages.get(a.id) || a.image_url || null,
         image_2d: assetImages.get(a.id) || a.image_url || null,
@@ -2159,8 +2171,8 @@ export function initViewer(config) {
         compiled_brief: portraitBrief?.compiled_brief || a.lore_snippet || `${a.name} (${a.role || 'Actor'})`,
         fragments_used: frags,
         world_setting: portraitBrief?.zone_context?.zone_name || 'Border March Customs House',
-        lore_snippet: npc?.portrait || a.lore_snippet || `${a.name} (${a.role || 'Actor'})`,
-        description: npc?.portrait || a.lore_snippet || `${a.name} (${a.role || 'Actor'})`,
+        lore_snippet: npc?.portrait || item?.description || a.lore_snippet || `${a.name} (${a.role || 'Actor'})`,
+        description: item?.description || npc?.portrait || a.lore_snippet || `${a.name} (${a.role || 'Actor'})`,
         obstacle_type: 'actor',
         mass_kg: 70.0,
         interactive_verbs: ['talk', 'inspect_standing'],
@@ -2173,7 +2185,7 @@ export function initViewer(config) {
         coherence_conflicts: [],
         saturation_score: 0.5,
         saturation_locked: false,
-        npc_sheet: npc,
+        npc_sheet: sceneCastSheet,
       };
       _rehydrateSavedAsset(entity);
       return entity;
@@ -2299,6 +2311,7 @@ export function initViewer(config) {
     if (!entity) return null;
 
     selectedAsset = entity;
+    if (entity.kind === 'actor') currentPreviewFacet = 'sprite';
     const sc = typeof getCurrentScene === 'function' ? getCurrentScene() : null;
     const itemInScene = typeof _findItemInScene === 'function' ? _findItemInScene(sc, entity.id) : null;
     selectedPrimitiveId = itemInScene?.id || entity.id;
@@ -2492,6 +2505,25 @@ export function initViewer(config) {
       btn2dTo3d.innerText = selectedAsset.depth_url
         ? '📐 Re-forge 2D → 3D'
         : '📐 2D → 3D';
+    }
+
+    const isActor = selectedAsset.kind === 'actor';
+    const syncButtons = [
+      document.getElementById('btn-forge-sync-waterfall'),
+      document.getElementById('btn-sidebar-sync-waterfall'),
+    ];
+    syncButtons.forEach((button) => {
+      if (button) button.style.display = isActor ? 'none' : '';
+    });
+    const previewCompile = document.getElementById('btn-preview-compile');
+    if (previewCompile) {
+      previewCompile.disabled = false;
+      previewCompile.innerText = selectedAsset.prompt_status === 'rewritten' ? '⚡ Re-write Prompt' : '⚡ Rewrite Prompt';
+    }
+    const previewRender = document.getElementById('btn-preview-render');
+    if (previewRender) {
+      previewRender.disabled = false;
+      previewRender.innerText = isActor ? '✨ Render Portrait' : '✨ Render Asset';
     }
   }
 
@@ -2707,7 +2739,7 @@ export function initViewer(config) {
         : '';
       const warrantText = selectedAsset.warrant_id ? ` Canon warrant: ${selectedAsset.warrant_id}.` : '';
 
-      let briefBase = npc?.compiled_portrait?.compiled_brief;
+      let briefBase = npc?.compiled_portrait?.compiled_brief || npc?.portrait;
       if (!briefBase) {
         if (id === 'hollis') {
           briefBase = "Hollis the Twice-Written, quartermaster of the customs house. Unshaven quartermaster in a ledger-keeper's coat over chainmail, open two-column ledger with red clearance seal.";
@@ -2719,7 +2751,8 @@ export function initViewer(config) {
       }
       selectedAsset.compiled_brief = briefBase + warrantText + (criticismsText ? ` [Criticisms: ${selectedAsset.active_criticisms.length}]` : '');
 
-      selectedAsset.diffusion_prompt = `Retro JRPG character art, sword and sorcery, 16-bit pixel aesthetic with painterly shading. character portrait bust, front three-quarter angle displaying primary visible face, ${selectedAsset.compiled_brief}, grounded in ${zoneName} upon ${substrate}.${criticismsText} expressive character visage, fine facial details, atmospheric cinematic rim lighting, 16-bit painterly texture, image diffusion render, 1024x1024.`;
+      const characterStyle = npc?.style || 'Retro JRPG character art, sword and sorcery, 16-bit pixel aesthetic with painterly shading';
+      selectedAsset.diffusion_prompt = `${characterStyle}. Character portrait bust, front three-quarter angle displaying primary visible face, ${selectedAsset.compiled_brief}, grounded in ${zoneName} upon ${substrate}.${criticismsText} expressive character visage, fine facial details, atmospheric cinematic rim lighting, 16-bit painterly texture, image diffusion render, 1024x1024.`;
     } else if (physicalPropsMap.has(id)) {
       const p = physicalPropsMap.get(id);
       visualFrags = selectedAsset.fragments_used?.length
@@ -2780,6 +2813,8 @@ export function initViewer(config) {
       prim.fragments_used = [...selectedAsset.fragments_used];
     }
 
+    selectedAsset.prompt_status = 'draft';
+
     // Immediately update DOM preview
     const previewPrompt = typeof document !== 'undefined' ? document.getElementById('sidebar-preview-prompt') : null;
     if (previewPrompt) {
@@ -2805,67 +2840,17 @@ export function initViewer(config) {
       }
     }
 
-    // Remote sync with Companion Forge Service (port 8788) when online
-    const activeSceneId = currentSceneId || selectedAsset.zone_context?.scene_id || 'border-march';
     if (typeof fetch === 'function' && options.remote !== false) {
-      postForgeJson('/forge/compile', {
-        asset_id: id,
-        kind: selectedAsset.kind,
-        scene_id: activeSceneId,
-        facet: options.facet || 'portrait',
-        asset: selectedAsset,
-      }, 60000).then(remote => {
-        if (remote && remote.ok) {
-          selectedAsset.diffusion_prompt = remote.diffusion_prompt;
-          selectedAsset.compiled_brief = remote.compiled_brief;
-          selectedAsset.fragments_used = remote.fragments_used;
-          selectedAsset.standing_tier = remote.standing_tier;
-          selectedAsset.standing_score = remote.standing_score;
-          if (remote.workflow_snapshot) {
-            selectedAsset.workflow_snapshot = remote.workflow_snapshot;
-          }
-          if (remote.comfyui_workflow) {
-            selectedAsset.comfyui_workflow = remote.comfyui_workflow;
-          }
-          if (itemInScene) {
-            itemInScene.diffusion_prompt = remote.diffusion_prompt;
-            itemInScene.compiled_brief = remote.compiled_brief;
-          }
-          if (previewPrompt) {
-            previewPrompt.textContent = remote.diffusion_prompt;
-            previewPrompt.classList.remove('prompt-updated-flash');
-            void previewPrompt.offsetWidth;
-            previewPrompt.classList.add('prompt-updated-flash');
-          }
-          log('LATTICE', `[gemma4-orion] Rewriter refined prompt (${(remote.diffusion_prompt || '').length} chars).`);
-          log('LATTICE', `[remote-sync] Synced gemma4-orion compiled prompt from companion forge service on port 8788.`);
-          renderAssetViewerDOM();
-          const activeItem = getSelectedScenePrimitive();
-          if (activeItem && (activeItem.id === id || activeItem.asset_id === id)) {
-            renderSidebarPreviewDOM(activeItem);
-          }
-          playAudioCue('seal_stamp');
-        } else {
-          log('LATTICE', `[remote-sync] Companion forge compile returned: ${remote?.error || 'unspecified'}.`, 'warn');
-        }
-      }).catch((err) => {
-        log('LATTICE', `[remote-sync] Companion forge compile error: ${err?.message || 'offline'}.`, 'warn');
-      }).finally(() => {
-        if (btnCompile) {
-          btnCompile.disabled = false;
-          btnCompile.innerText = '⚡ Re-compile (gemma4-orion)';
-        }
-      });
+      void requestRemoteAssetCompilation(id, selectedAsset, options);
     } else {
       if (btnCompile) {
         btnCompile.disabled = false;
-        btnCompile.innerText = '⚡ Re-compile (gemma4-orion)';
+        btnCompile.innerText = '⚡ Re-compile (Lattice)';
       }
     }
 
     log('LATTICE', `[compile-world-brief] Fragment Compiler assembled brief from ${selectedAsset.fragments_used.length} fragments.`);
-    log('LATTICE', `[rewrite-prompt] Lattice prompt rewriter refined prompt (${(selectedAsset.diffusion_prompt || '').length} chars).`);
-    log('LATTICE', `[gemma4-orion] Calling gemma4-orion prompt rewriter...`);
+    log('LATTICE', `[rewrite-prompt] Local prompt draft assembled (${(selectedAsset.diffusion_prompt || '').length} chars).`);
     log('LATTICE', `[format-flux3-conditioning] Conditioned for image diffusion (1024x1024).`);
 
     playAudioCue('click');
@@ -2886,12 +2871,89 @@ export function initViewer(config) {
       compiled_brief: selectedAsset.compiled_brief,
       fragments_used: selectedAsset.fragments_used,
       doctrine_fragments: doctrineFrags,
-      rewriter: 'gemma4-orion',
+      rewriter: 'local-draft',
       standing_tier: selectedAsset.standing_tier,
       lattice_workflow: 'asset-forge.lattice.json',
       lattice_run: latticeRun,
       status: 'compiled',
     };
+  }
+
+  async function requestRemoteAssetCompilation(id, asset, options = {}) {
+    const btnCompile = typeof document !== 'undefined' ? document.getElementById('btn-forge-compile') : null;
+    const previewCompile = typeof document !== 'undefined' ? document.getElementById('btn-preview-compile') : null;
+    asset.prompt_status = 'pending';
+    if (btnCompile) {
+      btnCompile.disabled = true;
+      btnCompile.innerText = '⏳ Compiling (Lattice)...';
+    }
+    if (previewCompile) {
+      previewCompile.disabled = true;
+      previewCompile.innerText = '⏳ Rewriting...';
+    }
+
+    try {
+      const remote = await postForgeJson('/forge/compile', {
+        asset_id: id,
+        kind: asset.kind,
+        scene_id: currentSceneId || asset.zone_context?.scene_id || 'border-march',
+        facet: options.facet || 'portrait',
+        asset,
+      }, options.timeoutMs || 60000);
+      if (!remote?.ok || !remote.diffusion_prompt) {
+        asset.prompt_status = 'unavailable';
+        log('LATTICE', `[remote-sync] Companion forge compile returned: ${remote?.error || 'no rewritten prompt returned'}.`, 'warn');
+        return remote || { ok: false, error: 'Companion returned no response' };
+      }
+
+      asset.diffusion_prompt = remote.diffusion_prompt;
+      asset.compiled_brief = remote.compiled_brief;
+      asset.fragments_used = remote.fragments_used || asset.fragments_used;
+      asset.standing_tier = remote.standing_tier || asset.standing_tier;
+      asset.standing_score = remote.standing_score ?? asset.standing_score;
+      asset.prompt_status = 'rewritten';
+      if (remote.workflow_snapshot) asset.workflow_snapshot = remote.workflow_snapshot;
+      if (remote.comfyui_workflow) asset.comfyui_workflow = remote.comfyui_workflow;
+
+      const itemInScene = _findItemInScene(getCurrentScene(), id);
+      if (itemInScene) {
+        itemInScene.diffusion_prompt = remote.diffusion_prompt;
+        itemInScene.compiled_brief = remote.compiled_brief;
+      }
+      if (selectedAsset === asset) {
+        const previewPrompt = typeof document !== 'undefined' ? document.getElementById('sidebar-preview-prompt') : null;
+        if (previewPrompt) {
+          previewPrompt.textContent = remote.diffusion_prompt;
+          previewPrompt.classList.remove('prompt-updated-flash');
+          void previewPrompt.offsetWidth;
+          previewPrompt.classList.add('prompt-updated-flash');
+        }
+        renderAssetViewerDOM();
+        const activeItem = getSelectedScenePrimitive();
+        if (activeItem && (activeItem.id === id || activeItem.asset_id === id)) {
+          renderSidebarPreviewDOM(activeItem);
+        }
+      }
+      log('LATTICE', `[rewrite-prompt] Companion rewriter returned ${remote.diffusion_prompt.length} characters for '${id}'.`);
+      playAudioCue('seal_stamp');
+      return remote;
+    } catch (err) {
+      asset.prompt_status = 'unavailable';
+      log('LATTICE', `[remote-sync] Companion forge compile error: ${err?.message || 'offline'}.`, 'warn');
+      return { ok: false, error: err?.message || 'offline' };
+    } finally {
+      if (btnCompile) {
+        btnCompile.disabled = false;
+        btnCompile.innerText = '⚡ Re-compile (Lattice)';
+      }
+      if (previewCompile) {
+        previewCompile.disabled = false;
+        previewCompile.innerText = '⚡ Rewrite Prompt';
+      }
+      if (selectedAsset === asset && typeof document !== 'undefined') {
+        renderSidebarPreviewDOM(getSelectedScenePrimitive());
+      }
+    }
   }
 
   function compileSelectedAssetBrief() {
@@ -2903,10 +2965,44 @@ export function initViewer(config) {
     return compileAssetBrief(active.id || active.asset_id);
   }
 
+  async function compileSelectedAssetBriefAndWait(options = {}) {
+    const active = selectedAsset || getSelectedScenePrimitive();
+    if (!active) {
+      log('LATTICE', 'Compile requested with no active asset or scene primitive.', 'warn');
+      return null;
+    }
+    const id = active.id || active.asset_id;
+    const draft = compileAssetBrief(id, { remote: false, facet: options.facet });
+    if (!draft.success || options.remote === false || typeof fetch !== 'function') return draft;
+
+    const remote = await requestRemoteAssetCompilation(id, selectedAsset, options);
+    if (!remote?.ok) return { ...draft, rewrite_status: 'unavailable' };
+    const latticeRun = executeLatticeGraph('asset-forge.lattice.json', {
+      targetNode: 'rewrite-prompt',
+      assetId: id,
+      prompt: remote.diffusion_prompt,
+      options,
+    });
+    return {
+      ...draft,
+      prompt: remote.diffusion_prompt,
+      compiled_brief: remote.compiled_brief,
+      fragments_used: remote.fragments_used || draft.fragments_used,
+      standing_tier: remote.standing_tier || draft.standing_tier,
+      lattice_run: latticeRun,
+      rewriter: 'companion-compiler',
+      rewrite_status: 'rewritten',
+    };
+  }
+
   function syncWaterfallPipeline(primitiveId, options = {}) {
     const sc = getCurrentScene();
     const pid = primitiveId || (selectedAsset ? (selectedAsset.id || selectedAsset.asset_id) : (selectedPrimitiveId || getSelectedScenePrimitive()?.id || 'ancient-bastion'));
     selectAsset(pid);
+    if (selectedAsset?.kind === 'actor') {
+      log('FORGE', `3D Waterfall is not available for character '${selectedAsset.label}'. Use Rewrite Prompt and Render Portrait.`, 'warn');
+      return { success: false, reason: 'character_requires_portrait_render' };
+    }
     const itemInScene = selectedAsset;
 
     const btnSidebar = typeof document !== 'undefined' ? document.getElementById('btn-sidebar-sync-waterfall') : null;
@@ -3128,6 +3224,10 @@ export function initViewer(config) {
     const sc = getCurrentScene();
     const pid = primitiveId || (selectedAsset ? selectedAsset.id : (selectedPrimitiveId || getSelectedScenePrimitive()?.id || 'ancient-bastion'));
     const itemInScene = _findItemInScene(sc, pid) || (selectedAsset?.id === pid ? selectedAsset : null);
+    if (itemInScene?._kind === 'cast' || selectedAsset?.kind === 'actor') {
+      log('FORGE', `3D depth generation is not available for character '${itemInScene?.name || selectedAsset?.label || pid}'.`, 'warn');
+      return { success: false, reason: 'character_has_no_3d_depth_facet' };
+    }
 
     const active2DImg = (selectedAsset && (selectedAsset.id === pid || selectedAsset.asset_id === pid) ? selectedAsset.image_url : null)
       || assetImages.get(pid)
@@ -3297,8 +3397,14 @@ export function initViewer(config) {
       selectAsset(id);
     }
 
-    if (!selectedAsset.diffusion_prompt || selectedAsset.diffusion_prompt.length < 20) {
-      compileAssetBrief(id);
+    if (selectedAsset.prompt_status !== 'rewritten') {
+      const compileResult = await compileSelectedAssetBriefAndWait({
+        remote: !options.immediate && options.remote !== false,
+        timeoutMs: options.compileTimeoutMs,
+      });
+      if (!compileResult?.success) {
+        return compileResult || { success: false, reason: 'prompt_compilation_failed' };
+      }
     }
 
     const frags = selectedAsset.fragments_used || [selectedAsset.fragment_id];
@@ -4735,16 +4841,27 @@ export function initViewer(config) {
   function setPreviewFacet(facet) {
     currentPreviewFacet = facet || 'sprite';
     if (typeof document !== 'undefined') {
+      const activeItem = getSelectedScenePrimitive();
+      if (activeItem?._kind === 'cast' && currentPreviewFacet !== 'sprite') {
+        currentPreviewFacet = 'sprite';
+        log('VIEWER', `3D inspection facets are not available for character '${activeItem.name}'. Showing portrait artwork instead.`, 'warn');
+      }
       const tabs = document.querySelectorAll('.sidebar-facet-tabs .facet-tab');
       tabs.forEach((tab) => {
         const f = tab.getAttribute('data-facet') || tab.id.replace('facet-tab-', '');
+        if (activeItem?._kind === 'cast') {
+          tab.disabled = f !== 'sprite';
+          tab.title = f === 'sprite' ? 'Character portrait artwork' : 'This facet is only available for 3D scene assets';
+        } else {
+          tab.disabled = false;
+          tab.title = '';
+        }
         if (f === currentPreviewFacet) {
           tab.classList.add('active');
         } else {
           tab.classList.remove('active');
         }
       });
-      const activeItem = getSelectedScenePrimitive();
       if (activeItem) {
         renderSidebarPreviewDOM(activeItem);
       }
@@ -4758,6 +4875,7 @@ export function initViewer(config) {
 
   function getFacetImageForItem(item, facet) {
     if (!item) return '';
+    if (item._kind === 'cast' && facet !== 'sprite') return '';
     const pid = item.id || item.asset_id || '';
     const cleanId = pid.replace(/^prop-/, '');
     if (facet === 'mesh') {
@@ -4808,6 +4926,33 @@ export function initViewer(config) {
     if (typeof document === 'undefined') return;
     const activeItem = item || getSelectedScenePrimitive();
     if (!activeItem) return;
+
+    if (typeof document.querySelectorAll === 'function') {
+      document.querySelectorAll('.sidebar-facet-tabs .facet-tab').forEach((tab) => {
+        const facet = tab.getAttribute('data-facet') || tab.id.replace('facet-tab-', '');
+        const character = activeItem._kind === 'cast';
+        tab.disabled = character && facet !== 'sprite';
+        tab.title = character && facet !== 'sprite'
+          ? 'This facet is only available for 3D scene assets'
+          : (character ? 'Character portrait artwork' : '');
+      });
+    }
+
+    const promptStatus = document.getElementById('sidebar-prompt-status');
+    if (promptStatus) {
+      const promptOwner = selectedAsset &&
+        (selectedAsset.id === activeItem.id || selectedAsset.asset_id === activeItem.id)
+        ? selectedAsset
+        : activeItem;
+      const statusLabels = {
+        pending: 'Rewriting…',
+        rewritten: 'Rewritten',
+        unavailable: 'Draft · Forge offline',
+        draft: 'Draft · not rewritten',
+      };
+      promptStatus.textContent = statusLabels[promptOwner.prompt_status] || 'Draft · not rewritten';
+      promptStatus.style.color = promptOwner.prompt_status === 'rewritten' ? '#34d399' : '#fbbf24';
+    }
 
     const previewImg = document.getElementById('sidebar-preview-img');
     const sidebar3dWrap = document.getElementById('sidebar-3d-wrap');
@@ -5137,12 +5282,15 @@ export function initViewer(config) {
   function openPrimitiveLightbox(primitiveId, facet) {
     if (typeof document === 'undefined') return;
     const targetId = primitiveId || selectedPrimitiveId;
-    const activeFacet = facet || currentPreviewFacet || 'sprite';
+    let activeFacet = facet || currentPreviewFacet || 'sprite';
     const sc = getCurrentScene();
     const prim = _findItemInScene(sc, targetId) ||
       Object.values(scenesManifest.scenes_by_id || {}).flatMap((s) => s.primitives).find((p) => p.id === targetId);
 
     if (!prim) return;
+    if (prim._kind === 'cast' && activeFacet !== 'sprite') {
+      activeFacet = 'sprite';
+    }
 
     const modal = document.getElementById('primitive-lightbox');
     const imgEl = document.getElementById('lightbox-img');
@@ -5181,9 +5329,9 @@ export function initViewer(config) {
         <div class="lightbox-title">${escapeHtml(prim.name)}</div>
         <div class="sidebar-facet-tabs" style="margin: 0; min-width: 320px;">
           <button class="facet-tab ${activeFacet === 'sprite' ? 'active' : ''}" onclick="window.viewer && window.viewer.openPrimitiveLightbox('${escapeHtml(prim.id)}', 'sprite')">🖼️ Sprite</button>
-          <button class="facet-tab ${activeFacet === 'mesh' ? 'active' : ''}" onclick="window.viewer && window.viewer.openPrimitiveLightbox('${escapeHtml(prim.id)}', 'mesh')">🧊 3D Mesh</button>
-          <button class="facet-tab ${activeFacet === 'depth' ? 'active' : ''}" onclick="window.viewer && window.viewer.openPrimitiveLightbox('${escapeHtml(prim.id)}', 'depth')">⛰️ 3D Depth</button>
-          <button class="facet-tab ${(activeFacet === 'sheet' || activeFacet === 'collage') ? 'active' : ''}" onclick="window.viewer && window.viewer.openPrimitiveLightbox('${escapeHtml(prim.id)}', 'sheet')">🔬 Sprite Sheet</button>
+          <button class="facet-tab ${activeFacet === 'mesh' ? 'active' : ''}" ${prim._kind === 'cast' ? 'disabled' : ''} onclick="window.viewer && window.viewer.openPrimitiveLightbox('${escapeHtml(prim.id)}', 'mesh')">🧊 3D Mesh</button>
+          <button class="facet-tab ${activeFacet === 'depth' ? 'active' : ''}" ${prim._kind === 'cast' ? 'disabled' : ''} onclick="window.viewer && window.viewer.openPrimitiveLightbox('${escapeHtml(prim.id)}', 'depth')">⛰️ 3D Depth</button>
+          <button class="facet-tab ${(activeFacet === 'sheet' || activeFacet === 'collage') ? 'active' : ''}" ${prim._kind === 'cast' ? 'disabled' : ''} onclick="window.viewer && window.viewer.openPrimitiveLightbox('${escapeHtml(prim.id)}', 'sheet')">🔬 Sprite Sheet</button>
         </div>
       </div>
       <div class="lightbox-meta" style="margin-top: 6px;">
@@ -6300,6 +6448,7 @@ export function initViewer(config) {
     getSelectedAsset: () => selectedAsset,
     compileAssetBrief,
     compileSelectedAssetBrief,
+    compileSelectedAssetBriefAndWait,
     renderAssetInForge,
     renderSelectedAssetInForge,
     viewWorkflowSnapshot,
@@ -6417,6 +6566,7 @@ export function initViewer(config) {
     globalRoot.getSelectedAsset = () => selectedAsset;
     globalRoot.compileAssetBrief = compileAssetBrief;
     globalRoot.compileSelectedAssetBrief = compileSelectedAssetBrief;
+    globalRoot.compileSelectedAssetBriefAndWait = compileSelectedAssetBriefAndWait;
     globalRoot.renderAssetInForge = renderAssetInForge;
     globalRoot.renderSelectedAssetInForge = renderSelectedAssetInForge;
     globalRoot.viewWorkflowSnapshot = viewWorkflowSnapshot;
@@ -6486,5 +6636,3 @@ const globalRoot = typeof window !== 'undefined' ? window : (typeof globalThis !
 if (globalRoot) {
   globalRoot.initViewer = initViewer;
 }
-
-

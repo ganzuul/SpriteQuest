@@ -288,7 +288,7 @@ describe('Sidebar Asset Viewer & Asset Forge Engine (TDD)', () => {
     assert.equal(hollis.id, 'hollis');
     assert.equal(hollis.kind, 'actor');
 
-    const compileHollisRes = viewer.compileSelectedAssetBrief();
+    const compileHollisRes = await viewer.compileSelectedAssetBrief();
     assert.equal(compileHollisRes.success, true);
     assert.equal(compileHollisRes.assetId, 'hollis');
     assert.equal(compileHollisRes.status, 'compiled');
@@ -349,6 +349,58 @@ describe('Sidebar Asset Viewer & Asset Forge Engine (TDD)', () => {
     assert.ok(latticeLogs.some(l => l.message.includes('rewrite-prompt')), 'Must log [rewrite-prompt] stage');
     assert.ok(latticeLogs.some(l => l.message.includes('format-flux3-conditioning')), 'Must log [format-flux3-conditioning] stage');
     assert.ok(latticeLogs.some(l => l.message.includes('forge-dispatch')), 'Must log [forge-dispatch] stage');
+  });
+
+  test('Surveyor cast uses its own portrait prompt and cannot open unrelated depth maps', async () => {
+    viewer.selectScene('consignment-overhang-bastion');
+    const castMember = viewer.selectScenePrimitive('surveyor-vellum');
+    assert.equal(castMember._kind, 'cast');
+
+    const asset = viewer.getSelectedAsset();
+    assert.equal(asset.id, 'surveyor-vellum');
+    assert.match(asset.npc_sheet.portrait, /reclaim his stolen theodolite/i);
+    assert.ok(asset.fragments_used.includes('cartographers/epistemic-survey'));
+
+    viewer.setPreviewFacet('depth');
+    assert.equal(viewer.getPreviewFacet(), 'sprite');
+    assert.equal(document.getElementById('facet-tab-depth').disabled, true);
+    assert.match(document.getElementById('sidebar-preview-img').alt, /Surveyor-Senior Vellum/);
+    assert.ok(document.getElementById('btn-preview-compile'));
+    assert.ok(document.getElementById('btn-preview-render'));
+    assert.equal(document.getElementById('btn-sidebar-sync-waterfall').style.display, 'none');
+
+    const rendered = await viewer.renderAssetInForge('surveyor-vellum', { immediate: true });
+    assert.equal(rendered.success, true);
+    assert.match(rendered.prompt, /reclaim his stolen theodolite/i);
+    assert.ok(rendered.prompt.length > 250);
+
+    let compilePayload;
+    const originalFetch = window.fetch;
+    window.fetch = async (_url, options) => {
+      compilePayload = JSON.parse(options.body);
+      return {
+        ok: true,
+        json: async () => ({
+          ok: true,
+          diffusion_prompt: 'Companion rewrite: Surveyor Vellum with calibrated brass theodolite and field slate.',
+          compiled_brief: 'Surveyor Vellum at the mountain pass.',
+          fragments_used: ['cartographers/epistemic-survey'],
+          standing_tier: 'provisional',
+          standing_score: 0.4,
+        }),
+      };
+    };
+    try {
+      const compiled = await viewer.compileSelectedAssetBriefAndWait();
+      assert.equal(compilePayload.asset_id, 'surveyor-vellum');
+      assert.equal(compilePayload.kind, 'actor');
+      assert.match(compilePayload.asset.npc_sheet.portrait, /reclaim his stolen theodolite/i);
+      assert.equal(compiled.prompt, 'Companion rewrite: Surveyor Vellum with calibrated brass theodolite and field slate.');
+      assert.equal(document.getElementById('sidebar-preview-prompt').textContent, compiled.prompt);
+      assert.equal(document.getElementById('sidebar-prompt-status').textContent, 'Rewritten');
+    } finally {
+      window.fetch = originalFetch;
+    }
   });
 
   test('10. Workflow Snapshot Inspection and Action Button', () => {
