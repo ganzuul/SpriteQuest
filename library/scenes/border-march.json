@@ -38,7 +38,7 @@
   "primitives": [
     {
       "id": "ancient-bastion",
-      "asset_id": "prop-relic-cairn",
+      "asset_id": "prop-ancient-bastion",
       "name": "Ancient 45° Stepped Bastion (North Rampart)",
       "tree_group": "Architecture & Terrain",
       "stage_role": "Non-Navigable Ancient Relic Rampart (≥45° overhang rule)",
@@ -70,7 +70,7 @@
     },
     {
       "id": "wish-stone-slab",
-      "asset_id": "unmodelled_placeholder_slab",
+      "asset_id": "prop-wish-stone-slab",
       "name": "Orom's Literal Wish-Stone Slab",
       "tree_group": "Architecture & Terrain",
       "stage_role": "Forged Megalithic Bridge / Literal Wish Artifact",

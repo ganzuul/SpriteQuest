@@ -1933,26 +1933,57 @@ export function initViewer(config) {
     return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
   }
 
-  function selectAsset(idOrEntity) {
-    if (!idOrEntity) return null;
-    let entity = null;
-    const assetId = typeof idOrEntity === 'string' ? idOrEntity : (idOrEntity.id || idOrEntity.targetId);
+  function _rehydrateSavedAsset(entity) {
+    if (!entity || !entity.id) return entity;
+    const cleanId = String(entity.id).replace(/^prop-/, '');
+    const savedJson = safeGetStorage(`spritequest_asset_${entity.id}`) || safeGetStorage(`spritequest_asset_${cleanId}`);
+    if (savedJson) {
+      try {
+        const saved = JSON.parse(savedJson);
+        if (saved && typeof saved === 'object') {
+          Object.assign(entity, saved);
+        }
+      } catch (_) {}
+    }
+    const liveImg = assetImages.get(entity.id) || assetImages.get(cleanId);
+    if (liveImg) {
+      entity.image_url = liveImg;
+      entity.image_2d = liveImg;
+      entity.sprite_url = liveImg;
+      entity.forged = true;
+    }
+    return entity;
+  }
 
-    // 1. Check physical props
+  function resolveSceneAsset(idOrEntity) {
+    if (!idOrEntity) return null;
+    const assetId = typeof idOrEntity === 'string'
+      ? idOrEntity
+      : (idOrEntity.id || idOrEntity.targetId || idOrEntity.asset_id);
+    if (!assetId) return null;
+    const cleanId = String(assetId).replace(/^prop-/, '');
+    const sc = typeof getCurrentScene === 'function' ? getCurrentScene() : null;
+
+    // 1. Check physical props by exact assetId (e.g. 'quartermaster_desk', 'r6_ship_crate_standard', 'glass_stasis_coffin')
     if (physicalPropsMap.has(assetId)) {
       const p = physicalPropsMap.get(assetId);
-      entity = {
+      const entity = {
         id: p.id,
+        asset_id: p.id,
         kind: 'prop',
-        label: p.label,
+        _kind: 'prop',
+        label: p.label || p.id,
+        name: p.label || p.id,
         fragment_id: p.fragment_id || 'customs-house/the-site',
         salience: p.salience || 'moderate',
         image_url: assetImages.get(p.id) || p.image_url || null,
+        image_2d: assetImages.get(p.id) || p.image_url || null,
         diffusion_prompt: p.diffusion_prompt || p.lore_snippet || `Orthographic asset specification for ${p.label}`,
         compiled_brief: p.compiled_brief || '',
         fragments_used: p.fragments_used ? [...p.fragments_used] : [p.fragment_id || 'customs-house/the-site'],
         world_setting: p.world_setting || 'Border March Customs House',
         lore_snippet: p.lore_snippet || '',
+        description: p.lore_snippet || '',
         obstacle_type: p.obstacle_type,
         mass_kg: p.mass_kg,
         interactive_verbs: p.interactive_verbs || ['examine', 'push'],
@@ -1966,21 +1997,140 @@ export function initViewer(config) {
         saturation_score: typeof p.saturation_score === 'number' ? p.saturation_score : 0.4,
         saturation_locked: Boolean(p.saturation_locked),
       };
+      _rehydrateSavedAsset(entity);
+      return entity;
     }
-    // 2. Check actors & declared NPCs
-    else if (actors.has(assetId) || npcs[assetId]) {
-      const npcKey = assetId === 'player' ? 'pell' : assetId;
-      const npc = npcs[assetId] || npcs[npcKey] || null;
+
+    // 2. Check current scene primitives, cast, and staging palette via _findItemInScene
+    let item = typeof _findItemInScene === 'function' ? _findItemInScene(sc, assetId) : null;
+
+    // 3. If not found in current scene, search across all scenes in manifest
+    if (!item && typeof scenesManifest !== 'undefined' && scenesManifest && scenesManifest.scenes_by_id && typeof _findItemInScene === 'function') {
+      for (const s of Object.values(scenesManifest.scenes_by_id)) {
+        const candidate = _findItemInScene(s, assetId);
+        if (candidate) {
+          item = candidate;
+          break;
+        }
+      }
+    }
+
+    // 4. If it's a primitive (from current scene, other scenes, or staging palette):
+    if (item && item._kind === 'primitive') {
+      const p = item;
+      const entity = {
+        id: p.id,
+        asset_id: p.asset_id || p.id,
+        kind: 'primitive',
+        _kind: 'primitive',
+        label: p.name || p.label || p.id,
+        name: p.name || p.label || p.id,
+        fragment_id: p.fragment_id || 'grey-wind/named-ruins',
+        salience: p.salience || 'major',
+        image_url: assetImages.get(p.id) || assetImages.get(cleanId) || p.image_url || p.image_2d || null,
+        image_2d: assetImages.get(p.id) || assetImages.get(cleanId) || p.image_2d || p.image_url || null,
+        sprite_url: p.sprite_url || p.image_2d || null,
+        sheet_url: p.sheet_url || null,
+        collage_url: p.collage_url || null,
+        depth_url: p.depth_url || null,
+        stl_path: p.stl_path || `library/stl_primitives/${cleanId}.stl`,
+        stl_url: p.stl_url || null,
+        mesh_glb: p.mesh_glb || null,
+        source_glb: p.source_glb || null,
+        lowpoly_glb: p.lowpoly_glb || p.mesh_glb || null,
+        collider_glb: p.collider_glb || null,
+        collider_url: p.collider_url || null,
+        diffusion_prompt: p.diffusion_prompt || p.description || `Orthographic asset specification for ${p.name || p.id}`,
+        compiled_brief: p.compiled_brief || '',
+        fragments_used: p.fragments_used ? [...p.fragments_used] : [p.fragment_id || 'grey-wind/named-ruins'],
+        world_setting: p.world_setting || (currentSceneId ? `Border March (${currentSceneId})` : 'Border March'),
+        lore_snippet: p.description || p.lore_snippet || '',
+        description: p.description || p.lore_snippet || '',
+        stage_role: p.stage_role || 'Ruin Primitive',
+        category: p.category || 'ancient_ruin',
+        tree_group: p.tree_group || 'Architecture & Fortifications',
+        dimensions: p.dimensions || [6.0, 6.0, 6.0],
+        triangle_count: p.triangle_count || 8000,
+        source_triangles: p.source_triangles || 8000,
+        coacd_pieces: p.coacd_pieces || (['ancient-bastion', 'relic-cairn', 'wish-stone-slab'].includes(cleanId) ? '6–16 CoACD Boxes' : undefined),
+        world_pos: p.world_pos || null,
+        obstacle_type: p.obstacle_type || 'ruin_geometry',
+        mass_kg: p.mass_kg || 12000,
+        interactive_verbs: p.interactive_verbs || ['survey', 'inspect_geometry', 'examine'],
+        forged: Boolean(assetImages.has(p.id) || assetImages.has(cleanId) || p.forged),
+        pipelineSource: p.pipelineSource || 'waterfall_pipeline',
+        zone_context: p.zone_context || {
+          zone_id: 'border-march-outdoors',
+          zone_name: 'Border March Exterior',
+          substrate_material: 'weathered granite bedrock',
+          scene_id: currentSceneId || 'border-march',
+        },
+        coherence_conflicts: p.coherence_conflicts ? p.coherence_conflicts.map((c) => ({ ...c })) : [],
+        active_criticisms: p.active_criticisms ? [...p.active_criticisms] : [],
+        standing_tier: p.standing_tier || 'verified',
+        standing_score: typeof p.standing_score === 'number' ? p.standing_score : 0.65,
+        warrant_id: p.warrant_id || 'WARRANT-GREY-WIND-01',
+        saturation_score: typeof p.saturation_score === 'number' ? p.saturation_score : 0.5,
+        saturation_locked: Boolean(p.saturation_locked),
+        overhang_constrained: Boolean(p.overhang_constrained !== undefined ? p.overhang_constrained : true),
+        overhang_angle_deg: typeof p.overhang_angle_deg === 'number' ? p.overhang_angle_deg : 45.0,
+      };
+      _rehydrateSavedAsset(entity);
+      return entity;
+    }
+
+    // 5. Check physical props by cleanId fallback
+    if (physicalPropsMap.has(cleanId)) {
+      const p = physicalPropsMap.get(cleanId);
+      const entity = {
+        id: p.id,
+        asset_id: p.id,
+        kind: 'prop',
+        _kind: 'prop',
+        label: p.label || p.id,
+        name: p.label || p.id,
+        fragment_id: p.fragment_id || 'customs-house/the-site',
+        salience: p.salience || 'moderate',
+        image_url: assetImages.get(p.id) || p.image_url || null,
+        image_2d: assetImages.get(p.id) || p.image_url || null,
+        diffusion_prompt: p.diffusion_prompt || p.lore_snippet || `Orthographic asset specification for ${p.label}`,
+        compiled_brief: p.compiled_brief || '',
+        fragments_used: p.fragments_used ? [...p.fragments_used] : [p.fragment_id || 'customs-house/the-site'],
+        world_setting: p.world_setting || 'Border March Customs House',
+        lore_snippet: p.lore_snippet || '',
+        description: p.lore_snippet || '',
+        obstacle_type: p.obstacle_type,
+        mass_kg: p.mass_kg,
+        interactive_verbs: p.interactive_verbs || ['examine', 'push'],
+        forged: assetImages.has(p.id),
+        zone_context: p.zone_context || { zone_id: 'inspection-hall', zone_name: 'Weigh & Inspection Hall', substrate_material: 'scarred timber planking' },
+        coherence_conflicts: p.coherence_conflicts ? p.coherence_conflicts.map((c) => ({ ...c })) : [],
+        active_criticisms: p.active_criticisms ? [...p.active_criticisms] : [],
+        standing_tier: p.standing_tier || 'verified',
+        standing_score: typeof p.standing_score === 'number' ? p.standing_score : 0.65,
+        warrant_id: p.warrant_id || null,
+        saturation_score: typeof p.saturation_score === 'number' ? p.saturation_score : 0.4,
+        saturation_locked: Boolean(p.saturation_locked),
+      };
+      _rehydrateSavedAsset(entity);
+      return entity;
+    }
+
+    // 5. Check actors, declared NPCs, or scene cast members
+    const isActor = (item && item._kind === 'cast') || actors.has(assetId) || npcs[assetId] || actors.has(cleanId) || npcs[cleanId];
+    if (isActor) {
+      const npcKey = (assetId === 'player' || cleanId === 'player') ? 'pell' : (cleanId || assetId);
+      const npc = npcs[assetId] || npcs[cleanId] || npcs[npcKey] || null;
       const portraitBrief = npc?.compiled_portrait || null;
-      const defaultFrag = assetId === 'pell' ? 'scaffolded-kingdom/understudy' : (assetId === 'hollis' ? 'customs-house/hollis-ledger' : 'shared/actor-roster');
+      const defaultFrag = npcKey === 'pell' ? 'scaffolded-kingdom/understudy' : (npcKey === 'hollis' ? 'customs-house/hollis-ledger' : 'shared/actor-roster');
       const frags = portraitBrief?.fragments_used?.length ? [...portraitBrief.fragments_used] : [defaultFrag, 'shared/brief-faces-are-themes'];
 
-      let a = actors.get(assetId);
+      let a = actors.get(assetId) || actors.get(cleanId);
       if (!a) {
         a = {
           id: assetId,
-          name: npc?.name || assetId,
-          role: npc?.role || 'Actor',
+          name: item?.name || npc?.name || assetId,
+          role: item?.role || npc?.role || 'Actor',
           x: 63.0,
           y: 69.0,
           z: 6.6,
@@ -1988,24 +2138,29 @@ export function initViewer(config) {
           balloonEl: null,
           image_url: null,
           diffusion_prompt: portraitBrief?.rewritten_prompt || '',
-          lore_snippet: npc?.portrait || `${npc?.name || assetId}`,
-          written: npc?.written !== undefined ? npc.written : (assetId === 'hollis'),
+          lore_snippet: npc?.portrait || `${item?.name || npc?.name || assetId}`,
+          written: npc?.written !== undefined ? npc.written : (npcKey === 'hollis'),
         };
         actors.set(assetId, a);
       }
 
-      entity = {
+      const entity = {
         id: a.id,
+        asset_id: a.id,
         kind: 'actor',
+        _kind: 'actor',
         label: a.name || npc?.name || a.id,
+        name: a.name || npc?.name || a.id,
         fragment_id: defaultFrag,
         salience: 'major',
         image_url: assetImages.get(a.id) || a.image_url || null,
+        image_2d: assetImages.get(a.id) || a.image_url || null,
         diffusion_prompt: portraitBrief?.rewritten_prompt || a.diffusion_prompt || `${a.name}, 2.5D character portrait rendered via image diffusion`,
         compiled_brief: portraitBrief?.compiled_brief || a.lore_snippet || `${a.name} (${a.role || 'Actor'})`,
         fragments_used: frags,
         world_setting: portraitBrief?.zone_context?.zone_name || 'Border March Customs House',
         lore_snippet: npc?.portrait || a.lore_snippet || `${a.name} (${a.role || 'Actor'})`,
+        description: npc?.portrait || a.lore_snippet || `${a.name} (${a.role || 'Actor'})`,
         obstacle_type: 'actor',
         mass_kg: 70.0,
         interactive_verbs: ['talk', 'inspect_standing'],
@@ -2020,74 +2175,161 @@ export function initViewer(config) {
         saturation_locked: false,
         npc_sheet: npc,
       };
+      _rehydrateSavedAsset(entity);
+      return entity;
     }
-    // 3. Check cue marks
-    else if (stagecraft?.cue_marks) {
-      const mark = stagecraft.cue_marks.find((m) => m.id === assetId);
+
+    // 6. Check cue marks
+    if (stagecraft?.cue_marks) {
+      const mark = stagecraft.cue_marks.find((m) => m.id === assetId || m.id === cleanId);
       if (mark) {
-        entity = {
+        const entity = {
           id: mark.id,
+          asset_id: mark.id,
           kind: 'cue_mark',
+          _kind: 'cue_mark',
           label: mark.label || mark.id,
+          name: mark.label || mark.id,
           fragment_id: 'stagecraft/proscenium-cues',
           salience: 'moderate',
           image_url: assetImages.get(mark.id) || null,
+          image_2d: assetImages.get(mark.id) || null,
           diffusion_prompt: `Stagecraft cue mark token on floorplate: ${mark.label}, chalked blocking star with golden theatrical aura`,
           lore_snippet: `Theatrical blocking mark [${mark.role_gate || 'General'}]. Authorized standing: ${mark.authorized_standing || 'open'}.`,
+          description: `Theatrical blocking mark [${mark.role_gate || 'General'}]. Authorized standing: ${mark.authorized_standing || 'open'}.`,
           obstacle_type: 'cue_mark',
           mass_kg: null,
           interactive_verbs: ['step_onto_mark', 'inspect_cue'],
           forged: assetImages.has(mark.id),
         };
+        _rehydrateSavedAsset(entity);
+        return entity;
       }
     }
 
-    // 4. Check zones
-    if (!entity && zones) {
-      const zone = zones.find((z) => z.id === assetId);
+    // 7. Check zones
+    if (zones) {
+      const zone = zones.find((z) => z.id === assetId || z.id === cleanId);
       if (zone) {
-        entity = {
+        const entity = {
           id: zone.id,
+          asset_id: zone.id,
           kind: 'zone',
+          _kind: 'zone',
           label: zone.name || zone.id,
+          name: zone.name || zone.id,
           fragment_id: 'terrain/border-march',
           salience: 'region',
           image_url: assetImages.get(zone.id) || 'topdown_relief.png',
+          image_2d: assetImages.get(zone.id) || 'topdown_relief.png',
           diffusion_prompt: `Topographical map sector of ${zone.name}, 2.5D terrain relief with atmospheric altitude shading`,
           lore_snippet: `Regional map zone: ${zone.name}. Elevation bracket: ${zone.elevation || 6.0}m.`,
+          description: `Regional map zone: ${zone.name}. Elevation bracket: ${zone.elevation || 6.0}m.`,
           obstacle_type: 'terrain_zone',
           mass_kg: null,
           interactive_verbs: ['survey_terrain'],
           forged: assetImages.has(zone.id),
         };
+        _rehydrateSavedAsset(entity);
+        return entity;
       }
     }
 
-    if (!entity && typeof idOrEntity === 'object') {
-      entity = {
-        id: idOrEntity.id || 'unknown_asset',
-        kind: idOrEntity.kind || 'prop',
-        label: idOrEntity.label || idOrEntity.id,
+    // 8. If an object was passed directly, build from its properties
+    if (typeof idOrEntity === 'object') {
+      const entity = {
+        id: idOrEntity.id || assetId || 'unknown_asset',
+        asset_id: idOrEntity.asset_id || idOrEntity.id || assetId,
+        kind: idOrEntity.kind || idOrEntity._kind || 'prop',
+        _kind: idOrEntity.kind || idOrEntity._kind || 'prop',
+        label: idOrEntity.label || idOrEntity.name || assetId,
+        name: idOrEntity.name || idOrEntity.label || assetId,
         fragment_id: idOrEntity.fragment_id || 'shared/unmodelled-prop',
         salience: idOrEntity.salience || 'minor',
-        image_url: assetImages.get(idOrEntity.id) || idOrEntity.image_url || null,
-        diffusion_prompt: idOrEntity.diffusion_prompt || idOrEntity.lore || '',
-        lore_snippet: idOrEntity.lore || '',
+        image_url: assetImages.get(assetId) || idOrEntity.image_url || idOrEntity.image_2d || null,
+        image_2d: assetImages.get(assetId) || idOrEntity.image_2d || idOrEntity.image_url || null,
+        sprite_url: idOrEntity.sprite_url || null,
+        sheet_url: idOrEntity.sheet_url || null,
+        collage_url: idOrEntity.collage_url || null,
+        depth_url: idOrEntity.depth_url || null,
+        stl_path: idOrEntity.stl_path || null,
+        mesh_glb: idOrEntity.mesh_glb || null,
+        collider_glb: idOrEntity.collider_glb || null,
+        diffusion_prompt: idOrEntity.diffusion_prompt || idOrEntity.lore || idOrEntity.description || '',
+        lore_snippet: idOrEntity.lore || idOrEntity.description || idOrEntity.lore_snippet || '',
+        description: idOrEntity.description || idOrEntity.lore || idOrEntity.lore_snippet || '',
+        dimensions: idOrEntity.dimensions || null,
+        triangle_count: idOrEntity.triangle_count || null,
         obstacle_type: idOrEntity.obstacle_type || 'passable',
         mass_kg: idOrEntity.mass_kg || null,
-        interactive_verbs: idOrEntity.verbs || ['examine'],
-        forged: assetImages.has(idOrEntity.id),
+        interactive_verbs: idOrEntity.verbs || idOrEntity.interactive_verbs || ['examine'],
+        forged: Boolean(assetImages.has(assetId) || idOrEntity.forged),
       };
+      _rehydrateSavedAsset(entity);
+      return entity;
     }
 
+    // 9. Fallback for any unknown string ID
+    const fallback = {
+      id: assetId,
+      asset_id: assetId,
+      kind: 'prop',
+      _kind: 'prop',
+      label: assetId.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+      name: assetId.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+      fragment_id: 'grey-wind/named-ruins',
+      salience: 'minor',
+      image_url: assetImages.get(assetId) || null,
+      image_2d: assetImages.get(assetId) || null,
+      diffusion_prompt: `Orthographic asset specification for ${assetId}`,
+      lore_snippet: `Asset record for ${assetId}.`,
+      description: `Asset record for ${assetId}.`,
+      obstacle_type: 'passable',
+      mass_kg: null,
+      interactive_verbs: ['examine'],
+      forged: assetImages.has(assetId),
+    };
+    _rehydrateSavedAsset(fallback);
+    return fallback;
+  }
+
+  function selectAsset(idOrEntity, options = {}) {
+    if (!idOrEntity) return null;
+    const entity = resolveSceneAsset(idOrEntity);
     if (!entity) return null;
 
     selectedAsset = entity;
-    log('STAGE', `Selected ${entity.kind}: ${entity.label} [${entity.id}]`);
-    renderAssetViewerDOM();
-    if (typeof syncSidebarToSelectedAsset === 'function') {
-      syncSidebarToSelectedAsset(entity.id);
+    const sc = typeof getCurrentScene === 'function' ? getCurrentScene() : null;
+    const itemInScene = typeof _findItemInScene === 'function' ? _findItemInScene(sc, entity.id) : null;
+    selectedPrimitiveId = itemInScene?.id || entity.id;
+
+    // 1. Update active state in tree view DOM
+    if (typeof document !== 'undefined' && typeof document.querySelectorAll === 'function') {
+      const nodes = document.querySelectorAll('.tree-node-item');
+      nodes.forEach((n) => {
+        const nid = n.dataset ? (n.dataset.nodeId || n.dataset.primitiveId || n.dataset.assetId) : null;
+        if (nid === selectedPrimitiveId || nid === entity.id || nid === entity.asset_id || (entity.id && nid === entity.id.replace(/^prop-/, ''))) {
+          n.classList.add('active');
+        } else {
+          n.classList.remove('active');
+        }
+      });
     }
+
+    // 2. Render Left Sidebar Preview (unless caller already rendered the scene primitive)
+    if (!options.skipSidebarPreview) {
+      renderSidebarPreviewDOM(itemInScene || entity);
+    }
+
+    // 3. Render Right Sidebar (Asset & Diffusion Viewer)
+    renderAssetViewerDOM();
+
+    // 4. Optionally focus map if requested
+    if (options.focusMap && Array.isArray(entity.world_pos) && entity.world_pos.length >= 2) {
+      focusSceneAssetOnMap(entity.id);
+    }
+
+    log('STAGE', `Selected ${entity.kind}: ${entity.label} [${entity.id}]`);
     return selectedAsset;
   }
 
@@ -2233,7 +2475,7 @@ export function initViewer(config) {
       btnCompile.disabled = false;
       btnCompile.innerText = selectedAsset.compiled_brief
         ? '⚡ Re-compile (Lattice)'
-        : '⚡ Compile Prompt (Lattice)';
+        : '⚡ Compile (Lattice)';
     }
 
     const btnRender = document.getElementById('btn-forge-render');
@@ -2427,11 +2669,7 @@ export function initViewer(config) {
     const itemInScene = _findItemInScene(sc, id);
 
     if (!selectedAsset || (selectedAsset.id !== id && selectedAsset.asset_id !== id)) {
-      if (itemInScene) {
-        selectScenePrimitive(id, { syncViewer: true });
-      } else {
-        selectAsset(id);
-      }
+      selectAsset(id);
     }
 
     const btnCompile = typeof document !== 'undefined' ? (document.getElementById('btn-forge-compile') || document.getElementById('btn-sidebar-compile')) : null;
@@ -2668,7 +2906,8 @@ export function initViewer(config) {
   function syncWaterfallPipeline(primitiveId, options = {}) {
     const sc = getCurrentScene();
     const pid = primitiveId || (selectedAsset ? (selectedAsset.id || selectedAsset.asset_id) : (selectedPrimitiveId || getSelectedScenePrimitive()?.id || 'ancient-bastion'));
-    const itemInScene = _findItemInScene(sc, pid) || (selectedAsset?.id === pid ? selectedAsset : null);
+    selectAsset(pid);
+    const itemInScene = selectedAsset;
 
     const btnSidebar = typeof document !== 'undefined' ? document.getElementById('btn-sidebar-sync-waterfall') : null;
     const btnViewer = typeof document !== 'undefined' ? document.getElementById('btn-forge-sync-waterfall') : null;
@@ -3876,10 +4115,9 @@ export function initViewer(config) {
 
   function selectScenePrimitive(itemId, options = {}) {
     const sc = getCurrentScene();
-    let item = _findItemInScene(sc, itemId);
-    if (!item) {
-      // Search across all scenes if not in current scene
-      for (const s of Object.values(scenesManifest.scenes_by_id || {})) {
+    let item = typeof _findItemInScene === 'function' ? _findItemInScene(sc, itemId) : null;
+    if (!item && typeof scenesManifest !== 'undefined' && scenesManifest && scenesManifest.scenes_by_id && typeof _findItemInScene === 'function') {
+      for (const s of Object.values(scenesManifest.scenes_by_id)) {
         const candidate = _findItemInScene(s, itemId);
         if (candidate) {
           currentSceneId = s.id;
@@ -3888,16 +4126,17 @@ export function initViewer(config) {
         }
       }
     }
-    if (!item) return null;
+    if (!item) {
+      return selectAsset(itemId, options);
+    }
 
     selectedPrimitiveId = item.id;
 
-    // Update active state in tree view DOM
     if (typeof document !== 'undefined' && typeof document.querySelectorAll === 'function') {
       const nodes = document.querySelectorAll('.tree-node-item');
       nodes.forEach((n) => {
-        const nid = n.dataset ? n.dataset.nodeId : null;
-        if (nid === item.id) {
+        const nid = n.dataset ? (n.dataset.nodeId || n.dataset.primitiveId || n.dataset.assetId) : null;
+        if (nid === item.id || nid === item.asset_id || (item.id && nid === item.id.replace(/^prop-/, ''))) {
           n.classList.add('active');
         } else {
           n.classList.remove('active');
@@ -3908,51 +4147,24 @@ export function initViewer(config) {
     renderSidebarPreviewDOM(item);
 
     if (options.syncViewer !== false) {
-      const targetAssetId = item.asset_id || item.id;
-      if (item._kind === 'cast') {
-        selectAsset(item.id);
-      } else if (physicalPropsMap.has(targetAssetId)) {
-        selectAsset(targetAssetId);
-      } else if (physicalPropsMap.has(item.id)) {
-        selectAsset(item.id);
-      } else {
-        selectAsset({
-          id: item.id,
-          kind: 'prop',
-          label: item.name,
-          fragment_id: item.fragment_id,
-          salience: 'major',
-          image_url: item.image_2d || null,
-          lore: item.description,
-          dimensions: item.dimensions,
-          triangle_count: item.triangle_count,
-        });
-        compileAssetBrief(item.id);
-      }
+      const targetAssetId = (item.asset_id && physicalPropsMap.has(item.asset_id))
+        ? item.asset_id
+        : (item.id || itemId);
+      selectAsset(targetAssetId, { ...options, skipSidebarPreview: true });
+    }
 
-      if (options.focusMap && Array.isArray(item.world_pos) && item.world_pos.length >= 2) {
-        focusSceneAssetOnMap(item.id);
-      }
+    if (options.focusMap && Array.isArray(item.world_pos) && item.world_pos.length >= 2) {
+      focusSceneAssetOnMap(item.id);
     }
 
     return item;
   }
 
   function syncSidebarToSelectedAsset(assetId) {
-    const sc = getCurrentScene();
-    if (!sc) return;
-    const item = _findItemInScene(sc, assetId);
-    if (item && item.id !== selectedPrimitiveId) {
-      selectedPrimitiveId = item.id;
-      if (typeof document !== 'undefined' && typeof document.querySelectorAll === 'function') {
-        const nodes = document.querySelectorAll('.tree-node-item');
-        nodes.forEach((n) => {
-          const nid = n.dataset ? n.dataset.nodeId : null;
-          if (nid === item.id) n.classList.add('active');
-          else n.classList.remove('active');
-        });
-      }
-      renderSidebarPreviewDOM(item);
+    if (selectedAsset && (selectedAsset.id === assetId || selectedAsset.asset_id === assetId)) {
+      renderSidebarPreviewDOM(selectedAsset);
+    } else {
+      selectAsset(assetId);
     }
   }
 
@@ -5967,7 +6179,10 @@ export function initViewer(config) {
   // Initial setup
   renderFeaturesDOM();
   updatePlayerPosition(playerX, playerY);
-  selectAsset('r6_ship_crate_standard');
+  const initialAssetId = (scenesManifest.scenes_by_id?.[currentSceneId]?.primitives?.[0]?.id)
+    || (features?.scenes?.scenes_by_id?.['border-march']?.primitives?.[0]?.id)
+    || 'ancient-bastion';
+  selectAsset(initialAssetId);
   renderPrimitivesMenuDOM();
   setupSidebarResizer();
   log('STAGE', 'SpriteQuest 2.5D Viewport Engine initialized.');

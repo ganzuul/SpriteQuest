@@ -2504,11 +2504,11 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
           <div class="section-title">
             <span>🎨 Asset & Diffusion Viewer</span>
           </div>
-          <span class="asset-badge" id="asset-viewer-badge">[PROP · MAJOR]</span>
+          <span class="asset-badge" id="asset-viewer-badge">[PRIMITIVE · MAJOR]</span>
         </div>
         <div class="asset-title-row">
-          <span class="asset-name" id="asset-viewer-name">R6-SHIP Standard Bounding Crate</span>
-          <span class="asset-id" id="asset-viewer-id">r6_ship_crate_standard</span>
+          <span class="asset-name" id="asset-viewer-name">Ancient 45° Stepped Bastion</span>
+          <span class="asset-id" id="asset-viewer-id">ancient-bastion</span>
         </div>
 
         <div class="asset-image-container" id="asset-viewer-image-container">
@@ -2516,18 +2516,18 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
         </div>
 
         <div class="asset-meta-row" id="asset-viewer-meta">
-          <div class="stat-row"><span>Provenance:</span><span class="stat-val stat-accent" id="asset-viewer-provenance">customs-house/r6-ship</span></div>
-          <div class="stat-row"><span>Compiled Lore:</span><span class="stat-val stat-accent" id="asset-viewer-fragments">r6-ship · single-face-reading</span></div>
-          <div class="stat-row"><span>Cartographer Standing:</span><span class="stat-val stat-gold" id="asset-viewer-standing">VERIFIED (0.65)</span></div>
-          <div class="stat-row"><span>Scene Backpressure:</span><span class="stat-val" id="asset-viewer-coherence">clearance-foyer · coherent</span></div>
-          <div class="stat-row"><span>Physicality:</span><span class="stat-val" id="asset-viewer-physicality">42.5kg · physics object</span></div>
+          <div class="stat-row"><span>Provenance:</span><span class="stat-val stat-accent" id="asset-viewer-provenance">grey-wind/named-ruins</span></div>
+          <div class="stat-row"><span>Compiled Lore:</span><span class="stat-val stat-accent" id="asset-viewer-fragments">named-ruins · single-face-reading</span></div>
+          <div class="stat-row"><span>Cartographer Standing:</span><span class="stat-val stat-gold" id="asset-viewer-standing">VERIFIED (0.65) · WARRANT-GREY-WIND-01</span></div>
+          <div class="stat-row"><span>Scene Backpressure:</span><span class="stat-val" id="asset-viewer-coherence">border-march · coherent</span></div>
+          <div class="stat-row"><span>Physicality:</span><span class="stat-val" id="asset-viewer-physicality">12000kg · ruin geometry</span></div>
           <div class="stat-row"><span>Diffusion Model:</span><span class="stat-val stat-gold" id="asset-viewer-model">MOSS-Image-SFT</span></div>
           <div class="stat-row"><span>Pipeline Server:</span><span class="stat-val" id="asset-viewer-server-status" style="color: #4ade80;">Checking...</span></div>
           <div class="stat-row"><span>Lattice Pipeline:</span><span class="stat-val stat-gold" id="asset-viewer-pipeline-status">Fragment Compiler + Rewriter</span></div>
         </div>
 
         <div class="asset-lore-box" id="asset-viewer-lore">
-          "Standardized rectangular shipping crate demanding arithmetic clearance."
+          "Cantilevered megalithic stone rampart obeying the 45-degree overhang rule. Dense stepped masonry tiers for F3K depth conditioning."
         </div>
 
         <div class="asset-actions" id="asset-viewer-actions">
