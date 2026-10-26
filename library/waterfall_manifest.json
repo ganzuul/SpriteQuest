@@ -10,17 +10,17 @@
     "mesh_hash": "e0c608e3e0d791e1",
     "lowpoly_faces": 7919,
     "source_faces": 529060,
-    "collider_hash": "88611c62a686c0f5",
-    "collider_blocks": 16,
-    "depth_hash": "8c12bf417abd63cc",
-    "sheet_hash": "e2b3ae398fd77294",
-    "updated_at": "2026-10-26T14:53:19Z",
+    "collider_hash": "cbd23929829f1a5c",
+    "collider_blocks": 32,
+    "depth_hash": "607d6b036ad8bc81",
+    "sheet_hash": "aa0fb86774b32fe2",
+    "updated_at": "2026-10-26T15:24:45Z",
     "dimensions": [
       1.8,
       1.8,
       1.6
     ],
-    "lattice_run_id": "waterfall-d18bcd7cc9"
+    "lattice_run_id": "waterfall-cbf532c0fa"
   },
   "prop-relic-cairn": {
     "prompt_hash": "bd1c373ba0234ab0",

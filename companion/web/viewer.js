@@ -102,10 +102,13 @@ export function initViewer(config) {
         body: JSON.stringify(payload),
         signal: typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(timeoutMs) : undefined,
       });
+      const data = await res.json().catch(() => null);
       if (res.ok) {
-        return await res.json();
+        return data;
+      } else {
+        return data || { ok: false, error: `HTTP ${res.status}: ${res.statusText}` };
       }
-    } catch (_) {
+    } catch (netErr) {
       // SillyTavern reverse proxy fallback if running under SillyTavern (port 8000)
       if (typeof window !== 'undefined' && window.location && window.location.port === '8000') {
         try {
@@ -116,11 +119,13 @@ export function initViewer(config) {
             body: JSON.stringify(payload),
             signal: typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(timeoutMs) : undefined,
           });
-          if (pRes.ok) return await pRes.json();
+          const pData = await pRes.json().catch(() => null);
+          if (pRes.ok) return pData;
+          return pData || { ok: false, error: `Proxy HTTP ${pRes.status}` };
         } catch (__) {}
       }
+      return { ok: false, error: `Cannot reach Forge service at ${base} (${netErr?.message || 'connection failed'})` };
     }
-    return null;
   }
 
   async function checkForgeServer(targetUrl = getForgeServiceUrl()) {
@@ -2749,15 +2754,38 @@ export function initViewer(config) {
             pipeStatusEl.textContent = `⚠️ Error: ${errMsg}`;
             pipeStatusEl.style.color = '#ef4444';
           }
+          if (imgContainer) {
+            imgContainer.innerHTML = `
+              <div class="asset-no-img-box" style="padding: 16px;">
+                <div style="font-size: 24px; margin-bottom: 6px;">⚠️</div>
+                <div class="asset-no-img-text" style="color: #f87171; font-weight: 600;">Waterfall Synchronization Error</div>
+                <div style="font-size: 10px; color: #cbd5e1; margin-top: 6px; max-width: 280px; word-break: break-word;">${escapeHtml(errMsg)}</div>
+                <div style="font-size: 9px; color: #a8947f; margin-top: 6px;">Service: ${escapeHtml(getForgeServiceUrl())}</div>
+                <button class="btn-forge-render btn-secondary" style="margin-top: 10px; font-size: 10px; padding: 4px 10px;" onclick="(window.syncWaterfallPipeline ? window.syncWaterfallPipeline() : (window.viewer && window.viewer.syncWaterfallPipeline && window.viewer.syncWaterfallPipeline()))">🔄 Retry Sync</button>
+              </div>
+            `;
+          }
           log('LATTICE', `[Waterfall] Server returned error: ${errMsg}.`, 'warn');
         }
       }).catch((err) => {
         resetWaterfallButtons();
+        const errMsg = err?.message || 'Connection offline';
         if (pipeStatusEl) {
-          pipeStatusEl.textContent = `⚠️ Error: ${err?.message || 'offline'}`;
+          pipeStatusEl.textContent = `⚠️ Error: ${errMsg}`;
           pipeStatusEl.style.color = '#ef4444';
         }
-        log('LATTICE', `[Waterfall] Pipeline error: ${err?.message || 'offline'}.`, 'warn');
+        if (imgContainer) {
+          imgContainer.innerHTML = `
+            <div class="asset-no-img-box" style="padding: 16px;">
+              <div style="font-size: 24px; margin-bottom: 6px;">⚠️</div>
+              <div class="asset-no-img-text" style="color: #f87171; font-weight: 600;">Waterfall Service Unreachable</div>
+              <div style="font-size: 10px; color: #cbd5e1; margin-top: 6px; max-width: 280px; word-break: break-word;">Cannot connect to ${escapeHtml(getForgeServiceUrl())}.</div>
+              <div style="font-size: 9px; color: #a8947f; margin-top: 6px;">Ensure companion/forge_service.py is running on port 8788.</div>
+              <button class="btn-forge-render btn-secondary" style="margin-top: 10px; font-size: 10px; padding: 4px 10px;" onclick="(window.syncWaterfallPipeline ? window.syncWaterfallPipeline() : (window.viewer && window.viewer.syncWaterfallPipeline && window.viewer.syncWaterfallPipeline()))">🔄 Retry Sync</button>
+            </div>
+          `;
+        }
+        log('LATTICE', `[Waterfall] Pipeline error: ${errMsg}.`, 'warn');
       });
     } else {
       setTimeout(resetWaterfallButtons, 600);
