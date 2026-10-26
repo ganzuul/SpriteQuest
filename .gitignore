@@ -19,3 +19,9 @@ work/
 legacy-archive/
 __pycache__/
 *.pyc
+
+# Generated assets
+/renders/
+/library/mesh/
+/library/sprites/
+/library/stl_primitives/
