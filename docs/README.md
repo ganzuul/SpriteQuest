@@ -29,6 +29,7 @@ For common settings, see [familiar node settings](operators-manual.md#familiar-n
 - [Developer guide](developer-guide.md) — architecture, rendering, local setup, checks, and contribution guidance.
 - [Development commands](development.md) — build and verification commands, including documentation capture tools.
 - [API and contracts](api/README.md) — proposed node plugin and companion HTTP contracts, the interface inventory, and the versioning policy.
+- [Asset jobs](api/asset-jobs.md) — the OpenJD-shaped job, resource, priority, cancel, and manifest spike.
 - [Documentation media](media.md) — screenshot and animation inventory and how to reproduce the captures.
 
 Screenshots use synthetic story material on the real local editor. The research and superpowers directories retain historical working records; use the user guides above for current operation.
@@ -41,5 +42,13 @@ These records explain the unified-workflow design, including proposals and open 
 | --- | --- |
 | [Workflow Unification Summary](design/workflow-unification-summary.md) | The lifecycle from preparation to publication, file updates, recall, story time, runtime, and host integration. |
 | [Expanded Nodes](design/expanded-nodes.md) | Proposed node contracts and story recipes for triggers, decisions, files, recall, clocks, progression, and relationship pacing. |
+
+## Cartography and rendering design
+
+| Document | Covers |
+| --- | --- |
+| [ComfyUI runtime](design/comfyui-runtime.md) | How ComfyUI starts, where its configuration lives, how models are discovered, and the RAM/VRAM budget rule. |
+| [MOSS atlas ontology](design/cartographers-moss-atlas-ontology.md) | How the Cartographers' Locus Frame, Witness Plate, and Scale Register map onto MOSS layouts and reference images, including the GGUF caveat. |
+| [Map geometry spec](design/map-geometry-spec.md) | Proposed geometry model for map declarations: typed primitives, an explicit frame, topology, and parent-map transforms. Not implemented. |
 
 Implemented requirements and validation appear in the [requirement evidence](design/workflow-unification-requirements.md) and [release report](superpowers/reports/2026-10-10-workflow-unification.md).
