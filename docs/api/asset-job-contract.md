@@ -21,7 +21,7 @@ only where `Status` is `n.a.`.
 | --- | --- | --- | --- | --- | --- |
 | C1 | A job is a portable document of named steps with explicit, acyclic dependencies, interpretable without the producing process. | m | Y | `model.py`; `TemplateTests` | Duplicate, unknown and cyclic names rejected. |
 | C2 | Independent steps may run concurrently; a step does not start before every dependency completes. | m | Y | `scheduler.py`; parallel and dependency tests | |
-| C3 | A failed or cancelled step resolves its dependents as skipped or unresolved, with a reason; no step stays indeterminate after settlement. | m | N | — | Deviation D1/G1: dependents remain `pending` while the job settles `failed`. |
+| C3 | A dependent of a step that did not complete resolves explicitly: `skipped` when the cause is failure or cancellation, `unresolved` when the cause is a missing input. No step stays indeterminate after settlement. | m | N | — | D1/G1: dependents remain `pending`. Superseded in meaning by C22-C23. |
 | C4 | Requirements are quantities (cpu, memory, gpu, vram) and named attributes; a worker is eligible only if it satisfies both. | m | Y | `resources.py`; `test_no_eligible_pool_fails_closed` | |
 | C5 | A swap group is exclusive to its capacity; a worker dedicated to a group refuses steps that do not request it. | m | Y | `resources.py`; `test_swap_group_is_exclusive` | |
 | C6 | A remote or shared provider is modelled as a pool with a declared concurrency limit. | m | Y | `resources.py` `capacity` | Model only; no remote adapter yet. |
@@ -40,13 +40,19 @@ only where `Status` is `n.a.`.
 | C19 | Lock state is readable without attempting regeneration: asset, reason, who set it, and when. | m | Y | `lock_state`, `locks`, `can_regenerate`; observability test | |
 | C20 | Automation may set a lock but may not release one. A release records who released it and why. | m | Y | `lock` (by `policy`), `unlock` (requires `by` and `reason`); auto-lock tests | The scheduler records the actor; it does not authenticate one. |
 | C21 | A retry is a new attempt of the same step, not an eviction: it consumes no eviction budget and changes no priority. | m | Y | `scheduler.py` `_execute_step` | Semantics were unstated until D2; the behaviour already matched. |
+| C22 | A refusal to run because named assets are absent is `unresolved` and carries those identifiers. Any other failure is `failed` and carries none. The distinction is asserted, never inferred from an error string. | m | N | — | Not delivered; see G5. |
+| C23 | A dependent inherits its dependencies' state: completed permits a run, unresolved becomes unresolved with the union of missing identifiers, and failed, cancelled or skipped becomes skipped with a reason. | m | N | — | Not delivered; see G5. |
+| C24 | Every unresolved step contributes its missing identifiers to a pending set, deduplicated by identifier and listing every demander. | m | N | — | Not delivered; see G5. |
+| C25 | A job that declares the asset it produces records `produced → missing` edges when it is unresolved. The pending set exposes those edges. | m | N | — | Not delivered; see G5. |
+| C26 | A pending asset with no recorded requirements is a root and is reported as the next thing to author. A cycle is reported as a cycle and never walked as if it could resolve. | m | N | — | Not delivered; see G5. |
 
 ### Statement of conformance
 
 **Are all mandatory capabilities implemented?** No.
 
-`C3` remains unsupported. Every other mandatory item is supported, with the
-qualifications recorded in `Remarks`. The single non-conformance is `C3` (D1).
+`C3` and `C22`–`C26` are not supported. Every other mandatory item is supported,
+with the qualifications recorded in `Remarks`. The non-conformances are `C3`
+(D1) and the pending-asset model (G5).
 
 ## Findings
 
@@ -58,6 +64,10 @@ Delivery exposes two kinds of failure, and they are not interchangeable.
   `failed` while its dependents remain `pending`. That is not a bug against a
   requirement; it is a missing requirement. C3 was added because of this
   finding.
+- **D3:** `C3` assumed one kind of failure and that skipping was a sufficient
+  answer. Delivery showed that a failure may mean *missing content*, which
+  points at a dependency tree rather than a dead end. `C3` was reworded and
+  `C22`–`C26` were added.
 - **D2:** retry semantics were unspecified. Resolved: `C21` states that a retry
   is a new attempt rather than an eviction, and `C17`–`C20` gate regeneration
   behind an asset lock. The gate is delivered and tested.
@@ -68,6 +78,8 @@ Delivery exposes two kinds of failure, and they are not interchangeable.
 - **G2:** `step.retry` has no test, so its behaviour is unverified.
 - **G3 (C13):** preemption is tested on single-step jobs only; multi-step
   eviction is exercised but not pinned.
+- **G5 (C22–C26):** the pending-asset model is specified but not implemented.
+  There is one failure kind, no missing channel, and nothing correlating demand.
 - ~~G4 (C17–C20):~~ resolved in `feat(asset-jobs): gate regeneration behind an
   asset lock`. The gate, the refusal code, and the observable lock are delivered
   and tested.
