@@ -71,6 +71,7 @@ class Step:
     script: StepScript
     timeout_seconds: float = 300.0
     retry: int = 0
+    requires: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -125,6 +126,7 @@ class JobTemplate:
                         },
                         "timeoutSeconds": step.timeout_seconds,
                         "retry": step.retry,
+                        "requires": list(step.requires),
                     }
                     for step in self.steps
                 ],
@@ -290,6 +292,12 @@ def _parse_steps(raw: Any) -> tuple[Step, ...]:
         )
         host_requirements = _parse_host_requirements(item.get("hostRequirements"), name)
         script = _parse_script(item.get("script"), name)
+        requires_raw = item.get("requires", ())
+        if not isinstance(requires_raw, (list, tuple)):
+            raise TemplateError(f"step {name}.requires must be a list of asset identifiers")
+        requires = tuple(
+            _string(item_id, f"step {name}.requires[]") for item_id in requires_raw
+        )
         timeout = item.get("timeoutSeconds", 300.0)
         if isinstance(timeout, bool) or not isinstance(timeout, (int, float)) or timeout <= 0:
             raise TemplateError(f"step {name}.timeoutSeconds must be a positive number")
@@ -304,6 +312,7 @@ def _parse_steps(raw: Any) -> tuple[Step, ...]:
                 script=script,
                 timeout_seconds=float(timeout),
                 retry=retry,
+                requires=requires,
             )
         )
     return tuple(steps)

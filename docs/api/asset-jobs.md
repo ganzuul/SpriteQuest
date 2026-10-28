@@ -118,6 +118,63 @@ The example worker layout:
 
 An LLM on llama-swap would be another exclusive group, for example `llm-analysis` or `llm-prose`.
 
+## Missing inputs and pending assets
+
+A step can fail for two different reasons, and the difference is the whole point:
+
+| State | Cause | Payload |
+| --- | --- | --- |
+| `failed` | The step ran and broke | An error, no claim about inputs |
+| `unresolved` | Named assets do not exist | The missing identifiers |
+
+`unresolved` is evidence, not a dead end. It says which content is absent, which
+is exactly what a dependency tree is made of.
+
+**Requirements are declared or reported.** A step may name what it needs:
+
+```json
+{ "name": "sprite", "requires": ["fragment/grounding-slate"] }
+```
+
+The scheduler checks declared requirements against the known assets *before*
+reserving a worker, so an unmet requirement costs nothing. A provider can report
+what it could not find at runtime:
+
+```python
+return ProviderResult(ok=False, error="fragment absent", missing=("fragment/x",))
+```
+
+A runtime `missing` is never retried — a second attempt cannot create content.
+
+**Dependents inherit the evidence.** A dependent of a `failed` or cancelled step
+is `skipped`, because nothing is known about what is missing. A dependent of an
+`unresolved` step is `unresolved` with the union of the missing identifiers.
+No step is left `pending` after settlement.
+
+**Demand is collected and correlated.** Every unresolved step contributes its
+missing identifiers to a pending set, deduplicated by identifier and listing
+each demander:
+
+```python
+for asset in scheduler.pending_assets():
+    print(asset.asset_id, asset.state, asset.depth, asset.requires, asset.demanders)
+```
+
+Edges are learned from the jobs themselves: a job that declares the asset it
+produces and ends `unresolved` because of `Y` teaches `produced → Y`. Nothing has
+to be declared up front.
+
+```text
+fragment/grounding-slate           root     depth=0  demands=3
+prop/tower                         waiting  depth=1  requires=(fragment/grounding-slate,)
+prop/brazier                       waiting  depth=1  requires=(fragment/grounding-slate,)
+prop/crate                         waiting  depth=1  requires=(fragment/grounding-slate,)
+```
+
+`pending_roots()` returns the assets nothing has claimed it can produce — the
+next authoring work. A cycle is reported as `state="cycle"` with `depth=None`
+rather than walked as if it could resolve.
+
 ## Regeneration and locks
 
 A job may name the asset it produces:
@@ -388,6 +445,8 @@ The demo prints the capability report, submits a critical `ruined-watchtower` jo
 ## Current limitations
 
 - One task per step; no `parameterSpace` or task chunking.
+- Known assets are declared through `register_asset` and completed jobs; there is
+  no content store to query.
 - Suspend/resume is declared unsupported; there is no checkpointing provider.
 - Locks are per asset identity provided by the caller, not derived from the ledger.
 - Preemption is eviction plus requeue, not suspension, so an evicted step restarts from zero.

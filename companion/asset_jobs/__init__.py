@@ -28,6 +28,7 @@ from .scheduler import (
     JobState,
     LockRecord,
     Outcome,
+    PendingAsset,
     PreemptionPolicy,
     Priority,
     RegenerationPolicy,

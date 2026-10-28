@@ -963,6 +963,242 @@ class SchedulerTests(unittest.TestCase):
         self.assertEqual(job.state, JobState.COMPLETED)
         self.assertEqual(job.evictions, 0)
 
+    # -- missing inputs and pending assets (C22-C26) --------------------------
+
+    def missing_scheduler(self, missing=("fragment/grounding-slate",), delay=0.01):
+        class NeedsContent:
+            id = "needs"
+
+            def __init__(self):
+                self.calls = 0
+
+            def run(self, request):
+                self.calls += 1
+                if request.step.requires:
+                    return ProviderResult(ok=False, error="declared but absent",
+                                          missing=tuple(request.step.requires))
+                return ProviderResult(ok=False, error="needs content", missing=tuple(missing))
+
+        provider = NeedsContent()
+        scheduler = self.scheduler(
+            providers={"needs": provider},
+            pools=[
+                ResourcePool(
+                    "gpu-image",
+                    "local-gpu",
+                    amounts={"amount.worker.gpu": 1, "amount.worker.vram_gb": 24},
+                    attributes={
+                        "attr.worker.model": ("moss-image-sft",),
+                        "attr.worker.swap_group": ("image",),
+                    },
+                    swap_group="image",
+                )
+            ],
+        )
+        return scheduler, provider
+
+    @staticmethod
+    def missing_template(name="render", requires=(), dependencies=(), retry=0):
+        return parse_job_template(
+            {
+                "name": f"{name}-job",
+                "specificationVersion": "jobtemplate-2023-09",
+                "steps": [
+                    {
+                        "name": "render",
+                        "dependencies": list(dependencies),
+                        "requires": list(requires),
+                        "retry": retry,
+                        "hostRequirements": {
+                            "amounts": [{"name": "amount.worker.gpu", "min": 1}],
+                            "attributes": [
+                                {"name": "attr.worker.model", "anyOf": ["moss-image-sft"]},
+                                {"name": "attr.worker.swap_group", "anyOf": ["image"]},
+                            ],
+                        },
+                        "script": {"actions": {"onRun": {"command": "provider:needs"}}},
+                    }
+                ],
+            }
+        )
+
+    def test_static_requirement_missing_is_unresolved_without_calling_the_provider(self):
+        scheduler, provider = self.missing_scheduler()
+        job = scheduler.submit(
+            self.missing_template(requires=["fragment/grounding-slate"]),
+            asset_id="prop/tower",
+        )
+        scheduler.run_until_idle()
+        self.assertEqual(job.state, JobState.UNRESOLVED)
+        step = job.step("render")
+        self.assertEqual(step.state, StepState.UNRESOLVED)
+        self.assertEqual(step.missing, ("fragment/grounding-slate",))
+        self.assertEqual(provider.calls, 0, "a declared requirement is checked before the work")
+        self.assertEqual(step.attempt, 0)
+
+    def test_registered_asset_satisfies_a_static_requirement(self):
+        calls = {"count": 0}
+
+        class Present:
+            id = "needs"
+
+            def run(self, request):
+                calls["count"] += 1
+                return ProviderResult(ok=True, artifacts=())
+
+        template = parse_job_template(
+            {
+                "name": "satisfied",
+                "specificationVersion": "jobtemplate-2023-09",
+                "steps": [
+                    {
+                        "name": "render",
+                        "requires": ["fragment/grounding-slate"],
+                        "hostRequirements": {"amounts": [], "attributes": []},
+                        "script": {"actions": {"onRun": {"command": "provider:needs"}}},
+                    }
+                ],
+            }
+        )
+        scheduler = self.scheduler(providers={"needs": Present()})
+        scheduler.register_asset("fragment/grounding-slate")
+        job = scheduler.submit(template, asset_id="prop/tower")
+        scheduler.run_until_idle()
+        self.assertEqual(job.state, JobState.COMPLETED)
+        self.assertEqual(calls["count"], 1)
+        self.assertEqual(job.step("render").missing, ())
+
+    def test_runtime_missing_is_unresolved_and_never_retried(self):
+        scheduler, provider = self.missing_scheduler()
+        job = scheduler.submit(self.missing_template(retry=3))
+        scheduler.run_until_idle()
+        self.assertEqual(job.state, JobState.UNRESOLVED)
+        step = job.step("render")
+        self.assertEqual(step.state, StepState.UNRESOLVED)
+        self.assertEqual(step.missing, ("fragment/grounding-slate",))
+        self.assertEqual(provider.calls, 1, "missing content is not a transient failure")
+        self.assertNotIn(
+            "io.spritequest.asset.step.retrying",
+            [event["type"] for event in scheduler.events()],
+        )
+
+    def test_dependent_of_unresolved_is_unresolved_with_the_union(self):
+        scheduler, _ = self.missing_scheduler()
+        template = parse_job_template(
+            {
+                "name": "chain",
+                "specificationVersion": "jobtemplate-2023-09",
+                "steps": [
+                    {
+                        "name": "first",
+                        "requires": ["fragment/a"],
+                        "hostRequirements": {"amounts": [], "attributes": []},
+                        "script": {"actions": {"onRun": {"command": "provider:needs"}}},
+                    },
+                    {
+                        "name": "second",
+                        "dependencies": ["first"],
+                        "requires": ["fragment/b"],
+                        "hostRequirements": {"amounts": [], "attributes": []},
+                        "script": {"actions": {"onRun": {"command": "provider:needs"}}},
+                    },
+                ],
+            }
+        )
+        job = scheduler.submit(template, asset_id="prop/thing")
+        scheduler.run_until_idle()
+        first = job.step("first")
+        second = job.step("second")
+        self.assertEqual(first.state, StepState.UNRESOLVED)
+        self.assertEqual(first.missing, ("fragment/a",))
+        self.assertEqual(second.state, StepState.UNRESOLVED)
+        self.assertEqual(second.missing, ("fragment/a",), "the dependent inherits the missing set")
+
+    def test_dependent_of_failed_is_skipped_not_unresolved(self):
+        class Broken:
+            id = "needs"
+
+            def run(self, request):
+                return ProviderResult(ok=False, error="boom")
+
+        template = parse_job_template(
+            {
+                "name": "chain",
+                "specificationVersion": "jobtemplate-2023-09",
+                "steps": [
+                    {
+                        "name": "first",
+                        "hostRequirements": {"amounts": [], "attributes": []},
+                        "script": {"actions": {"onRun": {"command": "provider:needs"}}},
+                    },
+                    {
+                        "name": "second",
+                        "dependencies": ["first"],
+                        "hostRequirements": {"amounts": [], "attributes": []},
+                        "script": {"actions": {"onRun": {"command": "provider:needs"}}},
+                    },
+                ],
+            }
+        )
+        scheduler = self.scheduler(providers={"needs": Broken()})
+        job = scheduler.submit(template)
+        scheduler.run_until_idle()
+        self.assertEqual(job.state, JobState.FAILED)
+        self.assertEqual(job.step("first").state, StepState.FAILED)
+        self.assertEqual(job.step("second").state, StepState.SKIPPED)
+        self.assertEqual(job.step("second").missing, ())
+        self.assertIn("dependency first failed", job.step("second").error)
+
+    def test_pending_assets_are_collected_and_deduplicated(self):
+        scheduler, _ = self.missing_scheduler()
+        tower = scheduler.submit(self.missing_template(), asset_id="prop/tower")
+        brazier = scheduler.submit(self.missing_template(), asset_id="prop/brazier")
+        scheduler.run_until_idle()
+        by_id = {asset.asset_id: asset for asset in scheduler.pending_assets()}
+        node = by_id["fragment/grounding-slate"]
+        self.assertEqual(node.demands, 2)
+        self.assertEqual(
+            sorted(node.demanders),
+            sorted([f"{tower.id}/render", f"{brazier.id}/render"]),
+        )
+        # The producers are nodes too, so the chain is visible.
+        self.assertEqual(set(by_id), {"fragment/grounding-slate", "prop/tower", "prop/brazier"})
+
+    def test_pending_edges_are_learned_from_produced_assets(self):
+        scheduler, _ = self.missing_scheduler()
+        scheduler.submit(self.missing_template(), asset_id="prop/tower")
+        scheduler.run_until_idle()
+        by_id = {asset.asset_id: asset for asset in scheduler.pending_assets()}
+        self.assertIn("prop/tower", by_id)
+        self.assertEqual(by_id["prop/tower"].requires, ("fragment/grounding-slate",))
+        self.assertEqual(by_id["prop/tower"].state, "waiting")
+        self.assertEqual(by_id["prop/tower"].depth, 1)
+        self.assertEqual(by_id["fragment/grounding-slate"].state, "root")
+        self.assertEqual(by_id["fragment/grounding-slate"].depth, 0)
+        self.assertEqual(
+            [asset.asset_id for asset in scheduler.pending_roots()],
+            ["fragment/grounding-slate"],
+        )
+
+    def test_pending_cycles_are_reported_not_walked(self):
+        scheduler, _ = self.missing_scheduler()
+        scheduler.submit(self.missing_template(requires=["prop/b"]), asset_id="prop/a")
+        scheduler.submit(self.missing_template(requires=["prop/a"]), asset_id="prop/b")
+        scheduler.run_until_idle()
+        by_id = {asset.asset_id: asset for asset in scheduler.pending_assets()}
+        self.assertEqual(by_id["prop/a"].state, "cycle")
+        self.assertEqual(by_id["prop/b"].state, "cycle")
+        self.assertIsNone(by_id["prop/a"].depth)
+        self.assertEqual(scheduler.pending_roots(), ())
+
+    def test_unresolved_manifest_records_missing_inputs(self):
+        scheduler, _ = self.missing_scheduler()
+        job = scheduler.submit(self.missing_template(requires=["fragment/a"]), asset_id="prop/t")
+        scheduler.run_until_idle()
+        manifest = json.loads(job.manifest_path.read_text())
+        self.assertEqual(manifest["state"], "unresolved")
+        self.assertEqual(manifest["steps"][0]["missing"], ["fragment/a"])
+
     def test_no_eligible_pool_fails_closed(self):
         scheduler = self.scheduler(
             providers={"mock-comfy": MockProvider("mock-comfy", kind="comfyui", delay=0.01)},

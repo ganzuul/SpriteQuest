@@ -66,6 +66,9 @@ class ProviderResult:
     error: str | None = None
     cancelled: bool = False
     metadata: dict[str, Any] = field(default_factory=dict)
+    #: Asset identifiers the step needs and could not find. A non-empty tuple
+    #: means "unresolved", never "failed": the difference is evidence.
+    missing: tuple[str, ...] = ()
 
 
 class Provider(Protocol):

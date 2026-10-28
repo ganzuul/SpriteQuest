@@ -56,6 +56,7 @@ class JobState(str, Enum):
     CANCELLED = "cancelled"
     COMPLETED = "completed"
     FAILED = "failed"
+    UNRESOLVED = "unresolved"
 
 
 class StepState(str, Enum):
@@ -65,9 +66,16 @@ class StepState(str, Enum):
     COMPLETED = "completed"
     CANCELLED = "cancelled"
     FAILED = "failed"
+    SKIPPED = "skipped"
+    UNRESOLVED = "unresolved"
 
 
-_TERMINAL_JOB_STATES = {JobState.CANCELLED, JobState.COMPLETED, JobState.FAILED}
+_TERMINAL_JOB_STATES = {
+    JobState.CANCELLED,
+    JobState.COMPLETED,
+    JobState.FAILED,
+    JobState.UNRESOLVED,
+}
 
 
 @dataclass
@@ -84,6 +92,7 @@ class StepRun:
     cancel_event: threading.Event = field(default_factory=threading.Event)
     preemption: dict[str, Any] | None = None
     suspended: bool = False
+    missing: tuple[str, ...] = ()
 
 
 @dataclass
@@ -164,6 +173,18 @@ class RegenerationPolicy:
 
 
 @dataclass(frozen=True)
+class PendingAsset:
+    """Content something needs and nothing has produced yet."""
+
+    asset_id: str
+    demanders: tuple[str, ...]
+    requires: tuple[str, ...]
+    demands: int
+    state: str
+    depth: int | None
+
+
+@dataclass(frozen=True)
 class Outcome:
     """A typed refusal or acceptance. Never a silent no-op."""
 
@@ -217,6 +238,7 @@ class Scheduler:
         self._regeneration = regeneration_policy or RegenerationPolicy()
         self._locks: dict[str, LockRecord] = {}
         self._lock_mutex = threading.Lock()
+        self._known_assets: set[str] = set()
         self._eviction_log: deque[float] = deque()
         groups = dict(swap_groups or {})
         for pool in self._pools:
@@ -655,6 +677,139 @@ class Scheduler:
             {"assetId": asset_id, "reason": record.reason, "lockedBy": record.locked_by},
         )
 
+    # -- pending assets ----------------------------------------------------
+
+    def register_asset(self, asset_id: str) -> None:
+        """Declare content that already exists, so a requirement can be met."""
+
+        with self._lock_mutex:
+            self._known_assets.add(asset_id)
+
+    def known_assets(self) -> frozenset[str]:
+        with self._lock_mutex:
+            return frozenset(self._known_assets)
+
+    def pending_assets(self) -> tuple[PendingAsset, ...]:
+        """Every missing asset, correlated into chains, roots and cycles.
+
+        Edges are learned from the jobs themselves: a job that declares the
+        asset it produces and ends unresolved because of ``Y`` teaches
+        ``produced -> Y``. Nothing has to be declared up front.
+        """
+
+        demanders: dict[str, set[str]] = {}
+        edges: dict[str, set[str]] = {}
+        for job in self._jobs.values():
+            for step_run in job.step_runs.values():
+                for asset_id in step_run.missing:
+                    demanders.setdefault(asset_id, set()).add(
+                        f"{job.id}/{step_run.step.name}"
+                    )
+                    if job.asset_id:
+                        edges.setdefault(job.asset_id, set()).add(asset_id)
+        nodes: set[str] = set(demanders) | set(edges)
+        for targets in edges.values():
+            nodes |= targets
+
+        cyclic = self._cyclic_nodes(nodes, edges)
+        depths: dict[str, int | None] = {}
+        for node in nodes:
+            depths[node] = self._depth_to_root(node, edges, cyclic, depths, set())
+
+        assets: list[PendingAsset] = []
+        for node in nodes:
+            requires = tuple(sorted(edges.get(node, ())))
+            if node in cyclic:
+                state = "cycle"
+            elif not requires:
+                state = "root"
+            else:
+                state = "waiting"
+            assets.append(
+                PendingAsset(
+                    asset_id=node,
+                    demanders=tuple(sorted(demanders.get(node, ()))),
+                    requires=requires,
+                    demands=len(demanders.get(node, ())),
+                    state=state,
+                    depth=depths[node],
+                )
+            )
+        assets.sort(key=lambda item: (item.depth is None, item.depth or 0, item.asset_id))
+        return tuple(assets)
+
+    def pending_roots(self) -> tuple[PendingAsset, ...]:
+        """Pending assets nothing has claimed it can produce: the next authoring work."""
+
+        return tuple(asset for asset in self.pending_assets() if asset.state == "root")
+
+    @staticmethod
+    def _cyclic_nodes(nodes: set[str], edges: dict[str, set[str]]) -> set[str]:
+        index: dict[str, int] = {}
+        low: dict[str, int] = {}
+        on_stack: set[str] = set()
+        stack: list[str] = []
+        cyclic: set[str] = set()
+        counter = [0]
+
+        def strongconnect(node: str) -> None:
+            index[node] = low[node] = counter[0]
+            counter[0] += 1
+            stack.append(node)
+            on_stack.add(node)
+            for target in edges.get(node, ()):
+                if target not in index:
+                    strongconnect(target)
+                    low[node] = min(low[node], low[target])
+                elif target in on_stack:
+                    low[node] = min(low[node], index[target])
+            if low[node] == index[node]:
+                component: list[str] = []
+                while True:
+                    member = stack.pop()
+                    on_stack.discard(member)
+                    component.append(member)
+                    if member == node:
+                        break
+                if len(component) > 1:
+                    cyclic.update(component)
+
+        for node in nodes:
+            if node not in index:
+                strongconnect(node)
+        for node, targets in edges.items():
+            if node in targets:
+                cyclic.add(node)
+        return cyclic
+
+    @staticmethod
+    def _depth_to_root(
+        node: str,
+        edges: dict[str, set[str]],
+        cyclic: set[str],
+        memo: dict[str, int | None],
+        visiting: set[str],
+    ) -> int | None:
+        if node in memo:
+            return memo[node]
+        if node in cyclic or node in visiting:
+            return None
+        targets = edges.get(node, ())
+        if not targets:
+            memo[node] = 0
+            return 0
+        visiting.add(node)
+        depths = [
+            Scheduler._depth_to_root(target, edges, cyclic, memo, visiting)
+            for target in targets
+        ]
+        visiting.discard(node)
+        if any(depth is None for depth in depths):
+            memo[node] = None
+        else:
+            memo[node] = 1 + min(depths)  # type: ignore[arg-type]
+        return memo[node]
+
     def _refuse_if_locked(self, asset_id: str) -> None:
         record = self.lock_state(asset_id)
         if record is None:
@@ -822,6 +977,19 @@ class Scheduler:
                     for dependency in step_run.step.dependencies
                 ):
                     continue
+                unmet = tuple(
+                    asset_id for asset_id in step_run.step.requires
+                    if asset_id not in self._known_assets
+                )
+                if unmet:
+                    step_run.state = StepState.UNRESOLVED
+                    step_run.missing = unmet
+                    step_run.finished_at = time.time()
+                    self._emit(job, "step.unresolved", step_run, {
+                        "code": "MISSING_INPUT",
+                        "missing": list(unmet),
+                    })
+                    continue
                 reservation = self._reserve(step_run.step.host_requirements)
                 if reservation is None:
                     continue
@@ -839,6 +1007,9 @@ class Scheduler:
                 self._futures[future] = (job.id, step_run.step.name)
                 future.add_done_callback(self._future_done)
                 submitted += 1
+            # Pre-flight can settle a job without ever calling a provider, so
+            # settlement cannot wait for a worker to report back.
+            self._finalize_job_locked(job)
         return submitted
 
     def _reserve(self, requirements: HostRequirements) -> Reservation | None:
@@ -894,6 +1065,14 @@ class Scheduler:
                     step_run,
                     {"artifacts": [artifact.id for artifact in result.artifacts]},
                 )
+            elif result.missing:
+                step_run.state = StepState.UNRESOLVED
+                step_run.missing = tuple(result.missing)
+                step_run.error = result.error or "missing inputs"
+                self._emit(job, "step.unresolved", step_run, {
+                    "code": "MISSING_INPUT",
+                    "missing": list(step_run.missing),
+                })
             else:
                 step_run.error = result.error or "provider failed"
                 lock = self.lock_state(job.asset_id) if job.asset_id else None
@@ -953,9 +1132,57 @@ class Scheduler:
             self._futures.pop(future, None)
             self._condition.notify_all()
 
+    def _resolve_blocked_locked(self, job: Job) -> None:
+        """Settle dependents from evidence, never by guessing.
+
+        A dependency that failed or was cancelled says nothing about what is
+        missing, so its dependents are skipped. A dependency that is unresolved
+        names what it lacks, so its dependents inherit that set.
+        """
+
+        changed = True
+        while changed:
+            changed = False
+            for step_run in job.step_runs.values():
+                if step_run.state != StepState.PENDING:
+                    continue
+                deps = [job.step_runs[name] for name in step_run.step.dependencies]
+                if any(
+                    dep.state in {StepState.FAILED, StepState.CANCELLED, StepState.SKIPPED}
+                    for dep in deps
+                ):
+                    cause = next(
+                        dep for dep in deps
+                        if dep.state in {StepState.FAILED, StepState.CANCELLED, StepState.SKIPPED}
+                    )
+                    step_run.state = StepState.SKIPPED
+                    step_run.finished_at = time.time()
+                    step_run.error = f"dependency {cause.step.name} {cause.state.value}"
+                    self._emit(job, "step.skipped", step_run, {"reason": step_run.error})
+                    changed = True
+                elif any(dep.state == StepState.UNRESOLVED for dep in deps):
+                    missing: list[str] = []
+                    for dep in deps:
+                        for asset_id in dep.missing:
+                            if asset_id not in missing:
+                                missing.append(asset_id)
+                    step_run.state = StepState.UNRESOLVED
+                    step_run.missing = tuple(missing)
+                    step_run.finished_at = time.time()
+                    step_run.error = "dependency unresolved"
+                    self._emit(job, "step.unresolved", step_run, {
+                        "code": "MISSING_INPUT",
+                        "missing": missing,
+                        "inheritedFrom": [
+                            dep.step.name for dep in deps if dep.state == StepState.UNRESOLVED
+                        ],
+                    })
+                    changed = True
+
     def _finalize_job_locked(self, job: Job) -> None:
         if job.is_terminal:
             return
+        self._resolve_blocked_locked(job)
         states = [step_run.state for step_run in job.step_runs.values()]
         if job.cancel_event.is_set() and not any(
             state in {StepState.RUNNING, StepState.PENDING} for state in states
@@ -969,9 +1196,19 @@ class Scheduler:
             job.finished_at = time.time()
             self._emit(job, "job.failed")
             return
+        if any(state == StepState.UNRESOLVED for state in states):
+            job.state = JobState.UNRESOLVED
+            job.finished_at = time.time()
+            self._emit(job, "job.unresolved", data={
+                "missing": sorted({asset for step_run in job.step_runs.values()
+                                   for asset in step_run.missing}),
+            })
+            return
         if all(state == StepState.COMPLETED for state in states):
             job.state = JobState.COMPLETED
             job.finished_at = time.time()
+            if job.asset_id:
+                self._known_assets.add(job.asset_id)
             self._emit(job, "job.completed")
             self._maybe_auto_lock(job)
             return

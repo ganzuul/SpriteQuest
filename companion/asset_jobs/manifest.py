@@ -48,6 +48,7 @@ def build_manifest(job: "Job", *, scheduler_version: str = SCHEDULER_VERSION) ->
                 "startedAt": _iso(step_run.started_at),
                 "finishedAt": _iso(step_run.finished_at),
                 "error": step_run.error,
+                "missing": list(step_run.missing),
                 "provider": step_run.provider,
                 "requirements": {
                     "amounts": [
