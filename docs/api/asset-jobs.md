@@ -1,6 +1,6 @@
 # Asset jobs — exploratory OpenJD-shaped scheduling
 
-[API overview](README.md) · [Contract](asset-job-contract.md) · [Interface inventory](interface-inventory.md)
+[API overview](README.md) · [Contract](asset-job-contract.md) · [Interface inventory](interface-inventory.md) · [Package guide](../../companion/asset_jobs/README.md)
 
 **Status:** exploratory. [`companion/asset_jobs/`](../../companion/asset_jobs/) carries no authority, is not the thing to build on, and is expected to be superseded. It runs a real ComfyUI provider in addition to deterministic mocks; llama-swap and remote APIs are not wired yet.
 
