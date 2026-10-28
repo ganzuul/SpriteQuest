@@ -1,14 +1,16 @@
 # Spec: Map Geometry Model v2
 
 Status: **proposal, not implemented**
-Supersedes: nothing (extends `schema_version: 1`)
+Phase 1 builds a standalone module; consumers are ported afterwards.
 Related: [cartographers-moss-atlas-ontology.md](cartographers-moss-atlas-ontology.md),
 [comfyui-runtime.md](comfyui-runtime.md)
 
 ## 1. Problem
 
 Map declarations carry geometry in feature-specific fields, so every consumer
-re-implements the same arithmetic. Two places branch on feature type today:
+re-implements the same arithmetic. That is acceptable while the format is still
+being discovered; it becomes the problem to solve once the shape is visible.
+Two places branch on feature type today:
 
 | Consumer | Branching |
 |---|---|
@@ -41,20 +43,30 @@ Consequences observed while building the MOSS workflow:
 1. One geometry vocabulary so extent, containment, and transform are computed
    once, independent of feature type.
 2. An explicit frame per map, sufficient to place a child map inside a parent.
-3. A versioned migration: v1 files keep loading unchanged; v2 is opt-in.
-4. No loss of existing capability. Every current feature must be expressible.
+3. A **standalone** implementation: it must not import the current renderers,
+   terrain loader, or scene placement, and nothing in this phase wires it into
+   them. Legacy code is ported to it later, not extended to meet it.
+4. No loss of existing capability. Every current feature must be expressible,
+   proven by equivalence tests rather than by rewiring consumers.
 
 ## 3. Non-goals
 
-Explicitly out of scope, with reasons:
+This phase builds the architecture and stops there. Explicitly out of scope:
 
-| Not adopted | Reason |
+| Not in this phase | Why |
 |---|---|
+| Editing `terrain_mesh.py`, `render_map_art.py`, `scene_placement.py` | Those files are scaffolding. Modifying them to host the new model tangles the two and is the spaghetti this phase exists to prevent. |
+| A compatibility shim inside existing consumers | A shim in legacy code is a dependency edge pointing the wrong way. |
+| Deleting the four per-type branch blocks | That is the porting phase's work, done consumer by consumer. |
 | EPSG/WKT CRS registry | Fictional world, flat per map; a frame record is sufficient |
 | Geodesy, map projections, datum shifts | Longest map is 140 m; planar error is nil |
 | OGC interchange encodings (WKT/GML/GeoJSON) | Take the model, skip the formats |
 | ISO 19115 lineage metadata | Hollis Ledger and provenance already cover it |
 | Spatial indexing (R-tree, tile pyramids) | 4 primitives, 7 STL primitives, 4 props, 1 build plate; brute force is clearer |
+
+Reading `schema_version: 1` files is *not* a legacy dependency: it is an input
+format, and supporting it keeps the new module testable against real data from
+day one.
 
 ## 4. Proposed model
 
@@ -146,43 +158,107 @@ A child map may name its parent and the affine that places it:
 is a claim, not a connection. Applying the transform is a pure function
 `to_parent(point) -> point`; nesting repeats it.
 
-## 5. Migration
+## 5. Architecture as source of truth
 
-- `schema_version: 1` files load unchanged. A shim converts each legacy arm to
-  a geometry record in memory, so consumers see one shape.
-- `schema_version: 2` files are read natively.
-- Writers emit v2. Readers accept both for at least one release cycle.
-- The v1→v2 shim is the single place that knows legacy field names, and it is
-  deleted when v1 support is dropped.
+The rendered map we have today is scaffolding: it discovered the structure
+(planar metres, a vertical axis, drape, rotation, feature kinds) but expresses
+it per-feature. This model is the first statement of the architecture. From here
+the model governs and the scaffolding becomes a sketch of what to implement.
 
-## 6. Impact
+Dependency rules, enforced by review and by a test that greps imports:
 
-| File | Change |
-|---|---|
-| `companion/terrain_mesh.py` | `load_outdoor_map_scene` reads geometry instead of four arms; `rasterize_stl_depth` and primitive stamping unchanged |
-| `companion/render_map_art.py` | `build_map_layout_prompt` collapses to one `extent()` call per feature |
-| `companion/scene_placement.py` | reads `placement` block |
-| `companion/floorplan.py` | unchanged; floor plans stay a separate schema |
-| new `companion/map_geometry.py` | primitives, `extent()`, rotation, node resolution, v1 shim |
-| new `companion/validate_maps.py` | frame present, geometry valid, extents inside frame, duplicate-node warnings, transform sanity |
-| `library/maps/border-march.json` | migrated to v2 as the reference fixture |
+1. `companion/map_model/` imports only the standard library and, where
+   unavoidable, `numpy`. Never `terrain_mesh`, `render_map_art`,
+   `scene_placement`, or any `companion.*` consumer.
+2. Consumers may import the model during porting. Until then, nothing does.
+3. No compatibility branch is added to legacy code. Where old code must keep
+   running, it keeps running unchanged on its own path.
+4. When a consumer is ported, its old arm is deleted in the same commit. No
+   consumer supports two geometry paths.
 
-## 7. Acceptance criteria
+### Reading v1 data
 
-1. `border-march` renders byte-identical depth, relief, and stylized art before
-   and after migration (guard against silent geometry drift).
-2. The MOSS layout draft for `border-march` keeps the same nine boxes
-   (build plate, 4 primitives, 4 props). The circular prop radius is
-   rotation-invariant, so migration alone must not move any box.
-3. No `ptype ==` or `primitive_type ==` branch remains in either consumer.
+`map_model` parses `schema_version: 1` files into the new types. This is a
+reader for a data format, not a dependency on legacy logic, and it lets every
+test run against `library/maps/border-march.json` immediately. The v1 reading
+path is deleted only when no v1 file remains.
+
+## 6. Phase plan
+
+### Phase 1 — architecture, standalone (this spec)
+
+Deliver `companion/map_model/` with primitives, frame, feature records, v1
+reading, and the parent transform. No consumer changes. Acceptance is
+equivalence: the model computes the same bounds and renders nothing.
+
+### Phase 2 — port one consumer
+
+Pick the cheaper of the two branch blocks — the MOSS layout builder
+(`build_map_layout_prompt`, 141 lines with four arms) — and rewrite it on the
+model, deleting the arms. Compare its nine boxes against the recorded draft
+before wiring; wire only after they match.
+
+### Phase 3 — port the loader
+
+`load_outdoor_map_scene` reads features through the model instead of branching.
+Verified by byte-identical depth and relief renders.
+
+### Phase 4 — capabilities the scaffolding never had
+
+Only after the ports: node topology (if a junction needs it), rotation-aware
+extents for polygons, cartographic generalisation for smaller scales, and
+standard aspect. These are additions to an established architecture, not
+retrofits.
+
+## 7. Migration and rollout
+
+- v1 files keep loading. The new model reads them; legacy consumers are not
+  touched in this phase.
+- Writers emit v2 only after Phase 3.
+- Overlap risk, and how it is contained:
+  - **Freeze legacy to bug fixes.** No new feature types are added to the
+    per-type arms once this phase begins, or the porting target moves.
+  - **Equivalence, not rewiring, proves the port.** Boxes and renders are
+    compared before a consumer switches.
+  - **One commit per consumer.** The old arm and the new call land together, so
+    no consumer ever has two geometry paths.
+
+## 8. Impact
+
+Phase 1 creates files and touches no existing module. Columns show when each
+change lands.
+
+| File | Phase 1 | Later phase |
+|---|---|---|
+| new `companion/map_model/` | primitives, frame, features, `extent()`, rotation, v1 reading, parent transform | — |
+| new `companion/map_model/test_map_model.py` | geometry, frames, v1 reading, transform, equivalence | — |
+| new `companion/validate_maps.py` | validates v1 and v2 files against the model | — |
+| `library/maps/border-march.json` | read only, unchanged | migrated to v2 in Phase 3 |
+| `companion/render_map_art.py` | **untouched** | Phase 2: `build_map_layout_prompt` collapses to one `extent()` call |
+| `companion/terrain_mesh.py` | **untouched** | Phase 3: `load_outdoor_map_scene` reads features instead of four arms |
+| `companion/scene_placement.py` | **untouched** | Phase 3: reads `placement` |
+| `companion/floorplan.py` | unchanged | unchanged; floor plans stay a separate schema |
+
+## 9. Acceptance criteria (Phase 1)
+
+1. The new package imports nothing from `companion.*`. A test asserts this.
+2. Reading `library/maps/border-march.json` yields one feature per declaration
+   entry: 4 primitives, 7 STL primitives, 4 props, 1 build plate.
+3. Bounds computed by the model match the current ad-hoc maths for all four
+   primitive types, and match the nine existing MOSS layout boxes (build plate,
+   4 primitives, 4 props). The circular prop radius is rotation-invariant, so
+   the boxes must not move.
 4. A synthetic two-map fixture resolves a child point into parent coordinates
-   within 1e-6, and a `claimed` transform is reported as such.
-5. `validate_maps.py` passes on the migrated fixture and fails on: missing
-   frame, geometry outside extent, unknown geometry type, unresolved node ref.
-6. Existing test suites pass; new tests cover geometry, shim, topology, and
-   transform.
+   within 1e-6, and a `claimed` transform reports its confidence.
+5. `validate_maps.py` passes on the real fixture and fails on: missing frame,
+   geometry outside extent, unknown geometry type, unresolved node reference.
+6. Existing suites still pass, proving nothing was disturbed.
 
-## 8. Open decisions
+Cross-phase acceptance (checked when a consumer is ported, not before):
+byte-identical depth, relief, and stylized renders; no `ptype ==` or
+`primitive_type ==` branch surviving in that consumer.
+
+## 10. Open decisions
 
 1. **Does `Polygon` need to represent the current buttress footprint?** It is
    a rotated rectangle today (`base_width` × `base_length` + `yaw_deg`), and
@@ -194,18 +270,18 @@ is a claim, not a connection. Applying the transform is a pure function
    omitted, so `border-march`'s nine boxes cover build plate, four primitives,
    and four props. Including them adds seven rotated features and needs
    rotation-aware extents (open decision 1) first.
-2. **Where does height live?** Per-feature `attributes` (current) or a `z` on
+3. **Where does height live?** Per-feature `attributes` (current) or a `z` on
    geometry? Recommend attributes, since MOSS and layout work are planar.
-3. **Are node references worth the parser cost now, or defer until a road
-   network exists?** Recommend deferring topology to v2.1 unless a junction
+4. **Are node references worth the parser cost now, or defer until a road
+   network exists?** Recommend deferring topology to Phase 4 unless a junction
    already needs it.
-4. **Should `frame.axis` be enforced or advisory?** Recommend advisory with a
+5. **Should `frame.axis` be enforced or advisory?** Recommend advisory with a
    validator warning, to avoid rewriting existing fixtures.
 
-## 9. Sequenced first slice
+## 11. Phase 1 scope
 
-Smallest change that proves the model: geometry + frame for
-`ridge_pass`, `canyon_gorge`, `hill`, `ancient_ruin_buttress` only, with the v1
-shim, no topology, no scale link. That deletes both four-arm blocks and is
-verifiable by acceptance criteria 1–3 and 6. Topology and scale link follow as
-separate slices with their own acceptance criteria.
+Geometry + frame + feature records + v1 reading, for all four primitive types
+plus props, STL primitives, and build plates. No topology, no scale link
+beyond the transform function, no consumer edits. Verifiable by acceptance
+criteria 1–6. Topology and generalisation follow in Phase 4, against an
+established architecture rather than retrofitted onto scaffolding.
