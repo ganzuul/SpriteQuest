@@ -138,6 +138,23 @@ What we deliberately do **not** absorb:
 | Saturation report | [`CartographersLedger`](../../companion/fragment_compiler.py) | Parsimony evidence | **Assimilate** (provisional) | Counts, score, threshold, lock, pending cap. |
 | Python dataclasses | [`schemas.py`](../../companion/schemas.py) | Implementation types | **Internal** | JSON Schema is normative; Python is checked against it. |
 
+## Asset job surfaces
+
+The OpenJD-shaped spike in [`companion/asset_jobs/`](../../companion/asset_jobs/) is a new seam. It is deliberately internal for now.
+
+| Element | Current owner | What crosses | Disposition | Contract anchor / notes |
+| --- | --- | --- | --- | --- |
+| Job template (OpenJD subset) | [`model.py`](../../companion/asset_jobs/model.py) | Steps, dependencies, host requirements | **Assimilate** later | Declared in [asset jobs](../api/asset-jobs.md); the package is exploratory and upstream OpenJD is the target schema |
+| `provider:<id>` command | [`providers.py`](../../companion/asset_jobs/providers.py) | Provider selection | **Internal** | A spike extension so templates carry no shell authority |
+| ComfyUI transport | [`comfy.py`](../../companion/asset_jobs/comfy.py) | Workflow submit, poll, fetch, cancel | **Internal** | ComfyUI's HTTP API is the implementation; the job contract is what stabilizes |
+| Resource pool and swap group | [`resources.py`](../../companion/asset_jobs/resources.py) | GPU/CPU/remote capacity | **Assimilate** later | Explicit replacement for llama-swap's implicit residency |
+| Job and step events | [`scheduler.py`](../../companion/asset_jobs/scheduler.py) | Progress, completion, failure | **Assimilate** later | CloudEvents-shaped; transport is not defined yet |
+| Manifest | [`manifest.py`](../../companion/asset_jobs/manifest.py) | Artifact hashes and provenance | **Assimilate** later | PROV/RO-Crate-compatible precursor |
+| `Scheduler` class | [`scheduler.py`](../../companion/asset_jobs/scheduler.py) | In-process API | **Internal** | Replaceable by OpenCue, Nomad, Kueue, or Deadline Cloud |
+| Capability report | [`scheduler.py`](../../companion/asset_jobs/scheduler.py) | `suspend` / `preempt` / `pause` / `cancel` support | **Assimilate** later | `/v1/capabilities` should publish it; callers must not guess |
+| Typed refusal (`Outcome`) | [`scheduler.py`](../../companion/asset_jobs/scheduler.py) | `ok`, `code`, `message`, `details` | **Assimilate** later | Same envelope as the companion error shape |
+| Preemption policy | [`scheduler.py`](../../companion/asset_jobs/scheduler.py) | Strict priority, budget, cooldown, window, reciprocity | **Assimilate** later | Anti-livelock invariants belong in the contract, not only in code |
+
 ## Documentation claims
 
 | Claim | Where | Reality | Action |

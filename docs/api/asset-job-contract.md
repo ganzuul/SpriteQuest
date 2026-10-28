@@ -1,0 +1,91 @@
+# Asset job contract
+
+[API overview](README.md) · [Implementation description](asset-jobs.md) · [Interface inventory](interface-inventory.md)
+
+**Status:** contract for the port. This document is upstream of the work it
+governs: the normative asset-job module does not exist yet. Where this contract
+and `companion/asset_jobs/` disagree, this contract is right and the sketch is
+defective.
+
+`companion/asset_jobs/` is an exploratory implementation that happens to be
+checked against these requirements. It is not the thing this contract governs,
+and satisfying a requirement here does not promote the sketch to normative.
+
+## Conformance proforma
+
+Modeled on the PICS proforma in ISO/IEC 9646-7. `Status` is the requirement on
+any implementation; `Support` is this implementation's answer. `N/A` is legal
+only where `Status` is `n.a.`.
+
+| Item | Requirement | Status | Support | Reference | Remarks |
+| --- | --- | --- | --- | --- | --- |
+| C1 | A job is a portable document of named steps with explicit, acyclic dependencies, interpretable without the producing process. | m | Y | `model.py`; `TemplateTests` | Duplicate, unknown and cyclic names rejected. |
+| C2 | Independent steps may run concurrently; a step does not start before every dependency completes. | m | Y | `scheduler.py`; parallel and dependency tests | |
+| C3 | A failed or cancelled step resolves its dependents as skipped or unresolved, with a reason; no step stays indeterminate after settlement. | m | N | — | Deviation D1/G1: dependents remain `pending` while the job settles `failed`. |
+| C4 | Requirements are quantities (cpu, memory, gpu, vram) and named attributes; a worker is eligible only if it satisfies both. | m | Y | `resources.py`; `test_no_eligible_pool_fails_closed` | |
+| C5 | A swap group is exclusive to its capacity; a worker dedicated to a group refuses steps that do not request it. | m | Y | `resources.py`; `test_swap_group_is_exclusive` | |
+| C6 | A remote or shared provider is modelled as a pool with a declared concurrency limit. | m | Y | `resources.py` `capacity` | Model only; no remote adapter yet. |
+| C7 | Queued work starts in declared priority order. | m | Y | `test_priority_orders_queued_jobs` | |
+| C8 | Pause stops starting new steps and never discards running work; resume continues from the same state. | m | Y | `test_pause_and_resume` | |
+| C9 | Cancel is cooperative and per step; pending steps cancel immediately; a running step stops, releases its reservation, and reports the outcome. | m | Y | `test_cancel_before_start`, `test_cancel_while_running` | |
+| C10 | Suspend and resume either work or refuse with a typed code; the capability is discoverable before asking; the refusal names the alternative and is never reported as success. | m | Y | `suspend`, `resume_suspended`, `capabilities()`; suspend tests | No provider can checkpoint, so refusal is the delivered behaviour. |
+| C11 | Preemption restarts the step, and the restart is visible in the attempt count. | m | Y | `test_preemption_evicts_and_requeues_the_step` | |
+| C12 | Only a strictly higher priority may evict; equal priorities never evict each other. | m | Y | `test_preemption_requires_strictly_higher_priority`, `test_equal_priority_jobs_cannot_ping_pong` | |
+| C13 | Evictions per job are bounded; cooldown, rolling window and reciprocity bound churn; no pair of jobs can restart each other indefinitely. | m | Y | policy tests | Pinned on single-step jobs only; see G3. |
+| C14 | A settled job writes exactly one manifest with template identity and hash, per-step state and attempts, artifact hashes, and provider identity. | m | Y | `manifest.py`; `test_sample_job_completes_with_manifest` | |
+| C15 | State changes are observable as events with a stable type; a refusal carries a machine-readable code. | m | Y | `scheduler.py` `_emit`; event assertions | |
+| C16 | Providers receive an injected transport; no step executes a shell command; behaviour is testable without a GPU or network. | m | Y | `comfy.py`, `providers.py`; ComfyUI transport tests | |
+
+### Statement of conformance
+
+**Are all mandatory capabilities implemented?** No.
+
+`C3` is not supported. Every other mandatory item is supported, with the
+qualifications recorded in `Remarks`. A "no" answer is only meaningful when the
+missing items are named, so `C3` is the sole non-conformance and `D1` records why
+the requirement did not exist before delivery.
+
+## Findings
+
+Delivery exposes two kinds of failure, and they are not interchangeable.
+
+**Contract defects** — the contract did not say, and delivery needed an answer:
+
+- **D1 (C3):** failure propagation was unspecified. The sketch settles the job
+  `failed` while its dependents remain `pending`. That is not a bug against a
+  requirement; it is a missing requirement. C3 was added because of this
+  finding.
+- **D2:** retry semantics are unspecified. The sketch has `step.retry` and
+  `step.retrying`, but the contract does not say whether a retry counts as an
+  eviction, whether a retry preserves artifacts, or what a consumer should
+  observe. Undecided.
+
+**Conformance gaps** — the contract says, the sketch does not do:
+
+- **G1 (C3):** dependents are not resolved on failure.
+- **G2:** `step.retry` has no test, so its behaviour is unverified.
+- **G3 (C13):** preemption is tested on single-step jobs only; multi-step
+  eviction is exercised but not pinned.
+
+## Out of scope
+
+These are excluded by the contract, not deferred defects:
+
+- durable scheduler state and restart recovery;
+- an HTTP job API, CloudEvents transport, and provider authentication;
+- `parameterSpace`, task chunking, and multi-step tasks;
+- checkpointing, and therefore true suspension;
+- admission control and per-pool quotas;
+- cost, rate-limit, and token accounting.
+
+## How to use this
+
+- A commit that delivers against this contract cites the requirement IDs it
+  meets, and lists the ones it does not.
+- A change to a requirement is a contract change and belongs in its own commit,
+  before the code that depends on it.
+- A finding that the contract failed to say something is recorded here as a
+  contract defect. Adding the requirement is the fix; the code follows.
+- This document was transcribed after the first sketch, which is recorded rather
+  than hidden. Its authority comes from governing the port, which has not
+  happened yet.

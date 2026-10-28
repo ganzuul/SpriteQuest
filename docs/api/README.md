@@ -59,6 +59,8 @@ The inventory names a disposition and, where it applies, a tier. A tier may only
 | [Interface inventory](interface-inventory.md) | See what currently crosses each seam and what should be assimilated, kept internal, deferred, or excluded. |
 | [Node plugin API](node-plugin-api.md) | Design or review an operation that does not require editing core source. |
 | [Companion HTTP API](companion-http-api.md) | Call, implement, or version the ledger and Cartographer service. |
+| [Asset job contract](asset-job-contract.md) | Read the numbered requirements the port must satisfy, and the conformance findings. |
+| [Asset jobs](asset-jobs.md) | See what the exploratory OpenJD-shaped implementation currently does. |
 | [Versioning](versioning.md) | Decide whether a change is additive, breaking, or merely a documentation fix. |
 | [`contracts/node-plugin.d.ts`](contracts/node-plugin.d.ts) | Read the TypeScript shape of the plug-in host contract. |
 | [`contracts/companion.openapi.yaml`](contracts/companion.openapi.yaml) | Generate a client or validate a response against the HTTP contract. |
@@ -84,6 +86,7 @@ Today the shipped workflows do not contain a Service Call node. The [inventory](
 | Companion schema publication | Python dataclasses only | Proposed JSON Schema + OpenAPI |
 | Companion authentication | None; loopback bind | Proposed optional bearer token and origin allowlist |
 | Forge routes | Mixed into the same handler | Excluded from v1; experimental namespace |
+| Asset job scheduler | Exploratory package in `companion/asset_jobs/`; ComfyUI provider plus mocks | OpenJD-shaped job model; the declared contract is in [Asset jobs](asset-jobs.md) |
 | `globalThis.lattice` | `{ open, close, toggle }` | Not part of these contracts; a launcher convenience |
 
 ## Non-goals

@@ -1,0 +1,46 @@
+{
+  "name": "comfy-sprite",
+  "specificationVersion": "jobtemplate-2023-09",
+  "parameters": [
+    {
+      "name": "Brief",
+      "type": "STRING",
+      "default": "A ruined watchtower on the border march, weathered stone and broken timber."
+    },
+    {
+      "name": "Seed",
+      "type": "INT",
+      "default": 42
+    }
+  ],
+  "steps": [
+    {
+      "name": "sprite",
+      "dependencies": [],
+      "hostRequirements": {
+        "amounts": [
+          { "name": "amount.worker.gpu", "min": 1 },
+          { "name": "amount.worker.vram_gb", "min": 24 }
+        ],
+        "attributes": [
+          { "name": "attr.worker.model", "anyOf": ["moss-image-sft"] },
+          { "name": "attr.worker.swap_group", "anyOf": ["image"] }
+        ]
+      },
+      "script": {
+        "actions": {
+          "onRun": {
+            "command": "provider:comfy",
+            "args": [
+              "--graph", "workflows/comfyui/r6_ship_crate_standard.json",
+              "--set", "4.inputs.text={{Param.Brief}}",
+              "--set", "7.inputs.seed={{Param.Seed}}",
+              "--set", "2.inputs.device=cpu"
+            ]
+          }
+        }
+      },
+      "timeoutSeconds": 600
+    }
+  ]
+}

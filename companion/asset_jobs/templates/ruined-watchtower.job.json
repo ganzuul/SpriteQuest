@@ -1,0 +1,105 @@
+{
+  "name": "ruined-watchtower",
+  "specificationVersion": "jobtemplate-2023-09",
+  "parameters": [
+    {
+      "name": "Brief",
+      "type": "STRING",
+      "default": "A ruined watchtower on the border march, weathered stone and broken timber."
+    },
+    {
+      "name": "Seed",
+      "type": "INT",
+      "default": 42
+    }
+  ],
+  "steps": [
+    {
+      "name": "sprite",
+      "dependencies": [],
+      "hostRequirements": {
+        "amounts": [
+          { "name": "amount.worker.gpu", "min": 1 },
+          { "name": "amount.worker.vram_gb", "min": 16 }
+        ],
+        "attributes": [
+          { "name": "attr.worker.model", "anyOf": ["moss-image-sft"] },
+          { "name": "attr.worker.swap_group", "anyOf": ["image"] }
+        ]
+      },
+      "script": {
+        "actions": {
+          "onRun": {
+            "command": "provider:mock-comfy",
+            "args": ["sprite", "{{Param.Brief}}", "{{Param.Seed}}"]
+          }
+        }
+      },
+      "timeoutSeconds": 30
+    },
+    {
+      "name": "encode",
+      "dependencies": [],
+      "hostRequirements": {
+        "amounts": [
+          { "name": "amount.worker.vcpu", "min": 8 },
+          { "name": "amount.worker.memory_gb", "min": 32 }
+        ],
+        "attributes": [
+          { "name": "attr.worker.kind", "anyOf": ["cpu"] }
+        ]
+      },
+      "script": {
+        "actions": {
+          "onRun": {
+            "command": "provider:mock-cpu",
+            "args": ["encode", "{{Param.Brief}}"]
+          }
+        }
+      },
+      "timeoutSeconds": 30
+    },
+    {
+      "name": "mesh",
+      "dependencies": ["sprite"],
+      "hostRequirements": {
+        "amounts": [
+          { "name": "amount.worker.gpu", "min": 1 },
+          { "name": "amount.worker.vram_gb", "min": 24 }
+        ],
+        "attributes": [
+          { "name": "attr.worker.model", "anyOf": ["hunyuan3d"] },
+          { "name": "attr.worker.swap_group", "anyOf": ["mesh"] }
+        ]
+      },
+      "script": {
+        "actions": {
+          "onRun": {
+            "command": "provider:mock-comfy",
+            "args": ["mesh", "{{Param.Brief}}"]
+          }
+        }
+      },
+      "timeoutSeconds": 30
+    },
+    {
+      "name": "audio",
+      "dependencies": [],
+      "hostRequirements": {
+        "amounts": [],
+        "attributes": [
+          { "name": "attr.worker.provider", "anyOf": ["remote-audio"] }
+        ]
+      },
+      "script": {
+        "actions": {
+          "onRun": {
+            "command": "provider:mock-remote",
+            "args": ["audio", "{{Param.Brief}}"]
+          }
+        }
+      },
+      "timeoutSeconds": 30
+    }
+  ]
+}
