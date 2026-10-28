@@ -78,39 +78,97 @@ structure.
 
 - **Exploratory code** is written to *discover* a shape. It exists because the
   structure is not yet visible, so it explores: per-case branches, duplicated
-  arithmetic, hardcoded values. Its value is that it may be wrong cheaply. It is
-  never authoritative, is not built upon, and is expected to be superseded.
+  arithmetic, hardcoded values. Its value is that it may be wrong cheaply. It
+  carries no authority, is not the sensible thing to build on, and is expected to
+  be superseded.
 - **Normative code** is written to *declare* a structure already observed. It is
-  the single source of truth, and everything else derives from it. Amendments
-  change the normative module; they do not reach into its dependents.
+  the source of truth for that structure, and other code derives from it rather
+  than restating it. Amendments change the normative module; they do not reach
+  into its dependents.
 
 Branches and duplication in exploratory code are honest admissions that the shape
 is unknown. Do not abstract prematurely and call the result architecture.
 
-### The rule
+### The principle
 
-> **Normative code must not depend on exploratory code, and exploratory code must
-> never become the host of a new architecture.**
+The two tiers differ in **authority**, and the useful constraint is about
+**direction**: a declaration should be able to change without discovery forcing
+it to, while discovery is free to change whenever the ground turns out to be
+different.
 
-In practice:
+Stated as a direction rather than a prohibition:
+
+> **Declaration may not come to depend on discovery. Discovery is expected to
+> depend on nothing.**
+
+The reason is cost, not purity. When normative code borrows from exploratory
+code, two things follow: the exploratory module gains a de-facto authority it was
+never meant to have, and every change in it now propagates into the declaration.
+That is the mechanism behind spaghetti, and it is worth naming precisely because
+an agent that knows the mechanism can reason about a case the rules did not
+anticipate.
+
+### Working with the principle
 
 1. **Explore freely while the structure is unclear.** Leave the branches there;
    they are evidence of what you did not yet know.
-2. **When the structure becomes visible, introduce the normative module as a
-   stand-alone package.** It must not import the exploratory modules, and must
-   not be wired into them.
-3. **Port afterwards, one consumer at a time.** Delete the old branch in the same
-   commit as the port, so no consumer ever holds two code paths.
-4. **Never add a compatibility shim to exploratory code.** A shim there inverts
-   the dependency: it makes the exploration the host of the architecture, and the
-   new design inherits the old shape.
+2. **When the structure becomes visible, write the normative module on its own
+   terms.** It should not need the exploratory modules to be correct, and its
+   tests should not need them to run.
+3. **Port one consumer at a time**, and let the port delete the old path rather
+   than preserve it beside the new one.
+4. **Put any transition at the boundary, not in the core.** Where old and new
+   must coexist for a while, the adapter is thin, one-directional, owned, and has
+   a deletion date. A dated adapter is debt you intend to repay; an undated one
+   is a second authority.
 
-### Overlap is the risk; contain it
+### The trap: obeying the letter
 
-While both tiers coexist there are two sources of truth. Contain it by **freezing
-the exploratory code to bug fixes** (no new cases, or the porting target moves),
-**proving equivalence at the boundary** (compare outputs before wiring), and
-landing each port atomically.
+Absolute phrasing invites evasion, and evasion is what produces the mess. If you
+find yourself doing any of these, the dependency is still there:
+
+| Evasion | Why it does not count |
+|---|---|
+| importing inside a function body | the dependency is identical; only the grep is defeated |
+| renaming a compatibility shim an "adapter" | the direction is unchanged |
+| passing an exploratory object through, untyped | the declaration still breaks when discovery changes |
+| duplicating a constant "to avoid the import" | two authorities, now guaranteed to diverge |
+
+The test is not whether an import statement exists. It is: **if the exploratory
+module changed shape tomorrow, would the normative module need editing?** If yes,
+the dependency is real regardless of how the code is arranged.
+
+### When the constraint should bend
+
+The principle is about the steady state, so it allows stated exceptions. These
+are the ones worth recognising:
+
+- **A time-boxed adapter at the boundary**, while a consumer is ported. Legitimate
+  if it is thin, one-directional, and has an owner and an end date.
+- **A consumer that accepts both old and new input formats.** Two *data* paths are
+  not two code paths; a file format is input, and reading it does not make the
+  normative module depend on the exploratory one.
+- **Reusing a definition, not a decision.** Importing a unit constant or a type
+  that both tiers genuinely share is different from calling a branch-laden
+  renderer. The first has no authority; the second does.
+
+What is not an exception: keeping the old path "just in case", or leaving the
+adapter undated so no one has to decide.
+
+### Symptoms worth checking
+
+Rather than a pass/fail gate, these are questions a reviewer can ask and an agent
+can ask itself:
+
+1. Does the normative module still make sense if the exploratory module were
+   deleted?
+2. Can its tests run without the exploratory modules present?
+3. Is there an adapter? Whose is it, and when does it go?
+4. Has an exploratory branch gained a new case since the port began? If so, the
+   porting target is moving and should be re-scoped before continuing.
+
+A grep for imports is still useful as a **tripwire** — it points at places worth
+asking question 1 — but passing it is not evidence of anything.
 
 ### Words that steer this correctly
 
@@ -120,7 +178,7 @@ The wrong words invite the wrong move, so prefer these:
 |---|---|---|
 | declare the contract, legislate the shape | "define an API", "flatten the interface" | An API can be *extracted from* existing code, which wraps exploration instead of replacing it. Declaring requires the shape to be visible first, and flattening is an *outcome* of declaring, not the discipline that earns it. |
 | exploratory, provisional | "prototype", "v1", "the current API" | Those imply something to extend. Exploration is something to supersede. |
-| derive from the normative module | "consumer of the API" | A dependent has authority only through the normative module, and must not consult the exploratory version. |
+| derive from the normative module | "consumer of the API" | A dependent has authority only through the normative module; reading the exploratory version instead means there are two sources of truth again. |
 | amend the normative module | "patch the caller" | Fixing a derived copy leaves the source wrong. |
 
 ### In-world name

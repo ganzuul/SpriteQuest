@@ -43,9 +43,9 @@ Consequences observed while building the MOSS workflow:
 1. One geometry vocabulary so extent, containment, and transform are computed
    once, independent of feature type.
 2. An explicit frame per map, sufficient to place a child map inside a parent.
-3. A **standalone** implementation: it must not import the current renderers,
-   terrain loader, or scene placement, and nothing in this phase wires it into
-   them. Legacy code is ported to it later, not extended to meet it.
+3. A **standalone** implementation: it should be correct without the current
+   renderers, terrain loader, or scene placement, and this phase does not wire it
+   into them. Legacy code is ported to it later, not extended to meet it.
 4. No loss of existing capability. Every current feature must be expressible,
    proven by equivalence tests rather than by rewiring consumers.
 
@@ -170,16 +170,23 @@ See `AGENTS.md` § "Exploratory and Normative Code" for the repository-wide rule
 In that vocabulary this phase is the engraving, Phases 2–3 are striking prints
 from it, and Phase 4 adds capability to the plate rather than to a sketch.
 
-Dependency rules, enforced by review and by a test that greps imports:
+The principle (see `AGENTS.md` § "Exploratory and Normative Code") applied to
+this phase, stated as direction rather than prohibition:
 
-1. `companion/map_model/` imports only the standard library and, where
-   unavoidable, `numpy`. Never `terrain_mesh`, `render_map_art`,
-   `scene_placement`, or any `companion.*` consumer.
-2. Consumers may import the model during porting. Until then, nothing does.
-3. No compatibility branch is added to legacy code. Where old code must keep
-   running, it keeps running unchanged on its own path.
-4. When a consumer is ported, its old arm is deleted in the same commit. No
-   consumer supports two geometry paths.
+1. **`companion/map_model/` should remain correct without the exploratory
+   modules.** In practice it imports the standard library and, where unavoidable,
+   `numpy`. It does not need `terrain_mesh`, `render_map_art`, or
+   `scene_placement` to be right, and its tests do not need them to run.
+2. **Ports run one consumer at a time.** Once a consumer is ported, it derives
+   from the model rather than restating the same arithmetic.
+3. **Transition belongs at the boundary.** If a consumer must briefly accept both
+   shapes, the adapter is thin, one-directional, listed here, and removed with the
+   port. A data format is not a code path: reading v1 files does not make the
+   model depend on the legacy modules.
+4. **An import grep is a tripwire, not the test.** It flags places worth asking
+   "would this module still be correct if the legacy code were deleted?" A
+   function-local import or a renamed shim defeats the grep while leaving the
+   dependency intact, so passing it is not evidence.
 
 ### Reading v1 data
 
@@ -225,8 +232,8 @@ retrofits.
     per-type arms once this phase begins, or the porting target moves.
   - **Equivalence, not rewiring, proves the port.** Boxes and renders are
     compared before a consumer switches.
-  - **One commit per consumer.** The old arm and the new call land together, so
-    no consumer ever has two geometry paths.
+  - **One commit per consumer.** The old arm and the new call land together, so a
+    consumer does not carry two geometry paths at the same time.
 
 ## 8. Impact
 
