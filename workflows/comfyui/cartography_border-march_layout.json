@@ -1,0 +1,146 @@
+{
+  "1": {
+    "class_type": "UNETLoader",
+    "inputs": {
+      "unet_name": "moss_image_sft_int8_convrot.safetensors",
+      "weight_dtype": "default"
+    }
+  },
+  "2": {
+    "class_type": "CLIPLoader",
+    "inputs": {
+      "clip_name": "qwen3.5_9b_w4a8_gptq.safetensors",
+      "type": "moss_image",
+      "device": "cpu"
+    }
+  },
+  "3": {
+    "class_type": "VAELoader",
+    "inputs": {
+      "vae_name": "flux2-vae.safetensors"
+    }
+  },
+  "4": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "clip": [
+        "2",
+        0
+      ],
+      "text": "{\"summary\":{\"meta\":[\"top-down fantasy cartography\",\"MOSS structured layout\"],\"canvas\":\"single\",\"caption\":\"Antique hand-inked regional terrain chart of The Border March & Forfeit Gap, strictly top-down orthographic, warm vellum, restrained watercolor elevation washes, fine hachures and contour marks. Preserve the relative placement and scale of the surveyed landforms. No lettering, labels, legend, frame, or route strokes; these will be added from the atlas record after illustration.\"},\"items\":[{\"label\":\"object\",\"caption\":\"Level architectural build plate for Customs House Ground Foundation.\",\"bbox\":[-180,-120,134,74]},{\"label\":\"object\",\"caption\":\"An elongated mountain ridge and traversable saddle pass, east-pass.\",\"bbox\":[-318,4,323,272]},{\"label\":\"object\",\"caption\":\"Stepped ancient stone ruin and steep buttress, north-ancient-bastion.\",\"bbox\":[-272,-226,-152,-105]},{\"label\":\"object\",\"caption\":\"Stepped ancient stone ruin and steep buttress, west-watch-ruin.\",\"bbox\":[138,-240,231,-147]},{\"label\":\"object\",\"caption\":\"A narrow sunken canyon gorge with sloped sides, south-intake-gorge.\",\"bbox\":[235,-263,318,33]},{\"label\":\"object\",\"caption\":\"Small top-down map symbol for Border Milestone Signpost.\",\"bbox\":[-36,-138,-19,-120]},{\"label\":\"object\",\"caption\":\"Small top-down map symbol for Frontier Iron Brazier.\",\"bbox\":[-113,-111,-99,-96]},{\"label\":\"object\",\"caption\":\"Small top-down map symbol for Impounded Cargo Crates.\",\"bbox\":[-2,-135,20,-114]},{\"label\":\"object\",\"caption\":\"Small top-down map symbol for Ancient Overhang Relic Cairn.\",\"bbox\":[-226,-180,-198,-152]}],\"bbox_coord_space\":\"abs_centralized\",\"bbox_format\":\"yxyx\"}"
+    }
+  },
+  "5": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "clip": [
+        "2",
+        0
+      ],
+      "text": ""
+    }
+  },
+  "6": {
+    "class_type": "EmptyFlux2LatentImage",
+    "inputs": {
+      "width": 768,
+      "height": 768,
+      "batch_size": 1
+    }
+  },
+  "10": {
+    "class_type": "LoadImage",
+    "inputs": {
+      "image": "spritequest_border-march_witness.png"
+    }
+  },
+  "11": {
+    "class_type": "VAEEncode",
+    "inputs": {
+      "pixels": [
+        "10",
+        0
+      ],
+      "vae": [
+        "3",
+        0
+      ]
+    }
+  },
+  "12": {
+    "class_type": "ReferenceLatent",
+    "inputs": {
+      "conditioning": [
+        "4",
+        0
+      ],
+      "latent": [
+        "11",
+        0
+      ]
+    }
+  },
+  "13": {
+    "class_type": "ReferenceLatent",
+    "inputs": {
+      "conditioning": [
+        "5",
+        0
+      ],
+      "latent": [
+        "11",
+        0
+      ]
+    }
+  },
+  "7": {
+    "class_type": "KSampler",
+    "inputs": {
+      "model": [
+        "1",
+        0
+      ],
+      "positive": [
+        "12",
+        0
+      ],
+      "negative": [
+        "13",
+        0
+      ],
+      "latent_image": [
+        "6",
+        0
+      ],
+      "seed": 7777,
+      "steps": 25,
+      "cfg": 3.0,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "denoise": 0.72
+    }
+  },
+  "8": {
+    "class_type": "VAEDecode",
+    "inputs": {
+      "samples": [
+        "7",
+        0
+      ],
+      "vae": [
+        "3",
+        0
+      ]
+    }
+  },
+  "9": {
+    "class_type": "SaveImage",
+    "inputs": {
+      "images": [
+        "8",
+        0
+      ],
+      "filename_prefix": "spritequest/cartography/border-march"
+    }
+  }
+}

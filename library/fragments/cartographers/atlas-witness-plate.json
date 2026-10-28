@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "cartographers/atlas-witness-plate",
+  "version": 1,
+  "world_id": "cartographers",
+  "for": "diffusion",
+  "facets": ["home", "favored_items"],
+  "detail": "a thin translucent witness plate beneath a map leaf, carrying a pale charcoal relief of ridges, river bends, and the surveyed road so an illuminator can add pigments without losing the measured arrangement",
+  "evidence": {
+    "kind": "directed",
+    "source": "OpenMOSS-Team/MOSS-Image-SFT",
+    "quote": "ReferenceLatent conditions image generation on a reference image; MOSS map-art workflows can use a topographic control image."
+  },
+  "facts": {
+    "extent": "a folio-sized translucent plate",
+    "scale_ref": "fits directly beneath one regional or local map leaf",
+    "material": "smoke-grey glass, charcoal transfer, and a thin brass registration edge",
+    "state": "relief marks are measured and fixed; pigment and ornament remain unfinished"
+  },
+  "note": "The diegetic counterpart to a reference/control image supplied through ReferenceLatent. It guides visual structure but is not a guarantee of pixel-perfect fidelity; exact terrain, routes, and boundaries must remain in deterministic map data or overlays."
+}

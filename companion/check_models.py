@@ -5,101 +5,57 @@ Run before rendering or starting ComfyUI:
 
     python3 companion/check_models.py
 
-Exits 0 if the diffusion model, VAE and text encoder are present;
-exits 1 and names what is missing otherwise. Honours COMFY_MODELS to point at
-a model directory other than ~/ComfyUI/models.
+Resolves the MOSS diffusion model, text encoder and VAE through the shared
+registry (local folders, extra_model_paths.yaml, and a reachable ComfyUI).
+Exits 0 when all three resolve, 1 and names what is missing otherwise.
+Honours COMFY_MODELS to point at a model directory other than ~/ComfyUI/models.
 """
 from __future__ import annotations
 
-import os
 import sys
 from pathlib import Path
 
-COMFY_MODELS = Path(
-    os.environ.get("COMFY_MODELS", Path.home() / "ComfyUI" / "models")
+REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from companion.comfy_models import (  # noqa: E402  (after path bootstrap)
+    DEFAULT_SERVER,
+    ModelNotInstalled,
+    ROLES,
+    model_path,
+    resolve,
 )
 
-DIFFUSION_CANDIDATES = [
-    "moss_image_sft_bf16.safetensors",
-    "moss_image_sft_int8_convrot.safetensors",
-    "moss-image-sft-bf16.safetensors",
-    "moss_image_sft.safetensors",
-    "moss-image-sft.safetensors",
-    "moss_image_sft_sd_Q4_K_M.gguf",
-    "flux3_image_klein_sd_Q4_K_M.gguf",
-    "flux_3_image_klein_int8_convrot.safetensors",
-    "flux3-image-klein-sd-int8-convrot.safetensors",
-    "flux_3_image_klein_distilled_fp8.safetensors",
-    "flux_3_image_klein_distilled_int8.safetensors",
-    "flux_3_image_klein_bf16.safetensors",
-    "flux_3_image_klein.safetensors",
-    "flux1-dev-fp8.safetensors",
-    "flux1-schnell-fp8.safetensors",
-]
 
-CLIP_CANDIDATES = [
-    "qwen3.5_9b_int8_convrot.safetensors",
-    "qwen3.5_9b_bf16.safetensors",
-    "qwen3.5_9b_w4a8_gptq.safetensors",
-    "qwen3.5_9b_moss_image_w4a8.safetensors",
-    "qwen3vl_4b_int8_convrot.safetensors",
-    "qwen3.5_9b_flux3_prompt_upsampler_w4a8.safetensors",
-    "qwen3vl_8b_w4a8.safetensors",
-    "qwen3vl_8b_int8_convrot.safetensors",
-    "t5xxl_fp8_e4m3fn.safetensors",
-    "clip_l.safetensors",
-]
-
-VAE_CANDIDATES = [
-    "flux2-vae.safetensors",
-    "flux_vae.safetensors",
-    "ae.safetensors",
-    "flux2_vae.safetensors",
-    "qwen_image_2.1_vae_bf16.safetensors",
-]
-
-
-def pick_first(dir_path: Path, candidates: list[str]) -> Path | None:
-    for name in candidates:
-        candidate = dir_path / name
-        if candidate.is_file() and candidate.stat().st_size > 0:
-            return candidate
-    return None
-
-
-def main():
-    root = Path(sys.argv[1]) if len(sys.argv) > 1 else COMFY_MODELS
-    print(f"Checking models directory: {root}")
-
-    diff_dir = root / "diffusion_models"
-    clip_dir = root / "text_encoders"
-    vae_dir = root / "vae"
-
-    diff_file = pick_first(diff_dir, DIFFUSION_CANDIDATES)
-    clip_file = pick_first(clip_dir, CLIP_CANDIDATES)
-    vae_file = pick_first(vae_dir, VAE_CANDIDATES)
+def main(argv: list[str] | None = None) -> int:
+    argv = sys.argv[1:] if argv is None else argv
+    server = None if "--offline" in argv else DEFAULT_SERVER
+    print(f"Resolving MOSS models ({'offline' if server is None else 'ComfyUI + local'})")
 
     missing = []
-    if diff_file:
-        print(f"  [PASS] Diffusion model: {diff_file.name} ({diff_file.stat().st_size / 1e9:5.2f} GB)")
-    else:
-        missing.append(f"Diffusion model in {diff_dir} (e.g. {DIFFUSION_CANDIDATES[0]})")
-
-    if clip_file:
-        print(f"  [PASS] Text encoder:    {clip_file.name} ({clip_file.stat().st_size / 1e9:5.2f} GB)")
-    else:
-        missing.append(f"Text encoder in {clip_dir} (e.g. {CLIP_CANDIDATES[0]})")
-
-    if vae_file:
-        print(f"  [PASS] VAE:             {vae_file.name} ({vae_file.stat().st_size / 1e9:5.2f} GB)")
-    else:
-        missing.append(f"VAE in {vae_dir} (e.g. {VAE_CANDIDATES[0]})")
+    for role, label in (
+        ("moss_unet", "Diffusion model"),
+        ("moss_clip", "Text encoder"),
+        ("moss_vae", "VAE"),
+    ):
+        try:
+            name = resolve(role, server)
+        except ModelNotInstalled as exc:
+            missing.append((label, str(exc)))
+            continue
+        path = model_path(role, name, server)
+        size = f" ({path.stat().st_size / 1e9:5.2f} GB)" if path else ""
+        print(f"  [PASS] {label + ':':17}{name}{size}")
 
     if missing:
         print("\nMissing required model weights for MOSS-Image-SFT:", file=sys.stderr)
-        for m in missing:
-            print(f"  - {m}", file=sys.stderr)
-        print("\nTo download MOSS-Image-SFT weights, place them in ~/ComfyUI/models/.", file=sys.stderr)
+        for label, reason in missing:
+            print(f"  - {label}: {reason}", file=sys.stderr)
+        print("\nFetch them with:", file=sys.stderr)
+        for role in ("moss_unet", "moss_clip", "moss_vae"):
+            print(f"  hf download Comfy-Org/MOSS-Image {ROLES[role].candidates[0]}", file=sys.stderr)
+        print("Then link the cache into ComfyUI: python3 tools/link_models.py --write", file=sys.stderr)
         return 1
 
     print("\nAll required model components for MOSS-Image-SFT are present and ready.")

@@ -1,0 +1,990 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10130f">
+  <title>The Living Atlas — Cartography Extension / First Draft</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #f0eadc;
+      --muted: #a7aa98;
+      --paper: #d7c99f;
+      --paper-dark: #9c8b62;
+      --forest: #202a21;
+      --forest-light: #344434;
+      --line: #ffffff20;
+      --brass: #d8ad60;
+      --rust: #c97b56;
+      --blue: #86b8b2;
+      --night: #10130f;
+      --panel: #171c17;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      background:
+        radial-gradient(ellipse at 74% 14%, #37402d55, transparent 38rem),
+        radial-gradient(ellipse at 9% 92%, #57462b24, transparent 34rem),
+        var(--night);
+      color: var(--ink);
+    }
+
+    button { font: inherit; }
+
+    .deckbar, .decknav {
+      position: fixed;
+      z-index: 20;
+      left: 0;
+      right: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px clamp(18px, 4vw, 58px);
+      background: #10130fe8;
+      backdrop-filter: blur(14px);
+    }
+
+    .deckbar { top: 0; border-bottom: 1px solid var(--line); }
+    .decknav { bottom: 0; border-top: 1px solid var(--line); }
+
+    .brand, .counter, .eyebrow, .tag, .scale-label, .micro, .status {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      letter-spacing: .11em;
+      text-transform: uppercase;
+    }
+
+    .brand { color: var(--paper); font-size: 11px; }
+    .deck-title { color: var(--muted); font-size: 12px; }
+    .counter { color: var(--muted); font-size: 11px; }
+    .counter strong { color: var(--ink); font-weight: 500; }
+
+    .progress {
+      position: fixed;
+      z-index: 21;
+      top: 0;
+      left: 0;
+      height: 2px;
+      width: 0;
+      background: var(--brass);
+      transition: width .25s ease;
+    }
+
+    .slides { min-height: 100svh; }
+    .slide {
+      display: none;
+      min-height: 100svh;
+      padding: 90px clamp(22px, 7vw, 104px) 88px;
+      align-items: center;
+      justify-content: center;
+      animation: arrive .28s ease both;
+    }
+    .slide.active { display: flex; }
+    .slide-content { width: min(1120px, 100%); margin: auto; }
+    @keyframes arrive { from { opacity: .4; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+    .eyebrow { color: var(--brass); font-size: 10px; margin: 0 0 18px; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1, h2, .serif {
+      font-family: Georgia, "Times New Roman", serif;
+      font-weight: 400;
+      letter-spacing: -.035em;
+    }
+    h1 { max-width: 800px; margin-bottom: 24px; font-size: clamp(48px, 8.5vw, 108px); line-height: .96; }
+    h2 { margin-bottom: 14px; font-size: clamp(38px, 5vw, 62px); line-height: 1.02; }
+    h3 { margin-bottom: 8px; font-size: 16px; font-weight: 600; }
+    .lede { max-width: 660px; color: #d1d0c3; font-size: clamp(16px, 2vw, 21px); line-height: 1.55; }
+    .muted { color: var(--muted); }
+    .small { color: var(--muted); font-size: 12px; line-height: 1.55; }
+    .micro { color: var(--muted); font-size: 9px; }
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 10px;
+      border: 1px solid #d8ad6055;
+      border-radius: 2px;
+      color: var(--paper);
+      font-size: 9px;
+    }
+    .tag::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--brass); }
+    .tag.cool { border-color: #86b8b255; color: #b6d2c9; }
+    .tag.cool::before { background: var(--blue); }
+
+    .hero {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(270px, .8fr);
+      align-items: center;
+      gap: clamp(32px, 7vw, 90px);
+    }
+    .hero-art {
+      position: relative;
+      min-height: 400px;
+      display: grid;
+      place-items: center;
+      perspective: 900px;
+    }
+    .folio {
+      position: absolute;
+      width: min(380px, 88%);
+      aspect-ratio: 1.18;
+      border: 1px solid #e8d5a66b;
+      background:
+        radial-gradient(ellipse at 50% 50%, #66765080, transparent 48%),
+        repeating-radial-gradient(ellipse at 50% 50%, transparent 0 26px, #bba87522 27px 28px),
+        #c7b98d;
+      box-shadow: 0 32px 80px #0009, inset 0 0 45px #55452b66;
+      transform: rotateX(56deg) rotateZ(-14deg);
+    }
+    .folio::before, .folio::after {
+      content: "";
+      position: absolute;
+      border: 1px solid #544b35a0;
+      border-radius: 50%;
+      inset: 14% 20%;
+    }
+    .folio::after { inset: 27% 7%; transform: rotate(-24deg); }
+    .folio-mark {
+      position: absolute;
+      z-index: 1;
+      width: 42px;
+      height: 42px;
+      border: 2px solid #aa563d;
+      border-radius: 50%;
+      left: 48%;
+      top: 44%;
+      box-shadow: 0 0 0 7px #aa563d25;
+      transform: translateZ(30px);
+    }
+    .folio-mark::before, .folio-mark::after {
+      content: "";
+      position: absolute;
+      background: #aa563d;
+    }
+    .folio-mark::before { width: 70px; height: 1px; top: 19px; left: -16px; }
+    .folio-mark::after { height: 70px; width: 1px; left: 19px; top: -16px; }
+    .folio-caption {
+      position: absolute;
+      right: 0;
+      bottom: 9%;
+      width: 175px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      background: #171c17e8;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.45;
+    }
+    .folio-caption strong { display: block; color: var(--paper); font-family: Georgia, serif; font-size: 16px; font-weight: 400; }
+    .hero-foot { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 28px; }
+
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+    .three-col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .four-col { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .card {
+      border: 1px solid var(--line);
+      background: linear-gradient(145deg, #1d241d, #151914);
+      padding: 20px;
+    }
+    .card p:last-child { margin-bottom: 0; }
+    .card-icon { color: var(--brass); font-family: Georgia, serif; font-size: 26px; margin-bottom: 12px; }
+    .problem-card { min-height: 205px; }
+    .problem-card .micro { display: block; margin-bottom: 16px; }
+    .equation {
+      margin: 24px 0;
+      padding: 18px 22px;
+      border-left: 2px solid var(--brass);
+      background: #d8ad600d;
+      color: #e7dcc1;
+      font-family: Georgia, serif;
+      font-size: clamp(18px, 2.3vw, 26px);
+    }
+    .chain { display: flex; align-items: stretch; gap: 8px; margin: 30px 0 24px; }
+    .chain-step {
+      position: relative;
+      flex: 1;
+      min-width: 0;
+      padding: 17px 15px;
+      border: 1px solid #d8ad6044;
+      background: #d8ad600b;
+    }
+    .chain-step:not(:last-child)::after {
+      content: "›";
+      position: absolute;
+      top: 50%;
+      right: -11px;
+      z-index: 2;
+      color: var(--brass);
+      font-size: 22px;
+      transform: translateY(-55%);
+    }
+    .scale-label { display: block; margin-bottom: 10px; color: var(--brass); font-size: 9px; }
+    .chain-step strong { display: block; font-family: Georgia, serif; font-size: 18px; font-weight: 400; }
+    .chain-step small { display: block; margin-top: 7px; color: var(--muted); font-size: 11px; line-height: 1.4; }
+
+    .demo-shell {
+      overflow: hidden;
+      border: 1px solid #d8ad604d;
+      background: #131713;
+      box-shadow: 0 24px 80px #0007;
+    }
+    .demo-top {
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 9px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+    .crumbs { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+    .crumb {
+      border: 0;
+      padding: 4px 0;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 11px;
+    }
+    .crumb.current { color: var(--paper); }
+    .crumb:not(:last-child)::after { content: " /"; color: #72766c; padding-left: 6px; }
+    .demo-actions { display: flex; align-items: center; gap: 8px; }
+    .tool-btn, .nav-btn {
+      border: 1px solid var(--line);
+      border-radius: 2px;
+      padding: 8px 10px;
+      color: var(--ink);
+      background: #20261f;
+      cursor: pointer;
+      font-size: 10px;
+    }
+    .tool-btn:hover, .nav-btn:hover { border-color: var(--brass); }
+    .tool-btn[aria-pressed="true"] { border-color: var(--brass); color: var(--paper); background: #d8ad6015; }
+    .demo-main { display: grid; grid-template-columns: minmax(0, 1fr) 260px; min-height: 340px; }
+    .map-stage {
+      position: relative;
+      height: 340px;
+      min-height: 340px;
+      overflow: hidden;
+      background:
+        radial-gradient(ellipse at center, #6671512a, transparent 72%),
+        #192018;
+    }
+    .map-stage::before {
+      content: "N";
+      position: absolute;
+      z-index: 2;
+      top: 15px;
+      left: 18px;
+      color: var(--paper);
+      font: 11px ui-monospace, monospace;
+    }
+    .map-stage::after {
+      content: "▲";
+      position: absolute;
+      z-index: 2;
+      top: 14px;
+      left: 17px;
+      color: var(--brass);
+      font-size: 8px;
+      transform: translateY(-10px);
+    }
+    .map-svg { position: absolute; inset: 0; display: none; width: 100%; height: 100%; min-height: 0; }
+    .map-svg.active { display: block; }
+    .map-svg > :not(.feature):not(.zone) { pointer-events: none; }
+    .map-paper { fill: #b8ad7b; }
+    .map-ink { stroke: #545d42; fill: none; }
+    .contour { fill: none; stroke: #526044; stroke-width: 1.1; opacity: .48; }
+    .route { fill: none; stroke: #a45e40; stroke-width: 3; stroke-linecap: round; }
+    .route-dash { fill: none; stroke: #d4bd7d; stroke-width: 2; stroke-dasharray: 6 8; }
+    .map-label { fill: #292d22; font: 13px Georgia, serif; }
+    .map-small { fill: #373a2b; font: 9px ui-monospace, monospace; letter-spacing: 1px; }
+    .feature { cursor: pointer; }
+    .feature-hitbox { fill: transparent; pointer-events: all; }
+    .feature:hover .feature-dot, .feature.selected .feature-dot { fill: #b5583e; stroke: #f4d293; }
+    .feature-dot { fill: #c8984f; stroke: #353a29; stroke-width: 2; }
+    .feature-box { fill: #c97b5617; stroke: #9f503a; stroke-width: 1.4; stroke-dasharray: 4 3; }
+    .locus .feature-frame { opacity: 1; }
+    .feature-frame { opacity: 0; pointer-events: none; transition: opacity .2s ease; }
+    .witness-layer { opacity: .48; transition: opacity .2s ease; }
+    .witness-off .witness-layer { opacity: 0; }
+    .demo-side {
+      padding: 17px;
+      border-left: 1px solid var(--line);
+      background: #171c17;
+    }
+    .demo-side h3 { margin: 8px 0; font-family: Georgia, serif; font-size: 20px; font-weight: 400; }
+    .status { display: inline-block; margin: 4px 0 14px; color: var(--blue); font-size: 8px; }
+    .status.provisional { color: var(--brass); }
+    .coordinate { display: block; margin: 12px 0; padding: 8px 9px; background: #0e120e; color: #c1c6b3; font: 10px ui-monospace, monospace; }
+    .spec-block { margin-top: 15px; border-top: 1px solid var(--line); padding-top: 13px; }
+    .spec-block summary { color: var(--paper); cursor: pointer; font-size: 10px; }
+    .spec-block pre {
+      max-height: 130px;
+      overflow: auto;
+      white-space: pre-wrap;
+      color: #b7c8a9;
+      font: 9px/1.5 ui-monospace, monospace;
+    }
+    .demo-caption { display: flex; justify-content: space-between; gap: 12px; padding: 10px 14px; border-top: 1px solid var(--line); color: var(--muted); font-size: 10px; }
+    .toast { min-height: 16px; color: var(--brass); font-size: 10px; }
+    .zone { fill: #c9b986; stroke: #685e43; stroke-width: 2; cursor: pointer; }
+    .zone:hover { fill: #dec98e; }
+
+    .pipeline { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0; margin: 30px 0 16px; }
+    .pipe-step { position: relative; padding: 17px 14px; border-top: 1px solid #d8ad6066; background: #d8ad600a; }
+    .pipe-step:not(:last-child)::after { content: "→"; position: absolute; top: 18px; right: -8px; z-index: 1; color: var(--brass); }
+    .pipe-step b { display: block; margin-bottom: 9px; color: var(--brass); font: 10px ui-monospace, monospace; }
+    .pipe-step strong { display: block; font-family: Georgia, serif; font-size: 17px; font-weight: 400; }
+    .pipe-step small { display: block; margin-top: 8px; color: var(--muted); font-size: 10px; line-height: 1.45; }
+    .code-card { overflow: auto; padding: 17px; border: 1px solid var(--line); background: #0b0e0b; color: #c3cfb4; font: 11px/1.65 ui-monospace, monospace; }
+    .code-card .key { color: #d8ad60; }
+    .code-card .string { color: #9bc0a8; }
+
+    .governance { display: grid; grid-template-columns: 1.1fr .9fr; gap: 26px; align-items: start; }
+    .maturity { display: grid; gap: 9px; }
+    .maturity-row { display: grid; grid-template-columns: 120px 1fr; gap: 13px; padding: 13px; border: 1px solid var(--line); background: #ffffff06; }
+    .maturity-row strong { color: var(--paper); font: 15px Georgia, serif; }
+    .maturity-row span { color: var(--muted); font-size: 11px; line-height: 1.5; }
+    .rule-card { border-left: 2px solid var(--rust); padding: 4px 0 4px 18px; }
+    .rule-card strong { display: block; margin-bottom: 8px; color: #e9c3aa; font: 21px Georgia, serif; font-weight: 400; }
+    .rule-card p { color: var(--muted); font-size: 13px; line-height: 1.6; }
+
+    .spec-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 22px; }
+    .spec-item { min-height: 116px; padding: 16px; border: 1px solid var(--line); background: #ffffff05; }
+    .spec-item .micro { display: block; margin-bottom: 8px; color: var(--brass); }
+    .spec-item p { margin: 0; color: #c1c4b8; font-size: 12px; line-height: 1.5; }
+    .question { margin-top: 18px; padding: 17px 19px; border: 1px dashed #d8ad6066; color: #ded8c4; }
+    .question strong { color: var(--brass); font-family: Georgia, serif; font-size: 18px; font-weight: 400; }
+
+    .deck-controls { display: flex; align-items: center; gap: 8px; }
+    .nav-btn { min-width: 78px; padding: 8px 12px; }
+    .nav-btn:disabled { opacity: .35; cursor: default; }
+    .keyhint { margin-left: 10px; color: #777d70; font: 9px ui-monospace, monospace; }
+
+    @media (max-width: 760px) {
+      .deck-title { display: none; }
+      .slide { padding-top: 82px; padding-bottom: 84px; }
+      .hero, .two-col, .governance { grid-template-columns: 1fr; }
+      .hero-art { min-height: 290px; }
+      .folio { width: 270px; }
+      .folio-caption { right: 2%; bottom: -1%; }
+      .three-col { grid-template-columns: 1fr; }
+      .four-col { grid-template-columns: 1fr 1fr; }
+      .chain { display: grid; grid-template-columns: 1fr 1fr; }
+      .chain-step:not(:last-child)::after { display: none; }
+      .demo-main { grid-template-columns: 1fr; }
+      .demo-side { border-left: 0; border-top: 1px solid var(--line); }
+      .map-stage { height: 300px; min-height: 300px; }
+      .pipeline { grid-template-columns: 1fr; gap: 6px; }
+      .pipe-step:not(:last-child)::after { content: "↓"; top: auto; bottom: -14px; right: 16px; }
+      .spec-grid { grid-template-columns: 1fr; }
+      .keyhint { display: none; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+
+    @media print {
+      body { background: var(--night); print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      .deckbar, .decknav, .progress { display: none !important; }
+      .slide, .slide.active { display: flex !important; min-height: 100vh; height: 100vh; page-break-after: always; }
+      .slide-content { max-width: 100%; }
+      .demo-shell { transform: scale(.9); transform-origin: top left; }
+    }
+  </style>
+</head>
+<body>
+  <div class="progress" id="progress"></div>
+  <header class="deckbar">
+    <div class="brand">SpriteQuest <span aria-hidden="true">/</span> Bureau of the Unwritten Atlas</div>
+    <div class="deck-title">The Living Atlas · Cartography Extension</div>
+    <div class="counter"><strong id="slide-number">01</strong> / <span id="slide-total">07</span></div>
+  </header>
+
+  <main class="slides" id="slides">
+    <section class="slide active" aria-label="Opening">
+      <div class="slide-content hero">
+        <div>
+          <p class="eyebrow">Cartography extension · concept draft 01</p>
+          <h1>The Living<br>Atlas</h1>
+          <p class="lede">A map is more than a picture. It is a chain of places, bearings, and warrants&mdash;from the world down to the room where the story turns.</p>
+          <div class="hero-foot">
+            <span class="tag">World → region → terrain → interior</span>
+            <span class="tag cool">MOSS illuminates · the atlas remembers</span>
+          </div>
+          <p class="small" style="margin-top:24px">A presentation prototype and first-pass product specification for a future SillyTavern extension.</p>
+        </div>
+        <div class="hero-art" aria-label="Stylized illuminated map folio">
+          <div class="folio"></div>
+          <div class="folio-mark"></div>
+          <div class="folio-caption"><strong>A bearing, not a border.</strong>Every mark earns its place by evidence. The unwritten margin stays unwritten.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" aria-label="The missing scale">
+      <div class="slide-content">
+        <p class="eyebrow">01 / The gap</p>
+        <h2>We can enter a place.<br>We cannot yet find it in the world.</h2>
+        <p class="lede">Today, an outdoor heightfield can host a building plan. The missing link is the regional map's position in a larger atlas.</p>
+        <div class="two-col" style="margin-top:30px">
+          <article class="card problem-card">
+            <span class="micro">What works now</span>
+            <div class="card-icon">⌂</div>
+            <h3>Terrain → floorplan</h3>
+            <p class="small">A build plate anchors the Customs House floorplan at a measured location on Border March terrain.</p>
+          </article>
+          <article class="card problem-card">
+            <span class="micro">What is missing</span>
+            <div class="card-icon">◎</div>
+            <h3>World → regional terrain</h3>
+            <p class="small">Scenes name a world, but no parent map says where Border March sits, how large it is, or which routes lead beyond it.</p>
+          </article>
+        </div>
+        <div class="equation">A picture can be beautiful and still have no address.</div>
+        <p class="small">Prototype premise: maps are linked records with explicit transforms. Their illustrations are views of those records, not substitutes for them.</p>
+      </div>
+    </section>
+
+    <section class="slide" aria-label="The scale register">
+      <div class="slide-content">
+        <p class="eyebrow">02 / The scale register</p>
+        <h2>One atlas. Several canvases.<br>Every transition has an address.</h2>
+        <p class="lede">Each scale owns the information it can responsibly represent. Parent links connect the leaves without flattening the world into one unwieldy map.</p>
+        <div class="chain" aria-label="Map hierarchy">
+          <div class="chain-step"><span class="scale-label">Scale 01</span><strong>World</strong><small>Named lands · long routes · broad uncertainty</small></div>
+          <div class="chain-step"><span class="scale-label">Scale 02</span><strong>Region</strong><small>Settlements · passes · travel corridors</small></div>
+          <div class="chain-step"><span class="scale-label">Scale 03</span><strong>Local terrain</strong><small>Metric heightfield · hazards · traversability</small></div>
+          <div class="chain-step"><span class="scale-label">Scale 04</span><strong>Interior</strong><small>Rooms · portals · scene positions</small></div>
+        </div>
+        <div class="three-col">
+          <article class="card"><div class="card-icon">⌖</div><h3>Stable anchors</h3><p class="small">A region links to a parent by a transform: position, orientation, represented extent, and coordinate reference.</p></article>
+          <article class="card"><div class="card-icon">↗</div><h3>Routes are records</h3><p class="small">Travel time, direction, and standing belong to route data. A dotted line in an image cannot make a route real.</p></article>
+          <article class="card"><div class="card-icon">◌</div><h3>Uncertainty is visible</h3><p class="small">Rumored, observed, charted, and warranted are distinct states—not a single “connected” flag.</p></article>
+        </div>
+        <p class="small" style="margin-top:17px">Demonstration geography is illustrative except where it reuses existing Border March data.</p>
+      </div>
+    </section>
+
+    <section class="slide" aria-label="Interactive prototype">
+      <div class="slide-content">
+        <p class="eyebrow">03 / Interactive prototype</p>
+        <h2>Open a leaf. Follow its bearings.</h2>
+        <p class="small" style="margin-bottom:17px">Click <strong>Grey Wind</strong> → <strong>Border March</strong> → <strong>Customs House</strong>. Toggle the locus frames and witness plate to preview MOSS-facing controls.</p>
+        <div class="demo-shell" id="map-demo">
+          <div class="demo-top">
+            <div class="crumbs" id="breadcrumbs" aria-label="Map navigation"></div>
+            <div class="demo-actions">
+              <button class="tool-btn" id="locus-toggle" aria-pressed="false" title="Show MOSS layout bounding boxes">Locus frames</button>
+              <button class="tool-btn" id="witness-toggle" aria-pressed="true" title="Show the deterministic reference relief">Witness plate</button>
+            </div>
+          </div>
+          <div class="demo-main">
+            <div class="map-stage witness-on" id="map-stage">
+              <svg class="map-svg active" id="map-world" viewBox="0 0 800 500" role="img" aria-label="Illustrative world atlas">
+                <defs>
+                  <pattern id="paper-grain" width="12" height="12" patternUnits="userSpaceOnUse">
+                    <circle cx="2" cy="3" r=".7" fill="#584c35" opacity=".14"/>
+                    <circle cx="9" cy="9" r=".55" fill="#584c35" opacity=".1"/>
+                  </pattern>
+                  <filter id="soft-shadow" x="-30%" y="-30%" width="160%" height="160%">
+                    <feGaussianBlur stdDeviation="9"/>
+                  </filter>
+                </defs>
+                <rect x="36" y="34" width="728" height="432" rx="3" class="map-paper"/>
+                <rect x="36" y="34" width="728" height="432" rx="3" fill="url(#paper-grain)"/>
+                <g class="witness-layer">
+                  <path d="M92 124 C142 82 227 91 257 141 C285 187 244 213 213 225 C180 239 138 218 109 197 C80 176 69 151 92 124Z" fill="#687453" opacity=".65"/>
+                  <path d="M414 89 C471 66 532 79 564 124 C590 160 564 197 520 203 C473 209 419 182 399 145 C384 117 390 99 414 89Z" fill="#6c7654" opacity=".55"/>
+                  <path d="M565 279 C612 244 684 265 704 311 C720 349 688 384 641 389 C594 394 552 367 547 333 C543 311 547 293 565 279Z" fill="#77805a" opacity=".6"/>
+                  <path d="M108 139 C151 107 220 111 244 148 M98 160 C142 131 212 129 248 163 M423 111 C462 88 521 98 547 131 M565 309 C603 277 666 287 687 320" class="contour"/>
+                </g>
+                <path d="M239 170 C315 137 352 132 425 138" class="route"/>
+                <path d="M483 161 C535 210 578 249 615 302" class="route-dash"/>
+                <text x="322" y="119" class="map-small">CHARTED ROAD</text>
+                <text x="533" y="232" class="map-small">FIELD NOTE · UNVERIFIED</text>
+                <g class="feature" data-feature="grey-wind" tabindex="0" role="button" aria-label="Open Grey Wind regional map" onclick="selectMap('region')">
+                  <ellipse cx="227" cy="167" rx="76" ry="61" class="feature-hitbox"/>
+                  <ellipse cx="227" cy="167" rx="76" ry="61" class="feature-frame feature-box"/>
+                  <circle cx="227" cy="167" r="8" class="feature-dot"/>
+                  <text x="158" y="252" class="map-label">Grey Wind</text>
+                  <text x="158" y="268" class="map-small">OPEN REGIONAL MAP →</text>
+                </g>
+                <g class="feature" data-feature="glass-coast" tabindex="0" role="button" aria-label="Glass Coast, distant chart" onclick="selectFeature('glass-coast')">
+                  <ellipse cx="623" cy="323" rx="67" ry="51" class="feature-hitbox"/>
+                  <circle cx="623" cy="323" r="6" class="feature-dot"/>
+                  <text x="593" y="414" class="map-label">Glass Coast</text>
+                  <text x="593" y="429" class="map-small">DISTANT CHART</text>
+                </g>
+                <g transform="translate(704 80)" stroke="#433e2e" fill="none">
+                  <path d="M0 24 L8 0 L16 24 L8 19Z" stroke-width="1.5"/>
+                  <text x="5" y="39" class="map-small" stroke="none">N</text>
+                </g>
+                <text x="58" y="444" class="map-small">WORLD LEAF · EXTENTS AND ROUTES ARE DEMONSTRATION DATA</text>
+              </svg>
+
+              <svg class="map-svg" id="map-region" viewBox="0 0 800 500" role="img" aria-label="Illustrative Grey Wind regional chart">
+                <rect x="30" y="25" width="740" height="450" rx="3" class="map-paper"/>
+                <g class="witness-layer">
+                  <path d="M72 72 C161 48 235 85 277 117 C329 156 363 153 405 112 C450 69 544 68 620 102 C703 139 733 222 695 291 C659 359 593 371 547 416 C481 481 391 438 329 423 C249 405 204 450 140 411 C84 377 111 330 75 277 C43 231 25 151 72 72Z" fill="#71805b" opacity=".65"/>
+                  <path d="M85 92 C160 70 235 99 270 135 C322 189 363 173 414 133 C465 94 551 91 618 122 C675 148 707 214 672 283 C636 345 576 359 527 399 C474 442 399 412 336 399 C261 382 207 423 153 393 C105 367 127 324 91 271 C61 228 47 153 85 92Z" class="contour"/>
+                  <path d="M111 116 C174 96 234 117 264 151 C310 205 366 198 430 153 C485 114 553 112 608 141 C652 164 677 213 651 273 C623 326 562 340 514 377 C463 411 400 386 345 372 C278 354 225 395 172 372 C132 353 146 313 114 264 C86 223 78 163 111 116Z" class="contour"/>
+                  <path d="M145 145 C193 123 241 138 265 170 C305 222 376 224 448 178 C505 142 553 136 593 159 C629 180 646 221 623 262 C600 305 547 318 503 350 C456 381 406 354 350 341 C294 327 241 363 194 347 C159 335 163 299 140 256 C119 218 119 171 145 145Z" class="contour"/>
+                </g>
+                <path d="M118 404 C195 353 232 312 316 283 C389 258 446 261 520 206 C566 172 615 152 676 144" class="route"/>
+                <path d="M120 405 C177 407 222 422 264 449" class="route-dash"/>
+                <path d="M539 96 L545 407" stroke="#484e3c" stroke-width="28" opacity=".24"/>
+                <path d="M541 96 L547 407" stroke="#565e46" stroke-width="2" stroke-dasharray="3 7"/>
+                <text x="547" y="116" class="map-small">EASTERN RIDGE · PASS</text>
+                <text x="218" y="325" class="map-small">CHARTED TRANSIT ROAD</text>
+                <g class="feature" data-feature="border-march" tabindex="0" role="button" aria-label="Open Border March local terrain" onclick="selectMap('terrain')">
+                  <rect x="259" y="191" width="178" height="123" rx="12" fill="#c6b57d" opacity=".44" stroke="#655d42" stroke-width="2"/>
+                  <rect x="247" y="179" width="202" height="147" rx="18" class="feature-frame feature-box"/>
+                  <circle cx="348" cy="247" r="9" class="feature-dot"/>
+                  <text x="275" y="226" class="map-label">THE BORDER MARCH</text>
+                  <text x="275" y="246" class="map-small">120 × 140 m LOCAL LEAF</text>
+                  <text x="275" y="286" class="map-small">OPEN TERRAIN →</text>
+                </g>
+                <g class="feature" data-feature="north-bastion" tabindex="0" role="button" aria-label="North ancient bastion" onclick="selectFeature('north-bastion')">
+                  <path d="M189 124 l12 -17 12 17 -12 7Z" fill="#68614b" stroke="#383b2d"/>
+                  <text x="149" y="99" class="map-small">NORTH BASTION</text>
+                </g>
+                <g class="feature" data-feature="west-ruin" tabindex="0" role="button" aria-label="West watch ruin" onclick="selectFeature('west-ruin')">
+                  <path d="M118 303 l11 -16 11 16 -11 7Z" fill="#68614b" stroke="#383b2d"/>
+                  <text x="80" y="281" class="map-small">WEST WATCH</text>
+                </g>
+                <text x="52" y="452" class="map-small">GREY WIND · REGIONAL CHART · ROUTE STATUS IS EXPLICIT</text>
+              </svg>
+
+              <svg class="map-svg" id="map-terrain" viewBox="0 0 800 500" role="img" aria-label="Border March local terrain map">
+                <defs>
+                  <linearGradient id="terrain-wash" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" stop-color="#b6a879"/>
+                    <stop offset=".55" stop-color="#c5b989"/>
+                    <stop offset="1" stop-color="#a8a174"/>
+                  </linearGradient>
+                </defs>
+                <rect x="24" y="20" width="752" height="460" rx="3" fill="url(#terrain-wash)"/>
+                <g class="witness-layer">
+                  <path d="M76 78 C139 39 230 52 262 100 C301 157 265 186 212 200 C153 216 95 183 69 139 C57 117 56 91 76 78Z" fill="#777653" opacity=".85"/>
+                  <path d="M86 89 C139 54 216 64 244 104 C270 142 247 171 207 182 M76 111 C128 78 203 82 238 122 M78 138 C122 107 188 106 224 143" class="contour"/>
+                  <path d="M520 58 C586 35 665 62 701 113 C734 160 706 221 670 243 C626 271 553 235 525 192 C497 148 485 71 520 58Z" fill="#737753" opacity=".8"/>
+                  <path d="M532 76 C590 52 651 77 683 119 C710 155 687 205 657 223 M516 101 C569 76 637 92 672 139 M526 133 C574 110 633 125 660 161 M550 170 C587 150 631 162 646 190" class="contour"/>
+                  <path d="M88 313 C146 273 208 296 235 341 C261 385 230 440 179 456 C127 471 75 428 70 379 C67 353 73 326 88 313Z" fill="#717652" opacity=".62"/>
+                  <path d="M104 330 C150 297 204 315 222 351 M87 357 C131 326 187 333 215 368 M94 390 C133 365 184 370 204 399" class="contour"/>
+                </g>
+                <path d="M278 412 C302 358 331 330 358 293 C394 244 420 205 454 170 C475 146 488 126 494 90" class="route"/>
+                <path d="M278 412 C294 395 315 382 335 365" class="route-dash"/>
+                <text x="298" y="448" class="map-small">INTAKE ROAD · CHARTED</text>
+                <path d="M386 205 L386 330 L510 330 L510 205Z" fill="#b9a876" stroke="#5d583f" stroke-width="2"/>
+                <path d="M394 214 L394 321 L501 321 L501 214Z" fill="#cbbd91" stroke="#7b6e4b"/>
+                <text x="400" y="264" class="map-small">CUSTOMS</text>
+                <text x="403" y="279" class="map-small">HOUSE</text>
+                <g class="feature-frame" data-feature="customs-house">
+                  <rect x="372" y="190" width="160" height="151" rx="9" class="feature-box"/>
+                </g>
+                <g class="feature" data-feature="customs-house" tabindex="0" role="button" aria-label="Open Customs House floorplan" onclick="selectMap('interior')">
+                  <rect x="372" y="190" width="160" height="151" class="feature-hitbox"/>
+                  <circle cx="448" cy="270" r="5" class="feature-dot"/>
+                  <text x="399" y="358" class="map-label">Customs House</text>
+                  <text x="399" y="373" class="map-small">OPEN FLOORPLAN →</text>
+                </g>
+                <g class="feature" data-feature="east-pass" tabindex="0" role="button" aria-label="East ridge pass" onclick="selectFeature('east-pass')">
+                  <path d="M510 90 C535 144 527 200 550 249" fill="none" stroke="#a27e4c" stroke-width="7" stroke-linecap="round"/>
+                  <text x="556" y="257" class="map-small">EAST PASS</text>
+                </g>
+                <g class="feature" data-feature="north-bastion" tabindex="0" role="button" aria-label="North ancient bastion" onclick="selectFeature('north-bastion')">
+                  <path d="M117 103 l20 -23 20 23 -20 11Z" fill="#5b5946" stroke="#292d22"/>
+                  <circle cx="137" cy="101" r="29" class="feature-frame feature-box"/>
+                  <text x="163" y="91" class="map-small">NORTH BASTION</text>
+                </g>
+                <g class="feature" data-feature="west-ruin" tabindex="0" role="button" aria-label="West watch ruin" onclick="selectFeature('west-ruin')">
+                  <path d="M118 378 l16 -19 16 19 -16 9Z" fill="#5b5946" stroke="#292d22"/>
+                  <circle cx="134" cy="376" r="26" class="feature-frame feature-box"/>
+                  <text x="151" y="406" class="map-small">WEST WATCH</text>
+                </g>
+                <g class="feature" data-feature="survey-marker" tabindex="0" role="button" aria-label="Surveyor Vellum's triangulation cairn" onclick="selectFeature('survey-marker')">
+                  <circle cx="173" cy="109" r="5" fill="#a14f39" stroke="#f0d79a" stroke-width="2"/>
+                  <text x="181" y="127" class="map-small">VELLUM'S BEARING</text>
+                </g>
+                <g transform="translate(708 64)" stroke="#433e2e" fill="none">
+                  <path d="M0 24 L8 0 L16 24 L8 19Z" stroke-width="1.5"/>
+                  <text x="5" y="39" class="map-small" stroke="none">N</text>
+                </g>
+                <text x="43" y="462" class="map-small">BORDER MARCH · 120 × 140 m · 0.5 m GRID · DEMO RENDER, NOT GEOGRAPHIC AUTHORITY</text>
+              </svg>
+
+              <svg class="map-svg" id="map-interior" viewBox="0 0 800 500" role="img" aria-label="Customs House floorplan">
+                <rect x="30" y="25" width="740" height="450" rx="3" class="map-paper"/>
+                <rect x="167" y="59" width="472" height="380" fill="#c9bb8c" stroke="#514b38" stroke-width="3"/>
+                <rect x="205" y="72" width="205" height="118" class="zone" onclick="selectFeature('foyer')"/>
+                <rect x="205" y="190" width="344" height="133" class="zone" onclick="selectFeature('inspection-hall')"/>
+                <rect x="410" y="203" width="124" height="105" fill="#bca876" stroke="#685e43" stroke-width="2" onclick="selectFeature('quartermaster-office')"/>
+                <rect x="205" y="323" width="122" height="101" class="zone" onclick="selectFeature('forfeit-corridor')"/>
+                <rect x="327" y="323" width="222" height="101" class="zone" onclick="selectFeature('cleared-egress')"/>
+                <path d="M268 181 L268 205 M354 317 L354 330 M456 317 L456 330" stroke="#8f4935" stroke-width="5"/>
+                <text x="223" y="128" class="map-label">INTAKE &amp; QUEUE FOYER</text>
+                <text x="224" y="248" class="map-label">WEIGH &amp; INSPECTION HALL</text>
+                <text x="422" y="251" class="map-small">QUARTERMASTER</text>
+                <text x="422" y="267" class="map-small">DESK &amp; LEDGER</text>
+                <text x="218" y="374" class="map-small">FORFEIT</text>
+                <text x="218" y="391" class="map-small">CORRIDOR</text>
+                <text x="351" y="374" class="map-small">CLEARED TRANSIT WAY</text>
+                <text x="183" y="451" class="map-small">CUSTOMS HOUSE · FLOORPLAN · 36 × 60 m</text>
+                <text x="599" y="90" class="map-small">SELECT A ROOM</text>
+              </svg>
+            </div>
+            <aside class="demo-side" aria-live="polite">
+              <span class="micro" id="detail-kicker">WORLD LEAF</span>
+              <h3 id="detail-title">Grey Wind</h3>
+              <span class="status provisional" id="detail-status">ILLUSTRATIVE · NOT WARRANTED</span>
+              <p class="small" id="detail-copy">A regional anchor on the world atlas. Select it to enter the map hierarchy.</p>
+              <code class="coordinate" id="detail-coord">parent: world-atlas<br>anchor: illustrative</code>
+              <div class="toast" id="demo-toast" role="status"></div>
+              <details class="spec-block">
+                <summary>Inspect MOSS layout draft</summary>
+                <pre id="layout-json"></pre>
+              </details>
+              <p class="micro" style="margin-top:14px">Prototype only · no model is called from this slide.</p>
+            </aside>
+          </div>
+          <div class="demo-caption"><span>Click a feature to inspect it. Use the breadcrumb to move back up.</span><span id="demo-scale">WORLD ATLAS</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" aria-label="MOSS illumination pipeline">
+      <div class="slide-content">
+        <p class="eyebrow">04 / MOSS as the illuminator</p>
+        <h2>Give the model a composition.<br>Keep the survey out of its hands.</h2>
+        <p class="lede">MOSS Layout can reserve image regions for named features. Reference conditioning can guide a style pass. Neither replaces measured geometry or a route graph.</p>
+        <div class="pipeline">
+          <div class="pipe-step"><b>01 · RECORD</b><strong>Map data</strong><small>Stable IDs, routes, terrain, transforms, standing.</small></div>
+          <div class="pipe-step"><b>02 · PROJECT</b><strong>Canvas</strong><small>Project one map leaf into a single image frame.</small></div>
+          <div class="pipe-step"><b>03 · DIRECT</b><strong>Locus frames</strong><small>Derive MOSS bounding boxes from feature footprints.</small></div>
+          <div class="pipe-step"><b>04 · ILLUMINATE</b><strong>MOSS + witness</strong><small>Style the map from a structured layout and optional relief reference.</small></div>
+          <div class="pipe-step"><b>05 · VERIFY</b><strong>Overlay &amp; audit</strong><small>Restore exact labels/routes; compare against source.</small></div>
+        </div>
+        <div class="two-col" style="margin-top:15px">
+          <div>
+            <p class="micro">MODEL-FACING LAYOUT · ONE LEAF, ONE GLOBAL CANVAS</p>
+            <div class="code-card" aria-label="Example MOSS map layout JSON"><span class="key">{</span><br>
+              &nbsp; "summary": { "caption": <span class="string">"Top-down antique regional chart…"</span> },<br>
+              &nbsp; "items": [<br>
+              &nbsp;&nbsp; { "label": "object", "caption": <span class="string">"The Border March plateau"</span>,<br>
+              &nbsp;&nbsp;&nbsp;&nbsp; "bbox": [286, 196, 478, 332] },<br>
+              &nbsp;&nbsp; { "label": "object", "caption": <span class="string">"Eastern mountain pass"</span>,<br>
+              &nbsp;&nbsp;&nbsp;&nbsp; "bbox": [506, 72, 568, 402] }<br>
+              &nbsp; ],<br>
+              &nbsp; "bbox_coord_space": "abs", "bbox_format": "xyxy"<br>
+              <span class="key">}</span>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-icon">⌖</div>
+            <h3>The Locus Frame is a region, not a promise.</h3>
+            <p class="small">MOSS's boxes guide where an item belongs in the image. They do not encode a road's exact course or prove that two endpoints connect. For exactness, draw those from map data after the style pass.</p>
+            <p class="small" style="margin-top:12px"><strong style="color:var(--paper)">Scale rule:</strong> Layouts are flat. World, regional, local, and interior maps each get their own canvas; parent transforms are applied before making that canvas.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" aria-label="Evidence and canon">
+      <div class="slide-content">
+        <p class="eyebrow">05 / Standing, evidence, and canon</p>
+        <h2>An image may be persuasive.<br>It is not a warrant.</h2>
+        <p class="lede">The Bureau distinguishes a measured place from a convincing depiction of one. Generated art can suggest revision; only authored evidence changes the atlas record.</p>
+        <div class="governance" style="margin-top:30px">
+          <div class="maturity">
+            <div class="maturity-row"><strong>Field note</strong><span>Unverified route or landmark claim. Visible as uncertainty; excluded from confirmed topology.</span></div>
+            <div class="maturity-row"><strong>Observed</strong><span>Seen or measured in-world. Attached to source and location; still not automatically canon.</span></div>
+            <div class="maturity-row"><strong>Warranted</strong><span>Curated and reviewed by an author. Eligible to appear as a certified atlas feature.</span></div>
+            <div class="maturity-row"><strong>Canon</strong><span>Stable map facts and relationships. Generated images never promote themselves here.</span></div>
+          </div>
+          <div>
+            <div class="rule-card">
+              <strong>Map art cannot silently rewrite map data.</strong>
+              <p>Every render keeps its source-map revision, scale, prompt/layout draft, seed, model settings, and output reference. A missed anchor becomes a render discrepancy to review—not a new world fact.</p>
+            </div>
+            <div class="card" style="margin-top:24px">
+              <span class="micro">DIEGETIC TRANSLATION</span>
+              <h3 style="margin-top:10px">Witness plate ≠ witness testimony</h3>
+              <p class="small">A plate guides the illuminator. A surveyor's signed observation records what was actually found. Confusing the two is how rumors acquire roads.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" aria-label="First-pass product specification">
+      <div class="slide-content">
+        <p class="eyebrow">06 / First-pass product specification</p>
+        <h2>What this prototype proposes<br>for a SillyTavern extension.</h2>
+        <div class="spec-grid">
+          <div class="spec-item"><span class="micro">MUST · MAP TREE</span><p>Browse World → Region → Local Terrain → Interior, with stable IDs and explicit parent transforms. Each leaf has a distinct scale, extent, orientation, and coordinate system.</p></div>
+          <div class="spec-item"><span class="micro">MUST · NAVIGATION</span><p>Enter child maps through named anchors; return through breadcrumbs. A portal or route records both endpoint map IDs and endpoint locations.</p></div>
+          <div class="spec-item"><span class="micro">MUST · AUTHORITY</span><p>Structured map data owns geometry and topology. MOSS output is a replaceable visual artifact with provenance; it cannot change the underlying map.</p></div>
+          <div class="spec-item"><span class="micro">MUST · ILLUSTRATION</span><p>Generate one MOSS Layout per canvas from projected feature boxes; optionally supply relief as a reference. Overlay exact labels and routes deterministically.</p></div>
+          <div class="spec-item"><span class="micro">MUST · REVIEW</span><p>Show evidence/standing, source revision, generated status, and discrepancies. Unknown and rumored connections stay visually distinct from charted routes.</p></div>
+          <div class="spec-item"><span class="micro">NOT V1</span><p>Automatic world synthesis, diffusion-authored topology, seamless infinite zoom, live travel simulation, and claims that bounding boxes guarantee exact placement.</p></div>
+        </div>
+        <div class="question"><strong>Decisions for the presentation room</strong><br><span class="small">Who edits map geometry? Is world scale topological first, or should it also have coarse terrain? Which evidence states should players see? Should MOSS render on demand or as a reviewed batch?</span></div>
+        <p class="small" style="margin-top:18px">Draft status: interaction model and authority boundaries are proposed; atlas schema, editing workflow, persistence, and ComfyUI integration remain to be specified.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="decknav">
+    <div class="counter">THE CARTOGRAPHERS' REGISTER <span class="keyhint">← → / SPACE</span></div>
+    <div class="deck-controls">
+      <button class="nav-btn" id="prev" aria-label="Previous slide">← Back</button>
+      <button class="nav-btn" id="next" aria-label="Next slide">Next →</button>
+    </div>
+  </footer>
+
+  <script>
+    const slides = [...document.querySelectorAll(".slide")];
+    let activeSlide = 0;
+    const slideNumber = document.getElementById("slide-number");
+    const progress = document.getElementById("progress");
+
+    function showSlide(index) {
+      activeSlide = Math.max(0, Math.min(slides.length - 1, index));
+      slides.forEach((slide, i) => {
+        slide.classList.toggle("active", i === activeSlide);
+        slide.setAttribute("aria-hidden", String(i !== activeSlide));
+      });
+      slideNumber.textContent = String(activeSlide + 1).padStart(2, "0");
+      progress.style.width = `${((activeSlide + 1) / slides.length) * 100}%`;
+      document.getElementById("prev").disabled = activeSlide === 0;
+      document.getElementById("next").disabled = activeSlide === slides.length - 1;
+    }
+    document.getElementById("slide-total").textContent = String(slides.length).padStart(2, "0");
+    document.getElementById("prev").addEventListener("click", () => showSlide(activeSlide - 1));
+    document.getElementById("next").addEventListener("click", () => showSlide(activeSlide + 1));
+    document.addEventListener("keydown", event => {
+      if (event.altKey || event.ctrlKey || event.metaKey) return;
+      if (["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement?.tagName)) return;
+      if (event.key === "ArrowRight" || event.key === "PageDown" || event.key === " ") {
+        event.preventDefault();
+        showSlide(activeSlide + 1);
+      } else if (event.key === "ArrowLeft" || event.key === "PageUp") {
+        event.preventDefault();
+        showSlide(activeSlide - 1);
+      } else if (event.key === "Home") {
+        showSlide(0);
+      } else if (event.key === "End") {
+        showSlide(slides.length - 1);
+      }
+    });
+
+    const levels = ["world", "region", "terrain", "interior"];
+    const levelNames = {
+      world: "World Atlas",
+      region: "Grey Wind",
+      terrain: "Border March",
+      interior: "Customs House"
+    };
+    const featureInfo = {
+      "grey-wind": {
+        kicker: "WORLD LEAF",
+        title: "Grey Wind",
+        status: "ILLUSTRATIVE · NOT WARRANTED",
+        copy: "A regional anchor on the world atlas. Select it to enter the map hierarchy.",
+        coord: "parent: world-atlas<br>anchor: illustrative"
+      },
+      "glass-coast": {
+        kicker: "WORLD LEAF",
+        title: "Glass Coast",
+        status: "FIELD NOTE · UNVERIFIED",
+        copy: "A distant chart mark used to demonstrate that rumor and surveyed route are different map states.",
+        coord: "route: suspected only<br>destination: not opened"
+      },
+      "border-march": {
+        kicker: "REGIONAL LEAF",
+        title: "The Border March",
+        status: "LOCAL MAP · SOURCE DATA",
+        copy: "The existing 120 × 140 m outdoor map: a customs plateau, east pass, ancient ruins, and intake gorge.",
+        coord: "parent: grey-wind<br>parent transform: demo only"
+      },
+      "customs-house": {
+        kicker: "LOCAL FEATURE",
+        title: "Customs House",
+        status: "FLOORPLAN · SOURCE DATA",
+        copy: "The building floorplan is anchored on the local terrain. Choose it to inspect rooms and portals.",
+        coord: "local anchor: (55, 65) m<br>interior: 36 × 60 m"
+      },
+      "east-pass": {
+        kicker: "TERRAIN FEATURE",
+        title: "Eastern ridge pass",
+        status: "CHARTED · DEMO SOURCE",
+        copy: "A traversable saddle cuts through the eastern ridge. Its centerline comes from terrain data, not from painted pixels.",
+        coord: "centerline: x = 90 m<br>y: 30 → 120 m"
+      },
+      "north-bastion": {
+        kicker: "TERRAIN FEATURE",
+        title: "North ancient bastion",
+        status: "SOURCE FEATURE",
+        copy: "A named ruin footprint in the Border March. Its locus box is an image-space aid for illustration.",
+        coord: "center: (24, 24) m<br>footprint: 26 × 26 m"
+      },
+      "west-ruin": {
+        kicker: "TERRAIN FEATURE",
+        title: "West watch ruin",
+        status: "SOURCE FEATURE",
+        copy: "A second ruin marker. The rendered glyph may be stylized; its map identity and coordinate remain fixed.",
+        coord: "center: (18, 110) m<br>footprint: 20 × 20 m"
+      },
+      "survey-marker": {
+        kicker: "SURVEY BEARING",
+        title: "Vellum's cairn",
+        status: "FIELD REFERENCE",
+        copy: "A triangulation marker on the local sheet. A witness plate may guide the painting; it does not certify the bearing.",
+        coord: "map feature: relic-cairn<br>elevation: sampled from terrain"
+      },
+      foyer: {
+        kicker: "INTERIOR ZONE",
+        title: "Intake & Queue Foyer",
+        status: "SOURCE FLOORPLAN",
+        copy: "Waiting area for arriving carriers and travellers with crated assets.",
+        coord: "bounds: x −16…0 m<br>z 0…24 m"
+      },
+      "inspection-hall": {
+        kicker: "INTERIOR ZONE",
+        title: "Weigh & Inspection Hall",
+        status: "SOURCE FLOORPLAN",
+        copy: "The inspection zone where goods are weighed, struck, rated, and sealed.",
+        coord: "bounds: x −16…16 m<br>z 24…44 m"
+      },
+      "quartermaster-office": {
+        kicker: "INTERIOR ZONE",
+        title: "Quartermaster's Desk",
+        status: "SOURCE FLOORPLAN",
+        copy: "Hollis's administrative desk and ledger bench, nested inside the inspection hall.",
+        coord: "bounds: x 2…16 m<br>z 26…42 m"
+      },
+      "forfeit-corridor": {
+        kicker: "INTERIOR ZONE",
+        title: "The Forfeit Corridor",
+        status: "SOURCE FLOORPLAN",
+        copy: "One-way transit corridor along which uncredited and forfeit assets travel to the yard.",
+        coord: "bounds: x −16…−6 m<br>z 44…60 m"
+      },
+      "cleared-egress": {
+        kicker: "INTERIOR ZONE",
+        title: "Cleared Transit Way",
+        status: "SOURCE FLOORPLAN",
+        copy: "The cleared roadway for accredited assets and verified travellers.",
+        coord: "bounds: x −4…16 m<br>z 44…60 m"
+      }
+    };
+
+    let mapLevel = "world";
+    let selectedFeature = "grey-wind";
+    const crumbs = document.getElementById("breadcrumbs");
+    const stage = document.getElementById("map-stage");
+
+    function setLevel(level) {
+      if (!levels.includes(level)) return;
+      mapLevel = level;
+      document.querySelectorAll(".map-svg").forEach(svg => svg.classList.toggle("active", svg.id === `map-${level}`));
+      document.getElementById("demo-scale").textContent = levelNames[level].toUpperCase();
+      const crumbLevels = levels.slice(0, levels.indexOf(level) + 1);
+      crumbs.replaceChildren(...crumbLevels.map((name, i) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = `crumb${i === crumbLevels.length - 1 ? " current" : ""}`;
+        button.textContent = levelNames[name];
+        button.setAttribute("aria-current", i === crumbLevels.length - 1 ? "page" : "false");
+        button.addEventListener("click", () => setLevel(name));
+        return button;
+      }));
+      showFeature(level === "world" ? "grey-wind" : level === "region" ? "border-march" : level === "terrain" ? "customs-house" : "inspection-hall");
+      document.getElementById("demo-toast").textContent = "";
+    }
+
+    function selectMap(level) {
+      if (level === "region" && mapLevel === "world") setLevel(level);
+      else if (level === "terrain" && mapLevel === "region") setLevel(level);
+      else if (level === "interior" && mapLevel === "terrain") setLevel(level);
+    }
+
+    function showFeature(id) {
+      selectedFeature = id;
+      const info = featureInfo[id] || featureInfo["border-march"];
+      document.getElementById("detail-kicker").textContent = info.kicker;
+      document.getElementById("detail-title").textContent = info.title;
+      const status = document.getElementById("detail-status");
+      status.textContent = info.status;
+      status.classList.toggle("provisional", /UNVERIFIED|ILLUSTRATIVE|FIELD NOTE/.test(info.status));
+      document.getElementById("detail-copy").textContent = info.copy;
+      document.getElementById("detail-coord").innerHTML = info.coord;
+      document.querySelectorAll(".feature.selected").forEach(el => el.classList.remove("selected"));
+      document.querySelectorAll(`.feature[data-feature="${CSS.escape(id)}"]`).forEach(el => el.classList.add("selected"));
+      document.getElementById("layout-json").textContent = JSON.stringify(layoutDraftFor(id), null, 2);
+    }
+
+    function selectFeature(id) {
+      if (id === "grey-wind" && mapLevel === "world") return selectMap("region");
+      showFeature(id);
+      document.getElementById("demo-toast").textContent = "Selection updated · source map data remains unchanged.";
+    }
+
+    function layoutDraftFor(id) {
+      const captions = {
+        "grey-wind": "Grey Wind regional terrain",
+        "border-march": "The Border March local terrain",
+        "customs-house": "The Customs House building",
+        "east-pass": "Eastern mountain pass",
+        "north-bastion": "Ancient north bastion",
+        "west-ruin": "West watch ruin"
+      };
+      return {
+        width: 1024,
+        height: 1024,
+        bbox_coord_space: "abs",
+        bbox_format: "xyxy",
+        summary: { caption: "Top-down antique atlas illustration; preserve the surveyed arrangement." },
+        items: [{
+          label: "object",
+          caption: captions[id] || featureInfo[id]?.title || "Surveyed map feature",
+          bbox: id === "east-pass" ? [640, 130, 730, 810] : id === "north-bastion" ? [190, 130, 320, 280] : [330, 340, 650, 670]
+        }]
+      };
+    }
+
+    document.getElementById("locus-toggle").addEventListener("click", event => {
+      const pressed = event.currentTarget.getAttribute("aria-pressed") !== "true";
+      event.currentTarget.setAttribute("aria-pressed", String(pressed));
+      document.querySelectorAll(".map-svg").forEach(svg => svg.classList.toggle("locus", pressed));
+      document.getElementById("demo-toast").textContent = pressed ? "Locus frames shown · image-space placement aids, not geography." : "";
+    });
+    document.getElementById("witness-toggle").addEventListener("click", event => {
+      const pressed = event.currentTarget.getAttribute("aria-pressed") !== "true";
+      event.currentTarget.setAttribute("aria-pressed", String(pressed));
+      stage.classList.toggle("witness-off", !pressed);
+      document.getElementById("demo-toast").textContent = pressed ? "Witness plate shown · deterministic terrain reference." : "Witness plate hidden · illustrative map layer only.";
+    });
+
+    document.querySelectorAll(".feature[tabindex='0']").forEach(feature => {
+      feature.addEventListener("keydown", event => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          feature.click();
+        }
+      });
+    });
+    setLevel("world");
+    showSlide(0);
+  </script>
+</body>
+</html>

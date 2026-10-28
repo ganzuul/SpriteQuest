@@ -103,6 +103,13 @@ class TestFactionCompiler(unittest.TestCase):
             self.assertIn("facts", frag)
             self.assertIn("evidence", frag)
 
+        fragment_ids = {frag_ref.get("id") for frag_ref in fragments}
+        self.assertTrue({
+            "cartographers/atlas-locus-frame",
+            "cartographers/atlas-witness-plate",
+            "cartographers/atlas-scale-register",
+        }.issubset(fragment_ids))
+
     def test_compose_and_compile_cartographers(self):
         """Composing Pell with Cartographers produces surveyor traits and unwritten tension."""
         composed = compose_npc(self.pell, self.cartographers)

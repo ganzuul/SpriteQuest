@@ -24,7 +24,7 @@ import io
 import json
 import math
 import os
-import shutil
+import re
 import struct
 import sys
 import time
@@ -40,12 +40,16 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+from companion.comfy_models import (
+    BudgetError,
+    require_budget,
+    resolve,
+)
 from companion.render_sheets import (
     Comfy,
     pick_clip,
     pick_clip_type,
     pick_unet,
-    pick_vae,
     save_workflow_snapshot,
     COMFY_WORKFLOWS_DIR,
 )
@@ -56,12 +60,13 @@ from companion.terrain_mesh import (
     TAG_ROAD_PASS,
     TerrainMesh,
     load_outdoor_map_scene,
-    rasterize_stl_depth,
 )
 
 DEFAULT_COMFY_SERVER = os.environ.get("COMFY_SERVER", "http://127.0.0.1:8080/upstream/comfyui")
 COMFY_INPUT_DIR = Path(os.environ.get("COMFY_INPUT", Path.home() / "ComfyUI" / "input"))
-
+MAP_DIFFUSION_SIZE = 768
+# Canvas presets trade detail against VRAM on the 8 GiB card these were measured on.
+CANVAS_PRESETS = {"safe": 768, "balanced": 896, "max": 1024}
 DEFAULT_MAP_PROMPT = (
     "This image is a grayscale height map: white is high mountain, black is low ground. "
     "Redraw it as antique hand-inked fantasy cartography on aged parchment, strictly top-down "
@@ -378,21 +383,26 @@ def build_map_art_workflow(
     depth_image_name: str,
     prompt_text: str = DEFAULT_MAP_PROMPT,
     negative_text: str = NEGATIVE_PROMPT,
-    width: int = 1024,
-    height: int = 1024,
+    width: int = MAP_DIFFUSION_SIZE,
+    height: int = MAP_DIFFUSION_SIZE,
     seed: int = 7777,
     steps: int = 25,
     cfg: float = 3.0,
     denoise: float = 1.0,
     prefix: str = "map_art/border_march",
     snapshot_name: str | Path | None = None,
+    unet_name: str | None = None,
+    clip_name: str | None = None,
+    vae_name: str | None = None,
+    clip_device: str = "cpu",
 ) -> dict:
     """
     Construct the ComfyUI API graph conditioning MOSS-Image-SFT
     on the Z-depth map using ReferenceLatent and a fresh latent canvas.
     """
-    unet_name = pick_unet()
-    clip_name = pick_clip()
+    unet_name = unet_name or pick_unet()
+    clip_name = clip_name or pick_clip()
+    vae_name = vae_name or pick_vae()
     clip_type = pick_clip_type(clip_name, unet_name)
     if unet_name.endswith(".gguf"):
         unet_node = {
@@ -405,19 +415,29 @@ def build_map_art_workflow(
             "inputs": {"unet_name": unet_name, "weight_dtype": "default"},
         }
 
-    workflow = {
-        "1": unet_node,
-        "2": {
+    if clip_name.endswith(".gguf"):
+        # CLIPLoaderGGUF has no device input: it always builds on the offload
+        # device with GGMLOps, which is the CPU placement this small GPU needs.
+        clip_node = {
+            "class_type": "CLIPLoaderGGUF",
+            "inputs": {"clip_name": clip_name, "type": clip_type},
+        }
+    else:
+        clip_node = {
             "class_type": "CLIPLoader",
             "inputs": {
                 "clip_name": clip_name,
                 "type": clip_type,
-                "device": "default",
+                "device": clip_device,
             },
-        },
+        }
+
+    workflow = {
+        "1": unet_node,
+        "2": clip_node,
         "3": {
             "class_type": "VAELoader",
-            "inputs": {"vae_name": pick_vae()},
+            "inputs": {"vae_name": vae_name},
         },
         "4": {
             "class_type": "CLIPTextEncode",
@@ -476,6 +496,271 @@ def build_map_art_workflow(
     return workflow
 
 
+def build_map_layout_prompt(
+    map_data: dict,
+    width: int = MAP_DIFFUSION_SIZE,
+    height: int = MAP_DIFFUSION_SIZE,
+) -> dict:
+    """Build a documented MOSS Layout draft from one map's geographic feature data."""
+    scale = map_data.get("scale", {})
+    dimensions = scale.get("dimensions", {})
+    map_width = float(dimensions.get("width", 100.0))
+    map_length = float(dimensions.get("length", 100.0))
+    if map_width <= 0 or map_length <= 0:
+        raise ValueError(f"Map dimensions must be positive, got {map_width} x {map_length}")
+    if width <= 0 or height <= 0 or width % 16 or height % 16:
+        raise ValueError("MOSS Layout canvas dimensions must be positive multiples of 16")
+
+    margin = min(width, height) * 0.08
+    px_per_m = min((width - 2 * margin) / map_width, (height - 2 * margin) / map_length)
+    map_px_width = map_width * px_per_m
+    map_px_height = map_length * px_per_m
+    offset_x = (width - map_px_width) / 2
+    offset_y = (height - map_px_height) / 2
+
+    def project_box(bounds: tuple[float, float, float, float]) -> list[float]:
+        x0, y0, x1, y1 = bounds
+        x0 = max(0.0, min(map_width, x0))
+        x1 = max(0.0, min(map_width, x1))
+        y0 = max(0.0, min(map_length, y0))
+        y1 = max(0.0, min(map_length, y1))
+        if x1 <= x0:
+            x0, x1 = max(0.0, x0 - 0.5), min(map_width, x1 + 0.5)
+        if y1 <= y0:
+            y0, y1 = max(0.0, y0 - 0.5), min(map_length, y1 + 0.5)
+        return [
+            round(offset_x + x0 * px_per_m, 2),
+            round(offset_y + y0 * px_per_m, 2),
+            round(offset_x + x1 * px_per_m, 2),
+            round(offset_y + y1 * px_per_m, 2),
+        ]
+
+    items = []
+    for plate in map_data.get("build_plates", []):
+        anchor = plate.get("anchor", {})
+        footprint = plate.get("footprint", {})
+        center_x = float(anchor.get("center_x", 0.0))
+        center_y = float(anchor.get("center_y", 0.0))
+        plate_width = float(footprint.get("width", 4.0))
+        plate_length = float(footprint.get("length", 4.0))
+        items.append({
+            "label": "object",
+            "caption": f"Level architectural build plate for {plate.get('name', plate.get('id', 'a settlement'))}.",
+            "bbox": project_box((
+                center_x - plate_width / 2,
+                center_y - plate_length / 2,
+                center_x + plate_width / 2,
+                center_y + plate_length / 2,
+            )),
+        })
+
+    for primitive in map_data.get("primitives", []):
+        primitive_type = primitive.get("type", "terrain feature")
+        feature_name = primitive.get("name") or primitive.get("id", primitive_type.replace("_", " "))
+        if primitive_type == "ridge_pass":
+            start, end = primitive["start"], primitive["end"]
+            margin_m = float(primitive.get("ridge_flank_width", 0.0)) + float(primitive.get("pass_width", 0.0)) / 2
+            bounds = (
+                min(float(start[0]), float(end[0])) - margin_m,
+                min(float(start[1]), float(end[1])) - margin_m,
+                max(float(start[0]), float(end[0])) + margin_m,
+                max(float(start[1]), float(end[1])) + margin_m,
+            )
+            caption = f"An elongated mountain ridge and traversable saddle pass, {feature_name}."
+        elif primitive_type == "ancient_ruin_buttress":
+            center = primitive["center"]
+            half_width = float(primitive.get("base_width", 4.0)) / 2
+            half_length = float(primitive.get("base_length", 4.0)) / 2
+            bounds = (
+                float(center[0]) - half_width,
+                float(center[1]) - half_length,
+                float(center[0]) + half_width,
+                float(center[1]) + half_length,
+            )
+            caption = f"Stepped ancient stone ruin and steep buttress, {feature_name}."
+        elif primitive_type == "canyon_gorge":
+            start, end = primitive["start"], primitive["end"]
+            half_width = float(primitive.get("bed_width", 2.0)) / 2 + float(primitive.get("wall_slope_width", 0.0))
+            bounds = (
+                min(float(start[0]), float(end[0])) - half_width,
+                min(float(start[1]), float(end[1])) - half_width,
+                max(float(start[0]), float(end[0])) + half_width,
+                max(float(start[1]), float(end[1])) + half_width,
+            )
+            caption = f"A narrow sunken canyon gorge with sloped sides, {feature_name}."
+        elif primitive_type == "hill":
+            center = primitive["center"]
+            radius = float(primitive.get("radius", 5.0))
+            bounds = (
+                float(center[0]) - radius,
+                float(center[1]) - radius,
+                float(center[0]) + radius,
+                float(center[1]) + radius,
+            )
+            caption = f"A rounded raised hill, {feature_name}."
+        else:
+            continue
+        items.append({"label": "object", "caption": caption, "bbox": project_box(bounds)})
+
+    for prop in map_data.get("props", []):
+        at = prop.get("at", [map_width / 2, map_length / 2])
+        x, y = float(at[0]), float(at[1])
+        radius = max(1.0, float(prop.get("scale", 1.0)) * 1.5)
+        items.append({
+            "label": "object",
+            "caption": f"Small top-down map symbol for {prop.get('label', prop.get('id', 'a landmark'))}.",
+            "bbox": project_box((x - radius, y - radius, x + radius, y + radius)),
+        })
+
+    if not items:
+        raise ValueError("Map contains no build plates, terrain primitives, or props to lay out")
+
+    map_name = map_data.get("name", map_data.get("id", "the surveyed region"))
+    return {
+        "width": width,
+        "height": height,
+        "bbox_coord_space": "abs",
+        "bbox_format": "xyxy",
+        "summary": {
+            "meta": ["top-down fantasy cartography", "MOSS structured layout"],
+            "canvas": "single",
+            "caption": (
+                f"Antique hand-inked regional terrain chart of {map_name}, strictly top-down "
+                "orthographic, warm vellum, restrained watercolor elevation washes, fine "
+                "hachures and contour marks. Preserve the relative placement and scale of "
+                "the surveyed landforms. No lettering, labels, legend, frame, or route strokes; "
+                "these will be added from the atlas record after illustration."
+            ),
+        },
+        "items": items,
+    }
+
+
+def compile_moss_layout_prompt(layout: dict) -> str:
+    """Convert an editable pixel Layout draft to MOSS's centered yxyx prompt format."""
+    width = layout.get("width")
+    height = layout.get("height")
+    if type(width) is not int or type(height) is not int or width <= 0 or height <= 0 or width % 16 or height % 16:
+        raise ValueError("MOSS Layout width and height must be positive multiples of 16")
+    if layout.get("bbox_coord_space") != "abs" or layout.get("bbox_format") != "xyxy":
+        raise ValueError("Editable MOSS Layout drafts must use abs / xyxy coordinates")
+    summary = layout.get("summary")
+    items = layout.get("items")
+    if not isinstance(summary, dict) or not isinstance(items, list) or not items:
+        raise ValueError("MOSS Layout draft requires a summary object and nonempty items")
+
+    compiled_items = []
+    for index, item in enumerate(items):
+        box = item.get("bbox") if isinstance(item, dict) else None
+        if not isinstance(box, list) or len(box) != 4 or any(type(value) not in (int, float) or not math.isfinite(value) for value in box):
+            raise ValueError(f"Layout item {index} bbox must contain four finite pixel coordinates")
+        x0, y0, x1, y1 = box
+        if not (0 <= x0 < x1 <= width and 0 <= y0 < y1 <= height):
+            raise ValueError(f"Layout item {index} bbox exceeds the {width}x{height} canvas")
+        centered_yxyx = [
+            math.floor(y0) - height // 2,
+            math.floor(x0) - width // 2,
+            math.ceil(y1) - height // 2,
+            math.ceil(x1) - width // 2,
+        ]
+        compiled_items.append({**item, "bbox": centered_yxyx})
+
+    compiled = {
+        "summary": summary,
+        "items": compiled_items,
+        "bbox_coord_space": "abs_centralized",
+        "bbox_format": "yxyx",
+    }
+    return json.dumps(compiled, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
+
+
+def export_map_layout_workflow(
+    map_id_or_path: str | Path = "border-march",
+    workflow_path: str | Path | None = None,
+    comfy_input_dir: str | Path = COMFY_INPUT_DIR,
+    layout_draft_path: str | Path | None = None,
+    width: int = MAP_DIFFUSION_SIZE,
+    height: int = MAP_DIFFUSION_SIZE,
+    seed: int = 7777,
+    steps: int = 25,
+    cfg: float = 3.0,
+    denoise: float = 0.72,
+    unet_name: str | None = None,
+    clip_name: str | None = None,
+    vae_name: str | None = None,
+    server: str = DEFAULT_COMFY_SERVER,
+) -> dict:
+    """Export a ComfyUI API workflow and its deterministic reference/layout inputs."""
+    map_path = Path(map_id_or_path)
+    if not map_path.is_file():
+        map_path = REPO_ROOT / "library" / "maps" / f"{map_id_or_path}.json"
+    if not map_path.is_file():
+        raise FileNotFoundError(f"Map declaration not found: {map_id_or_path}")
+
+    terrain, map_data = load_outdoor_map_scene(map_path)
+    map_id = str(map_data.get("id", map_path.stem))
+    safe_map_id = re.sub(r"[^a-zA-Z0-9_-]+", "_", map_id)
+    unet_name = unet_name or resolve("moss_unet", server)
+    if "moss" not in unet_name.lower():
+        raise ValueError(f"Cartography layout export requires a MOSS diffusion model, got {unet_name!r}")
+    clip_name = clip_name or resolve("moss_clip", server)
+    vae_name = vae_name or resolve("moss_vae", server)
+    input_dir = Path(comfy_input_dir)
+    input_dir.mkdir(parents=True, exist_ok=True)
+    reference_name = f"spritequest_{safe_map_id}_witness.png"
+    reference_path = input_dir / reference_name
+    reference_image = terrain.render_topdown_relief(contour_step_m=2.0)
+    reference_image = reference_image.resize((width, height), Image.Resampling.LANCZOS)
+    reference_image.save(reference_path, format="PNG")
+    if not reference_path.is_file():
+        raise RuntimeError(f"Failed to write ComfyUI witness image: {reference_path}")
+
+    if workflow_path is None:
+        workflow_path = COMFY_WORKFLOWS_DIR / f"cartography_{safe_map_id}_layout.json"
+    workflow_path = Path(workflow_path)
+    if layout_draft_path is None:
+        layout_stem = workflow_path.stem.removesuffix("_layout")
+        layout_path = workflow_path.with_name(f"{layout_stem}_layout_draft.json")
+    else:
+        layout_path = Path(layout_draft_path)
+
+    if layout_path.is_file():
+        layout = json.loads(layout_path.read_text(encoding="utf-8"))
+        if layout.get("width") != width or layout.get("height") != height:
+            raise ValueError(
+                f"Existing layout draft is {layout.get('width')}x{layout.get('height')}, "
+                f"but the export canvas is {width}x{height}"
+            )
+    else:
+        layout = build_map_layout_prompt(map_data, width=width, height=height)
+        layout_path.parent.mkdir(parents=True, exist_ok=True)
+        layout_path.write_text(json.dumps(layout, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    layout_text = compile_moss_layout_prompt(layout)
+    workflow = build_map_art_workflow(
+        depth_image_name=reference_name,
+        prompt_text=layout_text,
+        width=width,
+        height=height,
+        seed=seed,
+        steps=steps,
+        cfg=cfg,
+        denoise=denoise,
+        prefix=f"spritequest/cartography/{safe_map_id}",
+        snapshot_name=workflow_path,
+        unet_name=unet_name,
+        clip_name=clip_name,
+        vae_name=vae_name,
+    )
+    return {
+        "map_id": map_id,
+        "workflow_path": str(workflow_path),
+        "layout_path": str(layout_path),
+        "reference_image": str(reference_path),
+        "reference_name": reference_name,
+        "node_count": len(workflow),
+    }
+
+
 def render_map_bundle_art(
     map_id_or_path: str | Path,
     out_dir: Path | None = None,
@@ -484,6 +769,7 @@ def render_map_bundle_art(
     prompt: str = DEFAULT_MAP_PROMPT,
     seed: int = 7777,
     steps: int = 25,
+    ignore_budget: bool = False,
 ) -> dict:
     """
     End-to-end pipeline:
@@ -513,12 +799,8 @@ def render_map_bundle_art(
     art_path = out_dir / "map_art.png"
     relief_path = out_dir / "topdown_relief.png"
 
-    # 1. Rasterize Z-depth map
-    if stl_path.is_file():
-        depth_img = rasterize_stl_depth(stl_path, width=1024, height=1024)
-    else:
-        depth_img = tm.render_z_depth_map(width=1024, height=1024)
-    depth_img.save(depth_path, format="PNG")
+    # 1. Z-depth map from the elevation heightfield (offline, no rasterizer)
+    tm.render_z_depth_map(width=1024, height=1024).save(depth_path, format="PNG")
 
     # 2. Also save topdown relief if missing
     if not relief_path.is_file():
@@ -531,23 +813,44 @@ def render_map_bundle_art(
         try:
             comfy = Comfy(comfy_server, timeout=300)
             if comfy.alive():
+                unet_name = resolve("moss_unet", comfy_server)
+                clip_name = resolve("moss_clip", comfy_server)
+                vae_name = resolve("moss_vae", comfy_server)
+                if not ignore_budget:
+                    require_budget(
+                        clip_name,
+                        MAP_DIFFUSION_SIZE,
+                        MAP_DIFFUSION_SIZE,
+                        comfy_server,
+                        role="moss_clip",
+                    )
                 COMFY_INPUT_DIR.mkdir(parents=True, exist_ok=True)
                 input_name = f"sq_map_depth_{map_id}.png"
-                shutil.copyfile(depth_path, COMFY_INPUT_DIR / input_name)
+                with Image.open(depth_path) as depth_image:
+                    depth_image.resize(
+                        (MAP_DIFFUSION_SIZE, MAP_DIFFUSION_SIZE),
+                        Image.Resampling.LANCZOS,
+                    ).save(COMFY_INPUT_DIR / input_name, format="PNG")
 
                 wf = build_map_art_workflow(
                     depth_image_name=input_name,
                     prompt_text=prompt,
-                    width=1024,
-                    height=1024,
+                    width=MAP_DIFFUSION_SIZE,
+                    height=MAP_DIFFUSION_SIZE,
                     seed=seed,
                     steps=steps,
                     prefix=f"map_art/{map_id}",
                     snapshot_name=f"map_{map_id}.json",
+                    unet_name=unet_name,
+                    clip_name=clip_name,
+                    vae_name=vae_name,
                 )
                 img_bytes = comfy.run(wf)
-                art_path.write_bytes(img_bytes)
+                with Image.open(io.BytesIO(img_bytes)) as generated:
+                    generated.resize((1024, 1024), Image.Resampling.LANCZOS).save(art_path, format="PNG")
                 rendered_via = "moss_image_sft"
+        except BudgetError as exc:
+            print(f"ComfyUI generation refused ({exc}); using stylized cartography fallback", file=sys.stderr)
         except Exception as exc:
             print(f"ComfyUI generation notice ({exc}), using stylized cartography fallback", file=sys.stderr)
 
@@ -569,12 +872,75 @@ def main():
     parser.add_argument("map", nargs="?", default="border-march", help="Map ID or path (default: border-march)")
     parser.add_argument("--server", default=DEFAULT_COMFY_SERVER, help=f"ComfyUI server URL (default: {DEFAULT_COMFY_SERVER})")
     parser.add_argument("--stylized-only", action="store_true", help="Force deterministic stylized cartography without diffusion")
+    parser.add_argument(
+        "--export-workflow",
+        action="store_true",
+        help="Export a MOSS Layout ComfyUI API workflow and witness image without contacting ComfyUI",
+    )
+    parser.add_argument(
+        "--workflow-out",
+        help="Workflow JSON path (default: workflows/comfyui/cartography_<map-id>_layout.json)",
+    )
+    parser.add_argument(
+        "--layout-draft",
+        help="Editable top-left xyxy MOSS Layout draft; an existing draft is preserved and compiled",
+    )
+    parser.add_argument(
+        "--comfy-input",
+        default=str(COMFY_INPUT_DIR),
+        help=f"ComfyUI input directory for the witness image (default: {COMFY_INPUT_DIR})",
+    )
     parser.add_argument("--prompt", default=DEFAULT_MAP_PROMPT, help="Prompt text for diffusion conditioning")
     parser.add_argument("--seed", type=int, default=7777, help="Random seed for diffusion")
-    parser.add_argument("--steps", type=int, default=8, help="Sampling steps (default: 8)")
+    parser.add_argument(
+        "--steps",
+        type=int,
+        help="Sampling steps (default: 25 for workflow export, 8 for direct rendering)",
+    )
+    parser.add_argument("--cfg", type=float, default=3.0, help="ComfyUI KSampler CFG (default: 3.0)")
+    parser.add_argument("--denoise", type=float, default=0.72, help="Reference conditioning denoise (default: 0.72)")
+    parser.add_argument("--unet", help="Override the MOSS diffusion model filename")
+    parser.add_argument("--clip", help="Override the MOSS-compatible text encoder filename")
+    parser.add_argument("--vae", help="Override the MOSS-compatible VAE filename")
+    parser.add_argument(
+        "--canvas",
+        choices=sorted(CANVAS_PRESETS),
+        default="safe",
+        help="Square canvas preset: safe=768 (8 GiB GPU), balanced=896, max=1024 (>12 GiB free VRAM)",
+    )
+    parser.add_argument("--width", type=int, help="Override canvas width (positive multiple of 16)")
+    parser.add_argument("--height", type=int, help="Override canvas height (positive multiple of 16)")
     parser.add_argument("--out-dir", help="Output directory (defaults to renders/maps/<map_id>/)")
+    parser.add_argument(
+        "--ignore-budget",
+        action="store_true",
+        help="Skip the free RAM/VRAM check before submitting a diffusion job",
+    )
 
     args = parser.parse_args()
+    preset = CANVAS_PRESETS[args.canvas]
+    args.width = args.width or preset
+    args.height = args.height or preset
+    if args.export_workflow:
+        result = export_map_layout_workflow(
+            map_id_or_path=args.map,
+            workflow_path=Path(args.workflow_out) if args.workflow_out else None,
+            comfy_input_dir=args.comfy_input,
+            layout_draft_path=Path(args.layout_draft) if args.layout_draft else None,
+            width=args.width,
+            height=args.height,
+            seed=args.seed,
+            steps=args.steps if args.steps is not None else 25,
+            cfg=args.cfg,
+            denoise=args.denoise,
+            unet_name=args.unet,
+            clip_name=args.clip,
+            vae_name=args.vae,
+            server=args.server,
+        )
+        print(json.dumps(result, indent=2))
+        return
+
     out = render_map_bundle_art(
         map_id_or_path=args.map,
         out_dir=Path(args.out_dir) if args.out_dir else None,
@@ -582,7 +948,8 @@ def main():
         force_stylized=args.stylized_only,
         prompt=args.prompt,
         seed=args.seed,
-        steps=args.steps,
+        steps=args.steps if args.steps is not None else 8,
+        ignore_budget=args.ignore_budget,
     )
     print(json.dumps(out, indent=2))
 

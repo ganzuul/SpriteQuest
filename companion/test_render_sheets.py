@@ -17,11 +17,10 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from companion.check_models import (
-    DIFFUSION_CANDIDATES,
+from companion.comfy_models import (
     CLIP_CANDIDATES,
+    DIFFUSION_CANDIDATES,
     VAE_CANDIDATES,
-    pick_first,
 )
 from companion.render_sheets import (
     COMFY_WORKFLOWS_DIR,

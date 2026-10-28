@@ -1,0 +1,106 @@
+{
+  "width": 768,
+  "height": 768,
+  "bbox_coord_space": "abs",
+  "bbox_format": "xyxy",
+  "summary": {
+    "meta": [
+      "top-down fantasy cartography",
+      "MOSS structured layout"
+    ],
+    "canvas": "single",
+    "caption": "Antique hand-inked regional terrain chart of The Border March & Forfeit Gap, strictly top-down orthographic, warm vellum, restrained watercolor elevation washes, fine hachures and contour marks. Preserve the relative placement and scale of the surveyed landforms. No lettering, labels, legend, frame, or route strokes; these will be added from the atlas record after illustration."
+  },
+  "items": [
+    {
+      "label": "object",
+      "caption": "Level architectural build plate for Customs House Ground Foundation.",
+      "bbox": [
+        264.195,
+        204.285,
+        457.72499999999997,
+        517.635
+      ]
+    },
+    {
+      "label": "object",
+      "caption": "An elongated mountain ridge and traversable saddle pass, east-pass.",
+      "bbox": [
+        388.605,
+        66.045,
+        655.875,
+        706.5600000000001
+      ]
+    },
+    {
+      "label": "object",
+      "caption": "Stepped ancient stone ruin and steep buttress, north-ancient-bastion.",
+      "bbox": [
+        158.20499999999998,
+        112.125,
+        278.0175,
+        231.9375
+      ]
+    },
+    {
+      "label": "object",
+      "caption": "Stepped ancient stone ruin and steep buttress, west-watch-ruin.",
+      "bbox": [
+        144.3825,
+        522.24,
+        236.5425,
+        614.4000000000001
+      ]
+    },
+    {
+      "label": "object",
+      "caption": "A narrow sunken canyon gorge with sloped sides, south-intake-gorge.",
+      "bbox": [
+        121.3425,
+        619.005,
+        416.2575,
+        701.955
+      ]
+    },
+    {
+      "label": "object",
+      "caption": "Small top-down map symbol for Border Milestone Signpost.",
+      "bbox": [
+        246.6825,
+        348.06,
+        263.2725,
+        364.65
+      ]
+    },
+    {
+      "label": "object",
+      "caption": "Small top-down map symbol for Frontier Iron Brazier.",
+      "bbox": [
+        273.40500000000003,
+        271.1025,
+        287.235,
+        284.92499999999995
+      ]
+    },
+    {
+      "label": "object",
+      "caption": "Small top-down map symbol for Impounded Cargo Crates.",
+      "bbox": [
+        249.21750000000003,
+        382.84499999999997,
+        269.955,
+        403.5825
+      ]
+    },
+    {
+      "label": "object",
+      "caption": "Small top-down map symbol for Ancient Overhang Relic Cairn.",
+      "bbox": [
+        204.285,
+        158.20499999999998,
+        231.9375,
+        185.85750000000002
+      ]
+    }
+  ]
+}

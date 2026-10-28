@@ -13,7 +13,10 @@
     {"id": "cartographers/the-living-atlas", "version": 1},
     {"id": "cartographers/unwritten-borders", "version": 1},
     {"id": "cartographers/glyph-surveyor-rose", "version": 1},
-    {"id": "cartographers/cross-origin-clearance", "version": 1}
+    {"id": "cartographers/cross-origin-clearance", "version": 1},
+    {"id": "cartographers/atlas-locus-frame", "version": 1},
+    {"id": "cartographers/atlas-witness-plate", "version": 1},
+    {"id": "cartographers/atlas-scale-register", "version": 1}
   ],
   "epistemic_governance": {
     "maturity_ladder": {

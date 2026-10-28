@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "cartographers/atlas-locus-frame",
+  "version": 1,
+  "world_id": "cartographers",
+  "for": "diffusion",
+  "facets": ["home", "favored_items"],
+  "detail": "a brass four-arm locus frame laid over a vellum survey, its sliding corner shoes marking the permitted rectangle for one named landmark while leaving the interior uninked until the cartographer places the feature",
+  "evidence": {
+    "kind": "directed",
+    "source": "OpenMOSS-Team/MOSS-Image-SFT",
+    "quote": "Structured Layout items use bounding boxes to control object arrangement on the canvas."
+  },
+  "facts": {
+    "extent": "a hand-sized brass frame with four independently sliding corner shoes",
+    "scale_ref": "laid over a regional vellum sheet beside a surveyor's dividers",
+    "material": "aged brass rails, blackened steel shoes, ruled vellum",
+    "state": "calibrated to the sheet's pixel grid; its guides lift away before the final map is inked"
+  },
+  "note": "The diegetic counterpart to a MOSS Layout item's bounding box. The frame indicates an image-space region for one feature, not an exact geographic path or a visible border in the finished art. Map geometry remains authoritative."
+}

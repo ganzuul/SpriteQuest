@@ -14,7 +14,7 @@ Stdlib only. Talks HTTP to ComfyUI.
 Usage:
     python3 companion/render_sheets.py --dry-run                 # dry-run all NPC sheets
     python3 companion/render_sheets.py companion/npcs/hollis.json --dry-run
-    python3 companion/render_sheets.py --server http://127.0.0.1:8188
+    python3 companion/render_sheets.py --server http://127.0.0.1:8080/upstream/comfyui
 """
 
 from __future__ import annotations
@@ -37,69 +37,25 @@ NPCS_DIR = REPO_ROOT / "companion" / "npcs"
 RENDERS_DIR = REPO_ROOT / "renders"
 COMFY_WORKFLOWS_DIR = REPO_ROOT / "workflows" / "comfyui"
 
-COMFY_MODELS = Path(
-    os.environ.get("COMFY_MODELS", Path.home() / "ComfyUI" / "models")
+from companion.comfy_models import (  # noqa: E402  (after path bootstrap)
+    CLIP_CANDIDATES,
+    COMFY_MODELS,
+    DIFFUSION_CANDIDATES,
+    VAE_CANDIDATES,
+    resolve,
 )
-
-# --- MOSS-Image-SFT Model Candidates -----------------------------------------
-DIFFUSION_CANDIDATES = [
-    "moss_image_sft_bf16.safetensors",
-    "moss_image_sft_int8_convrot.safetensors",
-    "moss-image-sft-bf16.safetensors",
-    "moss_image_sft.safetensors",
-    "moss-image-sft.safetensors",
-    "moss_image_sft_sd_Q4_K_M.gguf",
-    "flux3_image_klein_sd_Q4_K_M.gguf",
-    "flux_3_image_klein_int8_convrot.safetensors",
-    "flux3-image-klein-sd-int8-convrot.safetensors",
-    "flux_3_image_klein_distilled_fp8.safetensors",
-    "flux_3_image_klein_distilled_int8.safetensors",
-    "flux_3_image_klein_bf16.safetensors",
-    "flux_3_image_klein.safetensors",
-    "flux1-dev-fp8.safetensors",
-    "flux1-schnell-fp8.safetensors",
-]
-
-CLIP_CANDIDATES = [
-    "qwen3.5_9b_int8_convrot.safetensors",
-    "qwen3.5_9b_bf16.safetensors",
-    "qwen3.5_9b_w4a8_gptq.safetensors",
-    "qwen3.5_9b_moss_image_w4a8.safetensors",
-    "qwen3vl_4b_int8_convrot.safetensors",
-    "qwen3.5_9b_flux3_prompt_upsampler_w4a8.safetensors",
-    "qwen3vl_8b_w4a8.safetensors",
-    "qwen3vl_8b_int8_convrot.safetensors",
-    "t5xxl_fp8_e4m3fn.safetensors",
-    "clip_l.safetensors",
-]
-
-VAE_CANDIDATES = [
-    "flux2-vae.safetensors",
-    "flux_vae.safetensors",
-    "ae.safetensors",
-    "flux2_vae.safetensors",
-    "qwen_image_2.1_vae_bf16.safetensors",
-]
-
-
-def pick_first(dir_path: Path, candidates: list[str]) -> str:
-    """Return the filename of the first candidate present on disk, or the top candidate."""
-    for name in candidates:
-        if (dir_path / name).is_file() and (dir_path / name).stat().st_size > 0:
-            return name
-    return candidates[0]
 
 
 def pick_unet() -> str:
-    return pick_first(COMFY_MODELS / "diffusion_models", DIFFUSION_CANDIDATES)
+    return resolve("image_unet", strict=False)
 
 
 def pick_clip() -> str:
-    return pick_first(COMFY_MODELS / "text_encoders", CLIP_CANDIDATES)
+    return resolve("image_clip", strict=False)
 
 
 def pick_vae() -> str:
-    return pick_first(COMFY_MODELS / "vae", VAE_CANDIDATES)
+    return resolve("image_vae", strict=False)
 
 
 def pick_clip_type(clip_name: str | None = None, unet_name: str | None = None) -> str:

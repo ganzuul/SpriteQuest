@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "cartographers/atlas-scale-register",
+  "version": 1,
+  "world_id": "cartographers",
+  "for": "diffusion",
+  "facets": ["home", "favored_items"],
+  "detail": "a tabbed brass scale register binding separate world, regional, and local map leaves, each marked with its own measured extent, orientation, and shared place bearings",
+  "evidence": {
+    "kind": "directed",
+    "source": "SpriteQuest multi-scale map design",
+    "quote": "A world atlas locates regional maps; each regional map locates local terrain; each local terrain anchors building floorplans."
+  },
+  "facts": {
+    "extent": "a long brass index with one numbered tab for each surveyed map leaf",
+    "scale_ref": "rests beside the Living Atlas and can be read while turning between map scales",
+    "material": "engraved brass tabs, linen binding cord, and inked vellum slips",
+    "state": "bearings are cross-referenced; an unverified route is marked as a claim, not a connection"
+  },
+  "note": "Each map scale is an independent canvas with an explicit transform to its parent map. MOSS Layouts are flat per image; do not model world-to-region hierarchy as nested MOSS bounding boxes. Stable coordinates, route topology, and confidence belong to map data."
+}
