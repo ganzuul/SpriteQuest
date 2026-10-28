@@ -52,5 +52,6 @@ These records explain the unified-workflow design, including proposals and open 
 | [MOSS atlas ontology](design/cartographers-moss-atlas-ontology.md) | How the Cartographers' Locus Frame, Witness Plate, and Scale Register map onto MOSS layouts and reference images, including the GGUF caveat. |
 | [Map geometry spec](design/map-geometry-spec.md) | Proposed geometry model for map declarations: typed primitives, an explicit frame, topology, and parent-map transforms. Not implemented. |
 | [Cartographers archival register](design/cartographers-archival-register.md) | The historical register for Cartographers prose: pipe-roll formulae, diplomatics, and how they map onto the commit contract. Proposal. |
+| [Cartographers source library](design/cartographers-source-library.md) | Public-domain editions (Gutenberg, archive.org) behind the lore register, with line-level citations usable in fragment `evidence` blocks. |
 
 Implemented requirements and validation appear in the [requirement evidence](design/workflow-unification-requirements.md) and [release report](superpowers/reports/2026-10-10-workflow-unification.md).

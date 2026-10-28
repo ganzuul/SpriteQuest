@@ -217,14 +217,19 @@ describes, and description carries no authority.
 - **Fragment schema is untouched.** This is a prose change within `detail`,
   `facts`, and `note`.
 
-## 9. Open questions
+## 9. Sources
 
-1. **Latin, English, or both?** `Et quietus est` in a card is evocative but opaque.
-   A workable middle: Latin formula, English gloss in the same sentence.
-2. **Does the Bureau have a Dialogue?** The *Dialogus* genre (question-and-answer
+The Gutenberg and archive.org editions for each claim are listed in
+[cartographers-source-library.md](cartographers-source-library.md), with line
+numbers so a citation is verifiable in one fetch. Register decision: **chiefly
+English, Latin for flair.**
+
+## 10. Open questions
+
+1. **Does the Bureau have a Dialogue?** The *Dialogus* genre (question-and-answer
    for a newcomer) fits the four commit questions almost exactly. It may be a
    better home for the contract's rules than a new fragment.
-3. **Should the commit form itself appear in-world?** A conformance table is
+2. **Should the commit form itself appear in-world?** A conformance table is
    already a pipe roll. Reproducing it as the Bureau's standard form, rather than
    describing it, may be the strongest option — but it makes the card a document
    rather than a description of one.
