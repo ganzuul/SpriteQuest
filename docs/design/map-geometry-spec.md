@@ -166,12 +166,14 @@ expresses it per-feature. This model is the **engraved plate** — the first
 statement of the architecture. From here the plate governs and the sketch
 becomes a record of what to implement.
 
-See `AGENTS.md` § "Exploratory and Normative Code" for the repository-wide rule.
-In that vocabulary this phase is the engraving, Phases 2–3 are striking prints
-from it, and Phase 4 adds capability to the plate rather than to a sketch.
+This spec is upstream of the code: it could be contradicted by an
+implementation, which is what gives it authority. In `AGENTS.md` §
+"Exploratory and Normative Code" vocabulary, this phase is the engraving,
+Phases 2–3 are striking prints from it, and Phase 4 adds capability to the
+plate rather than to a sketch.
 
-The principle (see `AGENTS.md` § "Exploratory and Normative Code") applied to
-this phase, stated as direction rather than prohibition:
+The principle applied to this phase, stated as direction rather than
+prohibition:
 
 1. **`companion/map_model/` should remain correct without the exploratory
    modules.** In practice it imports the standard library and, where unavoidable,

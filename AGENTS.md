@@ -122,6 +122,38 @@ anticipate.
    a deletion date. A dated adapter is debt you intend to repay; an undated one
    is a second authority.
 
+### Which tier is this code?
+
+A useful first approximation: **code without a spec above it is exploratory.** It
+is quick to apply and usually right. But it keys off whether a document exists,
+and an agent can satisfy that by writing one afterwards, so use the test below to
+settle the real question.
+
+> **When the code and the spec disagree, which one is wrong?**
+
+- The spec is right and the code is defective → **normative**. The spec is
+  upstream; disagreement resolves toward it.
+- The code is right and the spec was a guess → **exploratory**, whatever
+  documents exist. The spec is downstream; it describes rather than governs.
+
+A document that cannot be wrong is not a spec, it is a transcript. Authority
+requires that the document could contradict what someone built. A spec written
+after the fact, describing what the code happens to do, has no authority over
+that code and does not promote it.
+
+The same rule already governs fragments in this repository: canon without a
+warrant is cargo cult, and a warrant certifies that evidence supports the claim
+rather than following it. See `library/fragments/cartographers/canon-warrant.json`.
+
+Practical consequences:
+
+- **Writing a spec before the port** is what makes the port normative. The spec
+  may be short and may change; what matters is that it is upstream.
+- **Recording observed behaviour** is worth doing, but call it a description, and
+  do not cite it as authority.
+- **A spec that must be edited every time the code changes** was never upstream;
+  demote it to a description rather than maintaining a fiction.
+
 ### The trap: obeying the letter
 
 Absolute phrasing invites evasion, and evasion is what produces the mess. If you
@@ -133,6 +165,7 @@ find yourself doing any of these, the dependency is still there:
 | renaming a compatibility shim an "adapter" | the direction is unchanged |
 | passing an exploratory object through, untyped | the declaration still breaks when discovery changes |
 | duplicating a constant "to avoid the import" | two authorities, now guaranteed to diverge |
+| writing the spec after the code and calling it normative | a spec that cannot be wrong describes; it does not govern |
 
 The test is not whether an import statement exists. It is: **if the exploratory
 module changed shape tomorrow, would the normative module need editing?** If yes,
