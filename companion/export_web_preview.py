@@ -29,7 +29,7 @@ from PIL import Image
 
 from companion.scene_placement import ScenePlacementEngine
 from companion.terrain_lighting import TerrainLighting
-from companion.terrain_mesh import load_outdoor_map_scene, rasterize_stl_depth
+from companion.terrain_mesh import load_outdoor_map_scene
 
 
 def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
@@ -44,7 +44,6 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
 
     map_dir = out_html_path.parent
     map_dir.mkdir(parents=True, exist_ok=True)
-    stl_path = map_dir / f"{map_data.get('id', map_path.stem)}.stl"
     depth_path = map_dir / "depth_map.png"
     art_path = map_dir / "map_art.png"
     relief_path = map_dir / "topdown_relief.png"
@@ -52,15 +51,10 @@ def generate_interactive_html(map_path: Path, out_html_path: Path) -> Path:
 
     from companion.render_map_art import render_stylized_cartography
 
-    # 1. Z-depth map from binary STL if present, else TerrainMesh heightfield
+    # 1. Z-depth map from the elevation heightfield (offline, no rasterizer)
     if not depth_path.is_file():
-        if stl_path.is_file():
-            depth_img = rasterize_stl_depth(stl_path, width=1024, height=1024)
-        else:
-            depth_img = tm.render_z_depth_map(width=1024, height=1024)
-        depth_img.save(depth_path, format="PNG")
-    else:
-        depth_img = Image.open(depth_path)
+        tm.render_z_depth_map(width=1024, height=1024).save(depth_path, format="PNG")
+    depth_img = Image.open(depth_path)
 
     # 2. Hand-inked stylized cartography with primitive visual elements
     if not stylized_path.is_file():

@@ -19,7 +19,7 @@ to game-ready 3D assets:
      compound collision pieces via CoACD -> (`<id>-collider.glb`).
   6. 5-Cell Review Collage: Five-cell inspection row (`renders/primitives/<id>-collage.png`):
      [ 2D Sprite ] [ Source 3D ] [ Low-Poly LOD ] [ CoACD Collider ] [ Cuts in Colour ]
-  7. Offline Workflow Export: `--export-workflow` snapshots the Hunyuan3D-2.1 ComfyUI
+  8. Offline Workflow Export: `--export-workflow` snapshots the Hunyuan3D-2.1 ComfyUI
      API graph and its prepared sprite input without queuing a generation.
 
 QWEN.md / Stagecraft Compliance:
@@ -916,7 +916,7 @@ def process_ruin_pipeline(
       4. Export metric binary STL -> (library/stl_primitives/<id>.stl).
       5. Run CoACD convex decomposition (~32 blocks, OBBs + Hulls) -> (<id>-collider.glb).
       6. Render consolidated 3-cell + info-line Sprite Sheet -> (renders/primitives/<id>-sheet.png).
-      7. Rasterize Top-Down & 3/4th Ortho depth map from STL -> (renders/primitives/<id>-depth.png).
+      7. Render top-down & 3/4th depth views via ComfyUI -> (renders/primitives/<id>-depth.png).
     """
     t0 = time.monotonic()
     s_path = Path(sprite_path)

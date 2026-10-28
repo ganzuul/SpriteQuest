@@ -42,7 +42,7 @@ from companion.stl_primitives import (
     generate_stasis_coffin_primitive,
     generate_wish_stone_primitive,
 )
-from companion.terrain_mesh import TerrainMesh, build_terrain_with_scene, rasterize_stl_depth
+from companion.terrain_mesh import TerrainMesh, build_terrain_with_scene
 
 
 class TestSTLPrimitives(unittest.TestCase):
@@ -148,15 +148,6 @@ class TestSTLPrimitives(unittest.TestCase):
             # Primitives: 2 * 12 = 24
             # Total >= 986
             self.assertGreaterEqual(tri_count, 986)
-
-            # Test rasterizing composite depth map
-            depth_img = rasterize_stl_depth(out_composite, width=128, height=128)
-            self.assertEqual(depth_img.size, (128, 128))
-            arr = np.asarray(depth_img)
-            # Center where 2.0m crate stands should have higher brightness than empty floor
-            center_val = arr[64, 64]
-            edge_val = arr[2, 2]
-            self.assertGreater(center_val, edge_val)
 
     def test_default_stl_primitives_catalog(self):
         catalog = ensure_default_stl_primitives()

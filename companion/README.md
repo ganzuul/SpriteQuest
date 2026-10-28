@@ -120,6 +120,23 @@ camera, each saved with `Save Image`. Depth renders are normalised per view
 (min/max over hit pixels, near = white), so they are relative depth, not metric
 elevation.
 
+Asset depth templates are produced the same way, from the editable
+`workflows/comfyui/mesh_depth.json` graph: `companion/comfy_depth.py` only
+substitutes the mesh path, canvas, cameras and output prefix, then composes the
+two views into one `renders/primitives/<id>-depth.png`. `image_to_3d.py`,
+`waterfall_pipeline.py`, `forge_service.py`, and the
+`rasterize_primitive_depth.py` batch tool all call that one helper, so there is
+no Python mesh rasterizer to keep in sync. Terrain map depth
+(`renders/maps/<id>/depth_map.png`) is derived from the elevation heightfield
+and stays offline.
+
+Note on axes: `Get 3D Components` keeps the pipeline's Z-up convention (height
+on Z), and `Render Mesh` renders in that same frame, so the template must not
+rotate the mesh. The plan view uses an explicit `look_at` camera above +Z;
+`Create Camera Info`'s orbit mode pivots about Y, so an orbit "pitch 89" only
+produces an elevation of a Z-up mesh — that is what previously tipped the depth
+templates 90°.
+
 ### Inspect Scene Floor Plans & Stagecraft
 ```bash
 # List all registered floor plans

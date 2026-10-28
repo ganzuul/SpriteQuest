@@ -59,25 +59,43 @@ def load_depth_template(template_path: Path | str = DEPTH_TEMPLATE) -> dict:
     return json.loads(Path(template_path).read_text(encoding="utf-8"))
 
 
-def mesh_frame(mesh_path: Path | str, fov_deg: float = DEPTH_FOV_DEG, margin: float = 1.02) -> dict:
+def mesh_frame(
+    mesh_path: Path | str,
+    fov_deg: float = DEPTH_FOV_DEG,
+    margin: float = 1.06,
+) -> dict:
     """
-    Return camera target and distance that frame the mesh's bounding sphere.
+    Camera target and per-view distances for the two depth panes.
 
-    trimesh reports Z-up bounds while the GLB loads into the ComfyUI viewer as
-    Y-up, so the target is converted from trimesh space: (x, y, z) -> (x, z, -y).
+    Mesh coordinates are used as-is: `Get 3D Components` keeps SpriteQuest's Z-up
+    convention (height on Z), and `Render Mesh` aims in that same Z-up frame. The
+    three-quarter pane keeps the orbit framing (yaw -35, pitch 30); the plan pane
+    uses an explicit `look_at` above +Z because orbit mode pivots about Y and
+    would only ever give an elevation of a Z-up mesh.
     """
     import trimesh
 
     loaded = trimesh.load(str(mesh_path), force="mesh")
     bounds = loaded.bounds
     centre = (bounds[0] + bounds[1]) / 2.0
-    radius = max(float(np.linalg.norm(bounds[1] - bounds[0]) / 2.0), 1e-6)
-    distance = radius * margin / math.sin(math.radians(fov_deg) / 2.0)
+    extent = bounds[1] - bounds[0]
+    half_tan = math.tan(math.radians(fov_deg) / 2.0)
+
+    # Plan view: the footprint diagonal has to fit the square canvas.
+    footprint_radius = float(np.hypot(extent[0], extent[1]) / 2.0)
+    top_distance = footprint_radius * margin / half_tan
+    # Three-quarter view: the whole bounding sphere has to fit.
+    sphere_radius = float(np.linalg.norm(extent) / 2.0)
+    three_quarter_distance = sphere_radius * margin / half_tan
+
     return {
         "TARGET_X": round(float(centre[0]), 4),
-        "TARGET_Y": round(float(centre[2]), 4),
-        "TARGET_Z": round(float(-centre[1]), 4),
-        "DISTANCE": round(distance, 4),
+        "TARGET_Y": round(float(centre[1]), 4),
+        "TARGET_Z": round(float(centre[2]), 4),
+        "TOP_CAM_X": round(float(centre[0]), 4),
+        "TOP_CAM_Y": round(float(centre[1]), 4),
+        "TOP_CAM_Z": round(float(centre[2] + top_distance), 4),
+        "DISTANCE_34": round(three_quarter_distance, 4),
         "FOV": float(fov_deg),
     }
 

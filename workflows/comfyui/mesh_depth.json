@@ -23,7 +23,7 @@
       "mode": "orbit",
       "mode.yaw": -35.0,
       "mode.pitch": 30.0,
-      "mode.distance": "{{DISTANCE}}",
+      "mode.distance": "{{DISTANCE_34}}",
       "target_x": "{{TARGET_X}}",
       "target_y": "{{TARGET_Y}}",
       "target_z": "{{TARGET_Z}}",
@@ -37,7 +37,7 @@
     "class_type": "RenderMesh",
     "inputs": {
       "mesh": [
-        "9",
+        "2",
         0
       ],
       "mode": "depth",
@@ -63,10 +63,10 @@
   "6": {
     "class_type": "CreateCameraInfo",
     "inputs": {
-      "mode": "orbit",
-      "mode.yaw": 0.0,
-      "mode.pitch": 89.0,
-      "mode.distance": "{{DISTANCE}}",
+      "mode": "look_at",
+      "mode.position_x": "{{TOP_CAM_X}}",
+      "mode.position_y": "{{TOP_CAM_Y}}",
+      "mode.position_z": "{{TOP_CAM_Z}}",
       "target_x": "{{TARGET_X}}",
       "target_y": "{{TARGET_Y}}",
       "target_z": "{{TARGET_Z}}",
@@ -80,7 +80,7 @@
     "class_type": "RenderMesh",
     "inputs": {
       "mesh": [
-        "9",
+        "2",
         0
       ],
       "mode": "depth",
@@ -101,19 +101,6 @@
         0
       ],
       "filename_prefix": "{{PREFIX}}/topdown"
-    }
-  },
-  "9": {
-    "class_type": "RotateMesh",
-    "inputs": {
-      "mesh": [
-        "2",
-        0
-      ],
-      "mode": "euler_xyz",
-      "mode.angle_x": -90.0,
-      "mode.angle_y": 0.0,
-      "mode.angle_z": 0.0
     }
   }
 }

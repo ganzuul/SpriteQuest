@@ -34,8 +34,6 @@ from companion.terrain_mesh import (
     TAG_CANYON_GORGE,
     TAG_ROAD_PASS,
     TerrainMesh,
-    rasterize_mesh_depth,
-    rasterize_stl_depth,
 )
 
 
@@ -167,77 +165,6 @@ class TestTerrainMesh(unittest.TestCase):
         inv_arr = np.asarray(inv_depth)
         self.assertLess(int(inv_arr[128, 128]), 50)
         self.assertEqual(int(inv_arr[0, 0]), 255)
-
-    def test_rasterize_stl_depth(self):
-        self.tm.add_hill(20.0, 20.0, height=14.0, radius=10.0)
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            stl_path = Path(tmp_dir) / "hill.stl"
-            self.tm.export_stl(stl_path, solid_base=True)
-
-            depth_img = rasterize_stl_depth(stl_path, width=256, height=256)
-            self.assertEqual(depth_img.size, (256, 256))
-            self.assertEqual(depth_img.mode, "L")
-            arr = np.asarray(depth_img)
-            # Center hill should be bright, corners dark
-            self.assertGreater(int(arr[128, 128]), 200)
-            self.assertEqual(int(arr[0, 0]), 0)
-
-    def test_dense_mesh_depth_rasterization_fills_triangle_interiors(self):
-        triangle = np.array([[[0.0, 0.0, 0.0], [10.0, 0.0, 10.0], [0.0, 10.0, 20.0]]], dtype=np.float32)
-        dense_mesh = np.repeat(triangle, 10001, axis=0)
-
-        depth_img = rasterize_mesh_depth(dense_mesh, width=64, height=64, pad_ratio=0.0)
-        depth = np.asarray(depth_img)
-
-        self.assertGreater(int(depth[10, 10]), 0)
-        self.assertGreater(int(depth[10, 10]), int(depth[50, 10]))
-        self.assertEqual(int(depth[0, 63]), 0)
-
-    def test_glb_depth_rasterization_uses_terrain_up_axis(self):
-        vertices = np.array(
-            [[0.0, 0.0, 0.0], [4.0, 0.0, 0.0], [4.0, 0.0, 4.0], [0.0, 0.0, 4.0]],
-            dtype="<f4",
-        )
-        indices = np.array([0, 1, 2, 0, 2, 3], dtype="<u2")
-        binary = vertices.tobytes() + indices.tobytes()
-        gltf = {
-            "asset": {"version": "2.0"},
-            "buffers": [{"byteLength": len(binary)}],
-            "bufferViews": [
-                {"buffer": 0, "byteOffset": 0, "byteLength": vertices.nbytes},
-                {"buffer": 0, "byteOffset": vertices.nbytes, "byteLength": indices.nbytes},
-            ],
-            "accessors": [
-                {"bufferView": 0, "componentType": 5126, "count": 4, "type": "VEC3"},
-                {"bufferView": 1, "componentType": 5123, "count": 6, "type": "SCALAR"},
-            ],
-            "meshes": [{"primitives": [{"attributes": {"POSITION": 0}, "indices": 1}]}],
-            "extras": {"padding": "x" * 1024},
-        }
-        json_chunk = json.dumps(gltf).encode("utf-8")
-        json_chunk += b" " * (-len(json_chunk) % 4)
-        total_length = 12 + 8 + len(json_chunk) + 8 + len(binary)
-        glb = (
-            b"glTF"
-            + struct.pack("<II", 2, total_length)
-            + struct.pack("<I4s", len(json_chunk), b"JSON")
-            + json_chunk
-            + struct.pack("<I4s", len(binary), b"BIN\x00")
-            + binary
-        )
-
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            stl_dir = Path(tmp_dir) / "stl"
-            mesh_dir = Path(tmp_dir) / "mesh"
-            stl_dir.mkdir()
-            mesh_dir.mkdir()
-            stl_path = stl_dir / "flat.stl"
-            stl_path.touch()
-            glb_path = mesh_dir / "flat-source.glb"
-            glb_path.write_bytes(glb)
-            depth_img = rasterize_stl_depth(stl_path, width=64, height=64, pad_ratio=0.0)
-
-        self.assertGreater(np.count_nonzero(np.asarray(depth_img)), 0)
 
     def test_render_stratum_layer_with_base_art(self):
         self.tm.add_hill(20.0, 20.0, height=16.0, radius=12.0)

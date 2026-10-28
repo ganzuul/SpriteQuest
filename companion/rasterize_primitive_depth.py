@@ -2,13 +2,18 @@
 """
 companion/rasterize_primitive_depth.py
 
-Utility to rasterize dense, solid, orthographic top-down Z-depth maps
-from binary STL primitives in `library/stl_primitives/` to `renders/primitives/<id>-depth.png`.
+Render dual-view depth templates for stored 3D primitives into
+`renders/primitives/<id>-depth.png` via ComfyUI's `Render Mesh` node.
 
-These high-detail depth templates are consumed directly by:
+The node graph lives in `workflows/comfyui/mesh_depth.json`; this script only
+batches the render. Depth templates are consumed by:
   1. The Left Sidebar multi-representation inspector (facet: 'depth')
   2. The 3D Pipeline action button in SillyTavern / Web Viewer
   3. Image diffusion depth-conditioned img2img / ControlNet
+
+Usage:
+    python3 companion/rasterize_primitive_depth.py
+    python3 companion/rasterize_primitive_depth.py --primitive ancient-bastion
 """
 
 from __future__ import annotations
@@ -21,7 +26,8 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from companion.terrain_mesh import rasterize_stl_depth
+from companion.comfy_depth import render_depth_artifact
+from companion.comfy_models import DEFAULT_SERVER
 
 MESH_DIR = REPO_ROOT / "library" / "mesh"
 STL_DIR = REPO_ROOT / "library" / "stl_primitives"
@@ -36,42 +42,43 @@ def rasterize_all_primitive_depths(
     height: int = 512,
     side_by_side: bool = True,
     target_ids: list[str] | None = None,
+    server: str = DEFAULT_SERVER,
 ) -> list[tuple[str, Path]]:
     out_dir.mkdir(parents=True, exist_ok=True)
-    results = []
+    results: list[tuple[str, Path]] = []
+    seen: set[str] = set()
 
-    stl_files = sorted(stl_dir.glob("*.stl"))
-    for stl_path in stl_files:
+    for stl_path in sorted(stl_dir.glob("*.stl")):
         pid = stl_path.stem
         if target_ids and pid not in target_ids:
             continue
+        source_glb = mesh_dir / f"{pid}-source.glb"
+        mesh = source_glb if source_glb.is_file() else stl_path
         out_png = out_dir / f"{pid}-depth.png"
-        img = rasterize_stl_depth(stl_path, width=width, height=height, prefer_source_mesh=True, side_by_side=side_by_side)
-        img.save(out_png)
+        render_depth_artifact(mesh, out_png, width=width, height=height, server=server, side_by_side=side_by_side)
         results.append((pid, out_png))
-        print(f"[3D Depth] Rasterized '{pid}' -> {out_png.relative_to(REPO_ROOT)} ({img.width}x{img.height})")
+        seen.add(pid)
+        print(f"[3D Depth] Rendered '{pid}' -> {out_png.relative_to(REPO_ROOT)} ({width}x{height})")
 
-    # Also rasterize any standalone source GLBs
     for source_glb in sorted(mesh_dir.glob("*-source.glb")):
-        pid = source_glb.stem[:-7]  # strip '-source'
-        if target_ids and pid not in target_ids:
+        pid = source_glb.stem[:-7]
+        if (target_ids and pid not in target_ids) or pid in seen:
             continue
         out_png = out_dir / f"{pid}-depth.png"
-        img = rasterize_stl_depth(source_glb, width=width, height=height, prefer_source_mesh=True, side_by_side=side_by_side)
-        img.save(out_png)
-        if (pid, out_png) not in results:
-            results.append((pid, out_png))
-            print(f"[3D Depth] Rasterized source mesh '{pid}' -> {out_png.relative_to(REPO_ROOT)} ({img.width}x{img.height})")
+        render_depth_artifact(source_glb, out_png, width=width, height=height, server=server, side_by_side=side_by_side)
+        results.append((pid, out_png))
+        print(f"[3D Depth] Rendered source mesh '{pid}' -> {out_png.relative_to(REPO_ROOT)} ({width}x{height})")
 
     return results
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Rasterize STL primitives to high-detail top-down & 3/4th depth maps")
-    parser.add_argument("--width", type=int, default=1024, help="Output image width")
-    parser.add_argument("--height", type=int, default=512, help="Output image height")
-    parser.add_argument("--primitive", type=str, default="", help="Specific primitive ID to rasterize")
-    parser.add_argument("--single-view", action="store_true", help="Rasterize single top-down view instead of side-by-side")
+    parser = argparse.ArgumentParser(description="Render primitive depth templates through ComfyUI")
+    parser.add_argument("--width", type=int, default=1024, help="Composite width (two panes)")
+    parser.add_argument("--height", type=int, default=512, help="Pane height")
+    parser.add_argument("--primitive", type=str, default="", help="Specific primitive ID to render")
+    parser.add_argument("--single-view", action="store_true", help="Render only the top-down view")
+    parser.add_argument("--server", default=DEFAULT_SERVER, help=f"ComfyUI URL (default: {DEFAULT_SERVER})")
     args = parser.parse_args()
 
     target_ids = [args.primitive] if args.primitive else None
@@ -80,8 +87,9 @@ def main() -> int:
         height=args.height,
         side_by_side=not args.single_view,
         target_ids=target_ids,
+        server=args.server,
     )
-    print(f"Completed rasterization of {len(results)} high-detail depth templates.")
+    print(f"Rendered {len(results)} depth templates.")
     return 0
 
 

@@ -34,7 +34,7 @@ from companion.render_map_art import (
     render_map_bundle_art,
     render_stylized_cartography,
 )
-from companion.terrain_mesh import TerrainMesh, load_outdoor_map_scene, rasterize_stl_depth
+from companion.terrain_mesh import TerrainMesh, load_outdoor_map_scene
 
 
 class TestMapArtPipeline(unittest.TestCase):
