@@ -106,6 +106,8 @@ class Job:
     last_eviction_at: float | None = None
     preemptible: bool = True
     evicted_by: set[str] = field(default_factory=set)
+    asset_id: str | None = None
+    standing: float | None = None
 
     @property
     def artifacts(self) -> list[Artifact]:
@@ -121,6 +123,44 @@ class Job:
 
     def step(self, name: str) -> StepRun:
         return self.step_runs[name]
+
+
+class RegenerationRefused(RuntimeError):
+    """A submission or retry that would replace a locked asset.
+
+    The refusal is typed so a caller can branch without parsing prose, and so a
+    UI can show the lock rather than an unexplained failure.
+    """
+
+    def __init__(self, code: str, message: str, *, asset_id: str | None = None,
+                 details: Mapping[str, Any] | None = None) -> None:
+        super().__init__(message)
+        self.code = code
+        self.asset_id = asset_id
+        self.details = dict(details or {})
+
+
+@dataclass(frozen=True)
+class LockRecord:
+    """Why an asset will not be regenerated without a person saying so."""
+
+    asset_id: str
+    reason: str
+    locked_by: str
+    locked_at: float
+    standing: float | None = None
+
+
+@dataclass(frozen=True)
+class RegenerationPolicy:
+    """Automation may set a lock; it never releases one.
+
+    ``auto_lock_standing`` locks an asset when the standing reported at
+    submission reaches the threshold, so a batch run cannot trivially replace
+    something the story already accepted. Releasing is a user action.
+    """
+
+    auto_lock_standing: float | None = None
 
 
 @dataclass(frozen=True)
@@ -165,6 +205,7 @@ class Scheduler:
         swap_groups: Mapping[str, SwapGroup] | None = None,
         scheduler_version: str = SCHEDULER_VERSION,
         preemption_policy: PreemptionPolicy | None = None,
+        regeneration_policy: RegenerationPolicy | None = None,
     ) -> None:
         self._pools = list(pools)
         self._providers = dict(providers)
@@ -173,6 +214,9 @@ class Scheduler:
         self._max_workers = max(1, int(max_workers))
         self._scheduler_version = scheduler_version
         self._policy = preemption_policy or PreemptionPolicy()
+        self._regeneration = regeneration_policy or RegenerationPolicy()
+        self._locks: dict[str, LockRecord] = {}
+        self._lock_mutex = threading.Lock()
         self._eviction_log: deque[float] = deque()
         groups = dict(swap_groups or {})
         for pool in self._pools:
@@ -239,8 +283,12 @@ class Scheduler:
         *,
         priority: int | Priority = Priority.NORMAL,
         job_id: str | None = None,
+        asset_id: str | None = None,
+        standing: float | None = None,
     ) -> Job:
         values = resolve_parameters(template, parameters)
+        if asset_id is not None:
+            self._refuse_if_locked(asset_id)
         with self._condition:
             if self._closed:
                 raise RuntimeError("scheduler is closed")
@@ -256,6 +304,8 @@ class Scheduler:
                 priority=int(priority),
                 output_dir=output_dir,
                 template_hash=template.sha256(),
+                asset_id=asset_id,
+                standing=standing,
             )
             job.step_runs = {step.name: StepRun(step) for step in template.steps}
             self._jobs[identifier] = job
@@ -535,6 +585,112 @@ class Scheduler:
         while self._eviction_log and self._eviction_log[0] < cutoff:
             self._eviction_log.popleft()
 
+    # -- regeneration locks -----------------------------------------------
+
+    def lock(
+        self,
+        asset_id: str,
+        *,
+        reason: str,
+        by: str = "user",
+        standing: float | None = None,
+    ) -> LockRecord:
+        """Lock an asset against regeneration. Idempotent; the first reason wins."""
+
+        with self._lock_mutex:
+            existing = self._locks.get(asset_id)
+            if existing is not None:
+                return existing
+            record = LockRecord(
+                asset_id=asset_id,
+                reason=reason,
+                locked_by=by,
+                locked_at=time.time(),
+                standing=standing,
+            )
+            self._locks[asset_id] = record
+        self._emit_asset("asset.locked", asset_id, {
+            "reason": reason,
+            "lockedBy": by,
+            "standing": standing,
+        })
+        return record
+
+    def unlock(self, asset_id: str, *, by: str, reason: str) -> Outcome:
+        """Release a lock. Automation must not call this; a person must."""
+
+        with self._lock_mutex:
+            record = self._locks.pop(asset_id, None)
+        if record is None:
+            return Outcome(False, "ASSET_NOT_LOCKED", f"asset {asset_id!r} is not locked")
+        self._emit_asset("asset.unlocked", asset_id, {
+            "reason": reason,
+            "unlockedBy": by,
+            "lockedBy": record.locked_by,
+            "lockReason": record.reason,
+        })
+        return Outcome(True, "UNLOCKED", f"asset {asset_id!r} unlocked", {
+            "reason": reason,
+            "by": by,
+        })
+
+    def lock_state(self, asset_id: str) -> LockRecord | None:
+        with self._lock_mutex:
+            return self._locks.get(asset_id)
+
+    def locks(self) -> tuple[LockRecord, ...]:
+        with self._lock_mutex:
+            return tuple(sorted(self._locks.values(), key=lambda record: record.asset_id))
+
+    def can_regenerate(self, asset_id: str) -> Outcome:
+        """Answer before asking, the same way capabilities() does for suspend."""
+
+        record = self.lock_state(asset_id)
+        if record is None:
+            return Outcome(True, "REGENERATION_ALLOWED", f"asset {asset_id!r} is not locked")
+        return Outcome(
+            False,
+            "ASSET_LOCKED",
+            f"asset {asset_id!r} is locked: {record.reason}",
+            {"assetId": asset_id, "reason": record.reason, "lockedBy": record.locked_by},
+        )
+
+    def _refuse_if_locked(self, asset_id: str) -> None:
+        record = self.lock_state(asset_id)
+        if record is None:
+            return
+        self._emit_asset("regeneration.refused", asset_id, {
+            "code": "ASSET_LOCKED",
+            "reason": record.reason,
+            "lockedBy": record.locked_by,
+        })
+        raise RegenerationRefused(
+            "ASSET_LOCKED",
+            f"asset {asset_id!r} is locked: {record.reason}. "
+            "Unlock it to regenerate.",
+            asset_id=asset_id,
+            details={"reason": record.reason, "lockedBy": record.locked_by},
+        )
+
+    def _emit_asset(self, event_type: str, asset_id: str, data: Mapping[str, Any]) -> None:
+        payload = {"assetId": asset_id, **data}
+        event = {
+            "specversion": "1.0",
+            "id": uuid.uuid4().hex,
+            "source": "spritequest.asset-jobs",
+            "type": f"io.spritequest.asset.{event_type}",
+            "subject": asset_id,
+            "time": datetime.now(timezone.utc).isoformat(),
+            "data": payload,
+        }
+        self._events.append(event)
+        sink = self._event_sink
+        if sink is not None:
+            try:
+                sink(event)
+            except Exception:
+                pass
+
     def cancel(self, job_id: str) -> Job:
         with self._condition:
             job = self._job(job_id)
@@ -740,7 +896,17 @@ class Scheduler:
                 )
             else:
                 step_run.error = result.error or "provider failed"
-                if step_run.attempt <= step_run.step.retry:
+                lock = self.lock_state(job.asset_id) if job.asset_id else None
+                if lock is not None and step_run.attempt <= step_run.step.retry:
+                    step_run.state = StepState.FAILED
+                    step_run.error = f"ASSET_LOCKED: {lock.reason}"
+                    self._emit(
+                        job,
+                        "step.retry-refused",
+                        step_run,
+                        {"code": "ASSET_LOCKED", "assetId": job.asset_id, "reason": lock.reason},
+                    )
+                elif step_run.attempt <= step_run.step.retry:
                     step_run.state = StepState.PENDING
                     step_run.started_at = None
                     self._emit(
@@ -807,6 +973,7 @@ class Scheduler:
             job.state = JobState.COMPLETED
             job.finished_at = time.time()
             self._emit(job, "job.completed")
+            self._maybe_auto_lock(job)
             return
         if job.pause_event.is_set():
             job.state = JobState.PAUSED
@@ -909,6 +1076,21 @@ class Scheduler:
             except Exception:
                 # An observer must not be able to fail a job.
                 pass
+
+    def _maybe_auto_lock(self, job: Job) -> None:
+        """Standing promotes an asset to locked. Only a person may undo it."""
+
+        threshold = self._regeneration.auto_lock_standing
+        if threshold is None or job.asset_id is None or job.standing is None:
+            return
+        if job.standing < threshold:
+            return
+        self.lock(
+            job.asset_id,
+            reason=f"standing {job.standing:g} >= {threshold:g}",
+            by="policy",
+            standing=job.standing,
+        )
 
     def _write_pending_manifests(self) -> None:
         with self._condition:

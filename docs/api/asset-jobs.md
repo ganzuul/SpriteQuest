@@ -118,6 +118,55 @@ The example worker layout:
 
 An LLM on llama-swap would be another exclusive group, for example `llm-analysis` or `llm-prose`.
 
+## Regeneration and locks
+
+A job may name the asset it produces:
+
+```python
+job = scheduler.submit(template, {"Brief": brief}, asset_id="ruined-watchtower")
+```
+
+`asset_id` is what makes regeneration gating possible. Without it, the scheduler
+has no identity to protect and every submission is independent.
+
+**A lock stops replacement.** When an asset is locked, `submit` refuses with a
+typed `RegenerationRefused`:
+
+```text
+ASSET_LOCKED: asset 'ruined-watchtower' is locked: standing 0.91 >= 0.8.
+Unlock it to regenerate.
+```
+
+An automatic retry of a step belonging to a locked asset is refused the same
+way: the step fails with `ASSET_LOCKED` and emits `step.retry-refused` rather
+than quietly producing a second attempt. The first attempt is never interrupted;
+the lock governs regeneration, not work already authorised.
+
+**A lock is visible.** `lock_state(asset_id)` returns the record, `locks()`
+returns all of them, and `can_regenerate(asset_id)` answers before a caller
+tries — the same shape as `capabilities()` for suspension.
+
+```python
+record = scheduler.lock_state("ruined-watchtower")
+# LockRecord(asset_id=..., reason="standing 0.91 >= 0.8", locked_by="policy", ...)
+```
+
+**Only a person releases it.** `scheduler.lock(asset_id, reason=..., by=...)`
+sets a lock; `scheduler.unlock(asset_id, by=..., reason=...)` requires the actor
+and the reason, and emits `asset.unlocked` with both. The scheduler records who
+acted; it does not authenticate them. A UI is expected to show the lock and offer
+the release.
+
+**Standing can lock automatically.** A `RegenerationPolicy` may promote an asset
+when the standing reported at submission reaches a threshold:
+
+```python
+Scheduler(..., regeneration_policy=RegenerationPolicy(auto_lock_standing=0.8))
+```
+
+The policy only ever sets locks. It never releases one, so a batch run cannot
+undo a decision the story already made.
+
 ## Priority, pause, cancel
 
 These are three different mechanisms. The names are easy to conflate, so the implementation keeps them separate.
@@ -340,6 +389,7 @@ The demo prints the capability report, submits a critical `ruined-watchtower` jo
 
 - One task per step; no `parameterSpace` or task chunking.
 - Suspend/resume is declared unsupported; there is no checkpointing provider.
+- Locks are per asset identity provided by the caller, not derived from the ledger.
 - Preemption is eviction plus requeue, not suspension, so an evicted step restarts from zero.
 - No durable scheduler state; a process restart loses in-flight jobs.
 - Only the ComfyUI provider is real; the rest are mocks. llama-swap and remote APIs are not wired.
@@ -347,6 +397,7 @@ The demo prints the capability report, submits a critical `ruined-watchtower` jo
 - No artifact store beyond the local job directory.
 - No provider authentication, rate-limit accounting, or cost tracking.
 - No full PROV/RO-Crate serialization yet; the manifest is a compatible precursor.
+- A lock does not authenticate its actor; `by` is recorded, not verified.
 
 ## Next steps
 

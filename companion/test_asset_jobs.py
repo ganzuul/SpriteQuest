@@ -30,6 +30,9 @@ from companion.asset_jobs import (  # noqa: E402
     MockProvider,
     PreemptionPolicy,
     Priority,
+    ProviderResult,
+    RegenerationPolicy,
+    RegenerationRefused,
     ResourcePool,
     Scheduler,
     StepState,
@@ -731,6 +734,234 @@ class SchedulerTests(unittest.TestCase):
         outcome = scheduler.preempt(job.id)
         self.assertFalse(outcome.ok)
         self.assertEqual(outcome.code, "PREEMPTION_TARGET_TERMINAL")
+
+    # -- regeneration locks (C17-C21) -----------------------------------------
+
+    def locked_scheduler(self, **kwargs) -> Scheduler:
+        return self.scheduler(**kwargs)
+
+    def test_locked_asset_refuses_submission(self):
+        scheduler = self.locked_scheduler()
+        scheduler.lock("ruined-watchtower", reason="approved by review", by="user")
+        with self.assertRaises(RegenerationRefused) as caught:
+            scheduler.submit(one_step_template(), asset_id="ruined-watchtower")
+        self.assertEqual(caught.exception.code, "ASSET_LOCKED")
+        self.assertIn("approved by review", str(caught.exception))
+        self.assertEqual(scheduler.events()[-1]["data"]["code"], "ASSET_LOCKED")
+        with self.assertRaises(KeyError):
+            scheduler.job("does-not-exist")
+
+    def test_unlocking_allows_submission(self):
+        scheduler = self.locked_scheduler()
+        scheduler.lock("tower", reason="standing", by="user")
+        outcome = scheduler.unlock("tower", by="operator", reason="regenerate after fix")
+        self.assertTrue(outcome.ok)
+        self.assertEqual(outcome.code, "UNLOCKED")
+        job = scheduler.submit(one_step_template(), asset_id="tower")
+        scheduler.run_until_idle()
+        self.assertEqual(job.state, JobState.COMPLETED)
+        types = [event["type"] for event in scheduler.events()]
+        self.assertIn("io.spritequest.asset.asset.unlocked", types)
+
+    def test_unlock_refuses_an_unlocked_asset(self):
+        scheduler = self.locked_scheduler()
+        outcome = scheduler.unlock("tower", by="operator", reason="why not")
+        self.assertFalse(outcome.ok)
+        self.assertEqual(outcome.code, "ASSET_NOT_LOCKED")
+
+    def test_lock_state_is_observable(self):
+        scheduler = self.locked_scheduler()
+        self.assertIsNone(scheduler.lock_state("tower"))
+        self.assertTrue(scheduler.can_regenerate("tower").ok)
+        record = scheduler.lock("tower", reason="standing 0.9", by="policy", standing=0.9)
+        self.assertEqual(record.asset_id, "tower")
+        self.assertEqual(len(scheduler.locks()), 1)
+        state = scheduler.lock_state("tower")
+        self.assertEqual(state.reason, "standing 0.9")
+        self.assertEqual(state.locked_by, "policy")
+        blocked = scheduler.can_regenerate("tower")
+        self.assertFalse(blocked.ok)
+        self.assertEqual(blocked.code, "ASSET_LOCKED")
+        self.assertEqual(blocked.details["reason"], "standing 0.9")
+
+    def test_locking_is_idempotent_and_keeps_the_first_reason(self):
+        scheduler = self.locked_scheduler()
+        scheduler.lock("tower", reason="first", by="user")
+        scheduler.lock("tower", reason="second", by="policy")
+        self.assertEqual(scheduler.lock_state("tower").reason, "first")
+        self.assertEqual(len(scheduler.locks()), 1)
+
+    def test_standing_auto_locks_after_completion(self):
+        scheduler = self.locked_scheduler(
+            regeneration_policy=RegenerationPolicy(auto_lock_standing=0.8)
+        )
+        job = scheduler.submit(
+            one_step_template(), asset_id="tower", standing=0.9
+        )
+        scheduler.run_until_idle()
+        self.assertEqual(job.state, JobState.COMPLETED)
+        record = scheduler.lock_state("tower")
+        self.assertIsNotNone(record)
+        self.assertEqual(record.locked_by, "policy")
+        self.assertIn("standing", record.reason)
+        with self.assertRaises(RegenerationRefused):
+            scheduler.submit(one_step_template(), asset_id="tower")
+
+    def test_low_standing_does_not_lock(self):
+        scheduler = self.locked_scheduler(
+            regeneration_policy=RegenerationPolicy(auto_lock_standing=0.8)
+        )
+        job = scheduler.submit(one_step_template(), asset_id="tower", standing=0.2)
+        scheduler.run_until_idle()
+        self.assertEqual(job.state, JobState.COMPLETED)
+        self.assertIsNone(scheduler.lock_state("tower"))
+
+    def test_policy_never_releases_a_user_lock(self):
+        scheduler = self.locked_scheduler(
+            regeneration_policy=RegenerationPolicy(auto_lock_standing=0.8)
+        )
+        scheduler.lock("tower", reason="manual", by="user")
+        scheduler.run_until_idle()
+        self.assertIsNotNone(scheduler.lock_state("tower"))
+
+    def test_automatic_retry_is_refused_while_locked(self):
+        calls = {"count": 0}
+
+        class FailingOnce:
+            id = "flaky"
+
+            def run(self, request):
+                calls["count"] += 1
+                return ProviderResult(ok=False, error="transient")
+
+        template = parse_job_template(
+            {
+                "name": "retry-job",
+                "specificationVersion": "jobtemplate-2023-09",
+                "steps": [
+                    {
+                        "name": "render",
+                        "retry": 2,
+                        "hostRequirements": {
+                            "amounts": [{"name": "amount.worker.vcpu", "min": 1}],
+                            "attributes": [{"name": "attr.worker.kind", "anyOf": ["cpu"]}],
+                        },
+                        "script": {"actions": {"onRun": {"command": "provider:flaky"}}},
+                    }
+                ],
+            }
+        )
+        scheduler = self.scheduler(
+            providers={"flaky": FailingOnce()},
+            pools=[ResourcePool(
+                "cpu",
+                "local-cpu",
+                amounts={"amount.worker.vcpu": 4},
+                attributes={"attr.worker.kind": ("cpu",)},
+            )],
+        )
+        job = scheduler.submit(template, asset_id="tower")
+        # The lock lands while the job is queued: the first attempt runs, the
+        # automatic retry must not.
+        scheduler.lock("tower", reason="approved", by="user")
+        scheduler.run_until_idle()
+        self.assertEqual(job.state, JobState.FAILED)
+        step = job.step("render")
+        self.assertEqual(step.state, StepState.FAILED)
+        self.assertIn("ASSET_LOCKED", step.error)
+        self.assertEqual(step.attempt, 1)
+        self.assertEqual(calls["count"], 1)
+        types = [event["type"] for event in scheduler.events()]
+        self.assertIn("io.spritequest.asset.step.retry-refused", types)
+
+    def test_automatic_retry_runs_when_unlocked(self):
+        calls = {"count": 0}
+
+        class FailsThenSucceeds:
+            id = "flaky"
+
+            def run(self, request):
+                calls["count"] += 1
+                if calls["count"] == 1:
+                    return ProviderResult(ok=False, error="transient")
+                return ProviderResult(ok=True, artifacts=())
+
+        template = parse_job_template(
+            {
+                "name": "retry-job",
+                "specificationVersion": "jobtemplate-2023-09",
+                "steps": [
+                    {
+                        "name": "render",
+                        "retry": 1,
+                        "hostRequirements": {
+                            "amounts": [{"name": "amount.worker.vcpu", "min": 1}],
+                            "attributes": [{"name": "attr.worker.kind", "anyOf": ["cpu"]}],
+                        },
+                        "script": {"actions": {"onRun": {"command": "provider:flaky"}}},
+                    }
+                ],
+            }
+        )
+        scheduler = self.scheduler(
+            providers={"flaky": FailsThenSucceeds()},
+            pools=[ResourcePool(
+                "cpu",
+                "local-cpu",
+                amounts={"amount.worker.vcpu": 4},
+                attributes={"attr.worker.kind": ("cpu",)},
+            )],
+        )
+        job = scheduler.submit(template, asset_id="tower")
+        scheduler.run_until_idle()
+        self.assertEqual(job.state, JobState.COMPLETED)
+        self.assertEqual(job.step("render").attempt, 2)
+        self.assertEqual(calls["count"], 2)
+
+    def test_retry_is_not_an_eviction(self):
+        """C21: attempt counts rise, evictions do not."""
+
+        calls = {"count": 0}
+
+        class FailsOnce:
+            id = "flaky"
+
+            def run(self, request):
+                calls["count"] += 1
+                if calls["count"] == 1:
+                    return ProviderResult(ok=False, error="transient")
+                return ProviderResult(ok=True, artifacts=())
+
+        template = parse_job_template(
+            {
+                "name": "retry-job",
+                "specificationVersion": "jobtemplate-2023-09",
+                "steps": [
+                    {
+                        "name": "render",
+                        "retry": 1,
+                        "hostRequirements": {
+                            "amounts": [{"name": "amount.worker.vcpu", "min": 1}],
+                            "attributes": [{"name": "attr.worker.kind", "anyOf": ["cpu"]}],
+                        },
+                        "script": {"actions": {"onRun": {"command": "provider:flaky"}}},
+                    }
+                ],
+            }
+        )
+        scheduler = self.scheduler(
+            providers={"flaky": FailsOnce()},
+            pools=[ResourcePool(
+                "cpu",
+                "local-cpu",
+                amounts={"amount.worker.vcpu": 4},
+                attributes={"attr.worker.kind": ("cpu",)},
+            )],
+        )
+        job = scheduler.submit(template, asset_id="tower")
+        scheduler.run_until_idle()
+        self.assertEqual(job.state, JobState.COMPLETED)
+        self.assertEqual(job.evictions, 0)
 
     def test_no_eligible_pool_fails_closed(self):
         scheduler = self.scheduler(

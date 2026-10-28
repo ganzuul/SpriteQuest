@@ -35,20 +35,18 @@ only where `Status` is `n.a.`.
 | C14 | A settled job writes exactly one manifest with template identity and hash, per-step state and attempts, artifact hashes, and provider identity. | m | Y | `manifest.py`; `test_sample_job_completes_with_manifest` | |
 | C15 | State changes are observable as events with a stable type; a refusal carries a machine-readable code. | m | Y | `scheduler.py` `_emit`; event assertions | |
 | C16 | Providers receive an injected transport; no step executes a shell command; behaviour is testable without a GPU or network. | m | Y | `comfy.py`, `providers.py`; ComfyUI transport tests | |
-| C17 | A job may declare an asset identity. A job that would regenerate a locked asset is refused before it is created, and an automatic retry is refused while the asset is locked. | m | N | — | Not delivered; see G4. |
-| C18 | A regeneration refusal carries a machine-readable code naming the asset and the lock reason. It never replaces the artifact anyway. | m | N | — | Not delivered; see G4. |
-| C19 | Lock state is readable without attempting regeneration: asset, reason, who set it, and when. | m | N | — | Not delivered; see G4. |
-| C20 | Automation may set a lock but may not release one. A release records who released it and why. | m | N | — | Not delivered; see G4. |
+| C17 | A job may declare an asset identity. A job that would regenerate a locked asset is refused before it is created, and an automatic retry is refused while the asset is locked. | m | Y | `scheduler.py` `submit`, `_execute_step`; lock tests | |
+| C18 | A regeneration refusal carries a machine-readable code naming the asset and the lock reason. It never replaces the artifact anyway. | m | Y | `RegenerationRefused`; refusal tests | `ASSET_LOCKED`, with the reason in the message and details. |
+| C19 | Lock state is readable without attempting regeneration: asset, reason, who set it, and when. | m | Y | `lock_state`, `locks`, `can_regenerate`; observability test | |
+| C20 | Automation may set a lock but may not release one. A release records who released it and why. | m | Y | `lock` (by `policy`), `unlock` (requires `by` and `reason`); auto-lock tests | The scheduler records the actor; it does not authenticate one. |
 | C21 | A retry is a new attempt of the same step, not an eviction: it consumes no eviction budget and changes no priority. | m | Y | `scheduler.py` `_execute_step` | Semantics were unstated until D2; the behaviour already matched. |
 
 ### Statement of conformance
 
 **Are all mandatory capabilities implemented?** No.
 
-`C3` and `C17`–`C20` are not supported. Every other mandatory item is supported,
-with the qualifications recorded in `Remarks`. A "no" answer is only meaningful
-when the missing items are named, so the non-conformances are listed here rather
-than summarised: `C3` (D1), and the regeneration gate (`C17`–`C20`, G4).
+`C3` remains unsupported. Every other mandatory item is supported, with the
+qualifications recorded in `Remarks`. The single non-conformance is `C3` (D1).
 
 ## Findings
 
@@ -60,9 +58,9 @@ Delivery exposes two kinds of failure, and they are not interchangeable.
   `failed` while its dependents remain `pending`. That is not a bug against a
   requirement; it is a missing requirement. C3 was added because of this
   finding.
-- **D2:** retry semantics were unspecified. Amended: `C21` states that a retry
-  is a new attempt rather than an eviction, and `C17`–`C20` state when
-  regeneration is gated by a lock. The gate itself is not delivered yet (G4).
+- **D2:** retry semantics were unspecified. Resolved: `C21` states that a retry
+  is a new attempt rather than an eviction, and `C17`–`C20` gate regeneration
+  behind an asset lock. The gate is delivered and tested.
 
 **Conformance gaps** — the contract says, the sketch does not do:
 
@@ -70,8 +68,9 @@ Delivery exposes two kinds of failure, and they are not interchangeable.
 - **G2:** `step.retry` has no test, so its behaviour is unverified.
 - **G3 (C13):** preemption is tested on single-step jobs only; multi-step
   eviction is exercised but not pinned.
-- **G4 (C17–C20):** regeneration gating is specified but not implemented. There
-  is no lock, no refusal code, and nothing a UI can display.
+- ~~G4 (C17–C20):~~ resolved in `feat(asset-jobs): gate regeneration behind an
+  asset lock`. The gate, the refusal code, and the observable lock are delivered
+  and tested.
 
 ## Out of scope
 
