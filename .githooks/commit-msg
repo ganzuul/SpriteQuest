@@ -1,0 +1,4 @@
+#!/bin/sh
+# Validate the message against .github/commit-template.md.
+# Bypass with `git commit --no-verify`, and say why in the message body.
+exec node "$(git rev-parse --show-toplevel)/tools/check-commit-message.mjs" "$1"

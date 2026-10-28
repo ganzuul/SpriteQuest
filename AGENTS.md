@@ -213,6 +213,7 @@ The wrong words invite the wrong move, so prefer these:
 | exploratory, provisional | "prototype", "v1", "the current API" | Those imply something to extend. Exploration is something to supersede. |
 | derive from the normative module | "consumer of the API" | A dependent has authority only through the normative module; reading the exploratory version instead means there are two sources of truth again. |
 | amend the normative module | "patch the caller" | Fixing a derived copy leaves the source wrong. |
+| describe (what exploratory code does) | "spec", "contract", "the API" | A document written after the code cannot be wrong about it, so it records rather than governs. Write the spec before the port if you want authority. |
 
 ### In-world name
 
@@ -225,6 +226,101 @@ tiers line up directly: a sketch carries `field note` standing, a plate carries
 `canon`. The lore is the mnemonic; the engineering rule above is the authority.
 
 Full worked example: `docs/design/map-geometry-spec.md`.
+
+---
+
+## Commit messages
+
+A commit message states **authority, not inventory**. The diff already lists what
+changed; the message exists so a reader can tell what they may now build on, what
+they may not, and what has to happen before the next step. If that is unclear, the
+message is not finished.
+
+Every commit answers four questions, in this order:
+
+1. **What was true before, and why could it not continue?** The constraint, in a
+   sentence or two. Not the fix.
+2. **What does this commit establish?** The behaviour a later change may depend
+   on. Name the tier.
+3. **What does it not establish?** Internal details that stay free to change, and
+   capabilities that are absent or deliberately refused.
+4. **What must be true before the next step?** A short promissory list, not a
+   roadmap.
+
+The questions scale. A one-line fix answers them in one line. A commit that
+introduces a structure, moves a module between tiers, or changes a boundary may
+need a page.
+
+### Contract first (ICS-inspired)
+
+The pattern is the one standards bodies use for conformance claims: an
+**Implementation Conformance Statement** (ICS), defined for protocols by ISO/IEC
+9646-7 through its PICS proforma. A proforma lists every requirement with its
+status; the implementer records support against each. Copy the structure, not
+the ceremony:
+
+| Column | Meaning |
+| --- | --- |
+| Item | Stable identifier a commit can cite: `C1`, `C2`, ... |
+| Requirement | One falsifiable capability |
+| Reference | Where it is specified, and where it is tested |
+| Status | `m` mandatory, `o` optional, `c.i` conditional, `n.a.` not applicable |
+| Support | `Y` supported, `N` not supported; `N/A` only where status is `n.a.` |
+| Remarks | Deviations, with their reason |
+
+The contract is written **before** the work, or, where one already exists, cited
+and amended rather than restated. Commit it with the code if that is convenient;
+written after the code it is a description, however it is filed.
+
+The commit then reports like a PICS: the items it supports, the items it does
+not, and the deviations that explain why. Standards ask one question first — *are
+all mandatory capabilities implemented?* — and answer "no" only with every
+missing item listed and justified.
+
+- **Number the requirements** so a commit can cite what it met.
+- **Report conformance, not achievement.** Name the items supported, the items
+  not supported, and the items the contract was missing.
+- **Separate the two failures.** A *conformance gap* is a requirement not
+  delivered. A *contract defect* is something delivery exposed that the contract
+  failed to say. The second is the more valuable finding, and it is fixed by
+  amending the contract, not by patching the code.
+
+### Rules
+
+- **Name the tier.** A commit that introduces a structure says whether it is
+  exploratory or normative. Only a normative commit may call its document a spec,
+  a contract, or an authority. A document written after the code is a
+  *description*, whatever its title says.
+- **Cite the contract.** Name the file if one exists; write it first if it does
+  not. A commit that delivers requirements names the item IDs it supports and the
+  ones it does not. A commit with no contract to cite is exploratory for the code
+  it changes and says so; that is legitimate, but it cannot then claim authority
+  over that code.
+- **Refusals carry their code.** An operation that is deliberately unimplemented
+  is listed with the code it returns, so the gap is discoverable rather than
+  inferred from silence.
+- **Adapters carry an owner and an end condition.** If old and new coexist, say
+  whose adapter it is and what ends it.
+- **Do not restate the diff.** File lists and per-file summaries belong in the
+  change review, not the message.
+- **Verification is a command.** `npm run test:ci`, not "tests pass".
+- **Subject:** conventional `type(scope): act`, imperative, at most 72 characters.
+  The act changes what the repository knows — explore, declare, port, amend,
+  refuse, delete — not which files were touched.
+- **Body:** wrapped at 72 characters. Length follows the tier, not the diff size.
+
+A commit that adds a new structure without naming its tier is incomplete,
+regardless of how good the code is.
+
+The fill-in form is [`.github/commit-template.md`](.github/commit-template.md);
+enable it once per checkout with
+`git config commit.template .github/commit-template.md`, and install the
+validator with `npm run hooks:install`. Its field reference, notation, and worked
+examples are in [docs/commit-form.md](docs/commit-form.md).
+
+The validator checks shape and contract freshness. It cannot check whether you
+read the contract, and no password can: a token proves retrieval, not
+understanding, and trains extraction. Do not add one.
 
 ---
 

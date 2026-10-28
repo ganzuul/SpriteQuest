@@ -29,6 +29,7 @@ For common settings, see [familiar node settings](operators-manual.md#familiar-n
 - [Developer guide](developer-guide.md) — architecture, rendering, local setup, checks, and contribution guidance.
 - [Development commands](development.md) — build and verification commands, including documentation capture tools.
 - [API and contracts](api/README.md) — proposed node plugin and companion HTTP contracts, the interface inventory, and the versioning policy.
+- [Commit message form](commit-form.md) — the SDD/ICS template, its notation, and worked examples.
 - [Asset jobs](api/asset-jobs.md) — the OpenJD-shaped job, resource, priority, cancel, and manifest spike.
 - [Documentation media](media.md) — screenshot and animation inventory and how to reproduce the captures.
 
