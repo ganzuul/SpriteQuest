@@ -180,6 +180,25 @@ describe('commit message validator', () => {
         assert.equal(result.ok, true);
     });
 
+    test('judges a message against the contract as it was at commit time', () => {
+        const oldText = CONTRACT_TEXT;
+        const newText = `${CONTRACT_TEXT}| C9 | Added later. | m |\n`;
+        const oldRevision = gitBlobHash(oldText).slice(0, 12);
+        const message = FULL.replace(REVISION, oldRevision);
+        const atCommit = validateMessage(message, {
+            root: '/repo',
+            contractExists: () => true,
+            readContract: () => oldText,
+        });
+        assert.equal(atCommit.ok, true);
+        const againstToday = validateMessage(message, {
+            root: '/repo',
+            contractExists: () => true,
+            readContract: () => newText,
+        });
+        assert.match(againstToday.errors.join('\n'), /stale/);
+    });
+
     test('every failure points at the form', () => {
         const result = validateMessage('nonsense', options);
         assert.equal(result.ok, false);

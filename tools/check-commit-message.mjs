@@ -203,6 +203,33 @@ function messageFromCommit(sha) {
     return execFileSync('git', ['log', '-1', '--format=%B', sha], { cwd: ROOT, encoding: 'utf8' });
 }
 
+/**
+ * A contract as it existed in a specific commit.
+ *
+ * History is immutable, so a past message must be judged against the contract
+ * that was current when it was written, not against the working tree. Judging
+ * the past by today's file makes every citation look stale the moment the
+ * contract is amended.
+ */
+function contractAtCommit(sha, cache) {
+    return (path) => {
+        const key = `${sha}:${path}`;
+        if (cache.has(key)) return cache.get(key);
+        let content = null;
+        try {
+            content = execFileSync('git', ['show', `${sha}:${path}`], {
+                cwd: ROOT,
+                encoding: 'utf8',
+                stdio: ['ignore', 'pipe', 'ignore'],
+            });
+        } catch {
+            content = null;
+        }
+        cache.set(key, content);
+        return content;
+    };
+}
+
 function commitsInRange(range) {
     const output = execFileSync('git', ['rev-list', '--no-merges', range], { cwd: ROOT, encoding: 'utf8' });
     return output.split('\n').filter(Boolean);
@@ -233,8 +260,17 @@ function main(argv) {
             return 0;
         }
         let failed = 0;
+        const cache = new Map();
         for (const sha of commits) {
-            const result = validateMessage(messageFromCommit(sha));
+            const atCommit = contractAtCommit(sha, cache);
+            const result = validateMessage(messageFromCommit(sha), {
+                readContract: (path) => {
+                    const content = atCommit(path);
+                    if (content === null) throw new Error(`contract ${path} absent in ${sha}`);
+                    return content;
+                },
+                contractExists: (path) => atCommit(path) !== null,
+            });
             if (result.skipped) {
                 console.log(`SKIP ${sha.slice(0, 8)} ${result.skipped}`);
                 continue;
