@@ -51,5 +51,6 @@ These records explain the unified-workflow design, including proposals and open 
 | [ComfyUI runtime](design/comfyui-runtime.md) | How ComfyUI starts, where its configuration lives, how models are discovered, and the RAM/VRAM budget rule. |
 | [MOSS atlas ontology](design/cartographers-moss-atlas-ontology.md) | How the Cartographers' Locus Frame, Witness Plate, and Scale Register map onto MOSS layouts and reference images, including the GGUF caveat. |
 | [Map geometry spec](design/map-geometry-spec.md) | Proposed geometry model for map declarations: typed primitives, an explicit frame, topology, and parent-map transforms. Not implemented. |
+| [Cartographers archival register](design/cartographers-archival-register.md) | The historical register for Cartographers prose: pipe-roll formulae, diplomatics, and how they map onto the commit contract. Proposal. |
 
 Implemented requirements and validation appear in the [requirement evidence](design/workflow-unification-requirements.md) and [release report](superpowers/reports/2026-10-10-workflow-unification.md).
