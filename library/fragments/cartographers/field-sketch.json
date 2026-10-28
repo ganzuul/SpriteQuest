@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "id": "cartographers/field-sketch",
+  "version": 1,
+  "world_id": "cartographers",
+  "for": "diffusion",
+  "facets": [
+    "favored_items",
+    "home",
+    "evidence"
+  ],
+  "detail": "a sheaf of cheap surveyor's pencil sketches on unbleached paper, carried folded in a coat pocket, each sheet showing the ground as it was actually walked: rough bearings, corrections scratched over earlier marks, question marks beside anything the surveyor could not stand still long enough to confirm",
+  "evidence": {
+    "kind": "directed",
+    "source": "map-geometry-spec",
+    "quote": "That is acceptable while the format is still being discovered; it becomes the problem to solve once the shape is visible."
+  },
+  "facts": {
+    "extent": "a palm-sized folded sheaf, six to twelve leaves, soft from repeated handling",
+    "scale_ref": "kept in the surveyor's coat, always at hand, never filed in the archive",
+    "material": "unbleached linen-rag paper, graphite and red chalk, edges furred from folding",
+    "state": "heavily corrected, provisional, and clearly marked as not to be copied"
+  },
+  "note": "Code written to discover a shape rather than to declare one. A field sketch is made while the ground is still unfamiliar, and its whole value is that it may be wrong cheaply: it records what was observed, including the corrections. It is never authoritative and is not built upon. When the structure finally becomes visible, the sketch has done its work and is expected to be superseded by an Engraved Plate. Every sketch carries the standing tier 'field note'."
+}

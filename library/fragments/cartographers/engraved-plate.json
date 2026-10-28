@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "id": "cartographers/engraved-plate",
+  "version": 1,
+  "world_id": "cartographers",
+  "for": "diffusion",
+  "facets": [
+    "favored_items",
+    "home",
+    "evidence"
+  ],
+  "detail": "a faced copper printing plate resting on green baize, its surface cut with a single surveyed territory in clean reversed lines, the burin marks confident and evenly spaced, the plate kept under a weighted cloth because every copy in the world is struck from it",
+  "evidence": {
+    "kind": "directed",
+    "source": "map-geometry-spec",
+    "quote": "The model governs and the scaffolding becomes a sketch of what to implement."
+  },
+  "facts": {
+    "extent": "a thick copper plate the size of an open folio, bevelled at the edges",
+    "scale_ref": "stored flat in a shallow oak drawer, one plate per charted territory",
+    "material": "faced rolled copper, burin-cut, inked in bistre and wiped clean between strikings",
+    "state": "authoritative and unamended; corrections are re-engraved into the plate, never pencilled onto a print"
+  },
+  "note": "Code that declares a structure already observed, and from which all working copies derive. The plate is the single source of truth: a print carries authority only because of the plate beneath it. This is the difference between legislation and observation. You cannot engrave what has not been surveyed — a plate cut from a Field Sketch merely freezes the sketch's guesses at full authority. Corrections amend the plate and the next striking reflects them; no one edits a print and calls the map fixed. Flattening a scattered structure into one clean contract is what engraving produces, not what it sets out to do. Every plate carries the standing tier 'canon'."
+}

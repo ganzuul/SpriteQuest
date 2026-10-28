@@ -68,6 +68,67 @@ The boundary is an **engineering discipline**, not a creative prohibition:
 
 ---
 
+## Field Sketch vs Engraved Plate: Exploratory and Normative Code
+
+This is a **top-level design abstraction**, not a stylistic preference. It decides
+where new code goes and what may depend on what. Read it before starting work
+that introduces a new structure.
+
+### The two standing tiers of code
+
+- **Field Sketch** — code written to *discover* a shape. It exists because the
+  structure is not yet visible, so it explores: per-case branches, duplicated
+  arithmetic, hardcoded coordinates. Its value is that it may be wrong cheaply.
+  It is **never authoritative**, is **not built upon**, and is **expected to be
+  superseded**.
+- **Engraved Plate** — code written to *declare* a structure already observed.
+  It is the single source of truth. Everything else derives from it. Amendments
+  re-engrave the plate; nobody patches a print.
+
+The Cartographers' own ladder already names these: a sketch carries the `field
+note` tier, a plate carries `canon`. Lore fragments:
+`library/fragments/cartographers/field-sketch.json` and
+`library/fragments/cartographers/engraved-plate.json`.
+
+### The rule that follows
+
+> **You cannot engrave what has not been surveyed, and you cannot print from a
+> field sketch.**
+
+In practice:
+
+1. **Scaffold freely while the structure is unclear.** Branches and duplication
+   are honest admissions that the shape is unknown. Do not abstract prematurely
+   and call it architecture.
+2. **When the structure becomes visible, stop and engrave.** Introduce the
+   normative module as a **stand-alone** package. It must not import the
+   scaffolding, and it must not be wired into it.
+3. **Port afterwards, one consumer at a time.** Delete the old branch in the
+   same commit as the port, so no consumer ever holds two geometry paths.
+4. **Never add a compatibility shim to legacy code.** A shim in scaffolding is a
+   dependency edge pointing the wrong way: it makes the sketch the host of the
+   plate, and the architecture inherits the sketch's shape.
+
+### Overlap is the risk; contain it
+
+While sketch and plate coexist there are two sources of truth. Contain it by
+**freezing the sketch to bug fixes** (no new cases, or the porting target moves),
+**proving equivalence at the boundary** (compare outputs before wiring), and
+landing each port atomically.
+
+### Words to use, and words to avoid
+
+| Say | Not | Because |
+|---|---|---|
+| engrave the plate, declare the contract | "define an API", "flatten the interface" | An API can be *extracted from* existing code, which is exactly wrapping scaffolding. Engraving requires the shape to be visible first. Flattening is an *outcome* of engraving, not the discipline that produces it. |
+| field sketch, scaffolding | "prototype", "v1", "the current API" | Those imply something to extend. A sketch is something to supersede. |
+| struck print, derived copy | "consumer of the API" | A print has authority only through its plate; it must not consult the sketch. |
+| re-engrave the plate | "patch the print" | Fixing a derived copy leaves the source wrong. |
+
+Full worked example: `docs/design/map-geometry-spec.md`.
+
+---
+
 ## Development & Test Commands
 
 ```bash

@@ -55,7 +55,7 @@ This phase builds the architecture and stops there. Explicitly out of scope:
 
 | Not in this phase | Why |
 |---|---|
-| Editing `terrain_mesh.py`, `render_map_art.py`, `scene_placement.py` | Those files are scaffolding. Modifying them to host the new model tangles the two and is the spaghetti this phase exists to prevent. |
+| Editing `terrain_mesh.py`, `render_map_art.py`, `scene_placement.py` | Those files are field sketches. Modifying them to host the new model tangles sketch and plate, which is the spaghetti this phase exists to prevent. |
 | A compatibility shim inside existing consumers | A shim in legacy code is a dependency edge pointing the wrong way. |
 | Deleting the four per-type branch blocks | That is the porting phase's work, done consumer by consumer. |
 | EPSG/WKT CRS registry | Fictional world, flat per map; a frame record is sufficient |
@@ -160,10 +160,16 @@ is a claim, not a connection. Applying the transform is a pure function
 
 ## 5. Architecture as source of truth
 
-The rendered map we have today is scaffolding: it discovered the structure
-(planar metres, a vertical axis, drape, rotation, feature kinds) but expresses
-it per-feature. This model is the first statement of the architecture. From here
-the model governs and the scaffolding becomes a sketch of what to implement.
+The rendered map we have today is a **field sketch**: it discovered the
+structure (planar metres, a vertical axis, drape, rotation, feature kinds) but
+expresses it per-feature. This model is the **engraved plate** — the first
+statement of the architecture. From here the plate governs and the sketch
+becomes a record of what to implement.
+
+See `AGENTS.md` § "Field Sketch vs Engraved Plate" for the repository-wide rule
+and its vocabulary; the lore fragments are
+`library/fragments/cartographers/field-sketch.json` and
+`library/fragments/cartographers/engraved-plate.json`.
 
 Dependency rules, enforced by review and by a test that greps imports:
 
@@ -203,7 +209,7 @@ before wiring; wire only after they match.
 `load_outdoor_map_scene` reads features through the model instead of branching.
 Verified by byte-identical depth and relief renders.
 
-### Phase 4 — capabilities the scaffolding never had
+### Phase 4 — capabilities the sketch never had
 
 Only after the ports: node topology (if a junction needs it), rotation-aware
 extents for polygons, cartographic generalisation for smaller scales, and
@@ -284,4 +290,4 @@ Geometry + frame + feature records + v1 reading, for all four primitive types
 plus props, STL primitives, and build plates. No topology, no scale link
 beyond the transform function, no consumer edits. Verifiable by acceptance
 criteria 1–6. Topology and generalisation follow in Phase 4, against an
-established architecture rather than retrofitted onto scaffolding.
+established architecture rather than retrofitted onto a sketch.
