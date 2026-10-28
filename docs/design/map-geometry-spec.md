@@ -166,10 +166,9 @@ expresses it per-feature. This model is the **engraved plate** — the first
 statement of the architecture. From here the plate governs and the sketch
 becomes a record of what to implement.
 
-See `AGENTS.md` § "Field Sketch vs Engraved Plate" for the repository-wide rule
-and its vocabulary; the lore fragments are
-`library/fragments/cartographers/field-sketch.json` and
-`library/fragments/cartographers/engraved-plate.json`.
+See `AGENTS.md` § "Exploratory and Normative Code" for the repository-wide rule.
+In that vocabulary this phase is the engraving, Phases 2–3 are striking prints
+from it, and Phase 4 adds capability to the plate rather than to a sketch.
 
 Dependency rules, enforced by review and by a test that greps imports:
 

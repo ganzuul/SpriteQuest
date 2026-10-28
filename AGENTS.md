@@ -68,62 +68,70 @@ The boundary is an **engineering discipline**, not a creative prohibition:
 
 ---
 
-## Field Sketch vs Engraved Plate: Exploratory and Normative Code
+## Exploratory and Normative Code
 
 This is a **top-level design abstraction**, not a stylistic preference. It decides
-where new code goes and what may depend on what. Read it before starting work
-that introduces a new structure.
+where new code goes and what may depend on what. Read it before introducing a new
+structure.
 
-### The two standing tiers of code
+### Two standing tiers
 
-- **Field Sketch** — code written to *discover* a shape. It exists because the
+- **Exploratory code** is written to *discover* a shape. It exists because the
   structure is not yet visible, so it explores: per-case branches, duplicated
-  arithmetic, hardcoded coordinates. Its value is that it may be wrong cheaply.
-  It is **never authoritative**, is **not built upon**, and is **expected to be
-  superseded**.
-- **Engraved Plate** — code written to *declare* a structure already observed.
-  It is the single source of truth. Everything else derives from it. Amendments
-  re-engrave the plate; nobody patches a print.
+  arithmetic, hardcoded values. Its value is that it may be wrong cheaply. It is
+  never authoritative, is not built upon, and is expected to be superseded.
+- **Normative code** is written to *declare* a structure already observed. It is
+  the single source of truth, and everything else derives from it. Amendments
+  change the normative module; they do not reach into its dependents.
 
-The Cartographers' own ladder already names these: a sketch carries the `field
-note` tier, a plate carries `canon`. Lore fragments:
-`library/fragments/cartographers/field-sketch.json` and
-`library/fragments/cartographers/engraved-plate.json`.
+Branches and duplication in exploratory code are honest admissions that the shape
+is unknown. Do not abstract prematurely and call the result architecture.
 
-### The rule that follows
+### The rule
 
-> **You cannot engrave what has not been surveyed, and you cannot print from a
-> field sketch.**
+> **Normative code must not depend on exploratory code, and exploratory code must
+> never become the host of a new architecture.**
 
 In practice:
 
-1. **Scaffold freely while the structure is unclear.** Branches and duplication
-   are honest admissions that the shape is unknown. Do not abstract prematurely
-   and call it architecture.
-2. **When the structure becomes visible, stop and engrave.** Introduce the
-   normative module as a **stand-alone** package. It must not import the
-   scaffolding, and it must not be wired into it.
-3. **Port afterwards, one consumer at a time.** Delete the old branch in the
-   same commit as the port, so no consumer ever holds two geometry paths.
-4. **Never add a compatibility shim to legacy code.** A shim in scaffolding is a
-   dependency edge pointing the wrong way: it makes the sketch the host of the
-   plate, and the architecture inherits the sketch's shape.
+1. **Explore freely while the structure is unclear.** Leave the branches there;
+   they are evidence of what you did not yet know.
+2. **When the structure becomes visible, introduce the normative module as a
+   stand-alone package.** It must not import the exploratory modules, and must
+   not be wired into them.
+3. **Port afterwards, one consumer at a time.** Delete the old branch in the same
+   commit as the port, so no consumer ever holds two code paths.
+4. **Never add a compatibility shim to exploratory code.** A shim there inverts
+   the dependency: it makes the exploration the host of the architecture, and the
+   new design inherits the old shape.
 
 ### Overlap is the risk; contain it
 
-While sketch and plate coexist there are two sources of truth. Contain it by
-**freezing the sketch to bug fixes** (no new cases, or the porting target moves),
+While both tiers coexist there are two sources of truth. Contain it by **freezing
+the exploratory code to bug fixes** (no new cases, or the porting target moves),
 **proving equivalence at the boundary** (compare outputs before wiring), and
 landing each port atomically.
 
-### Words to use, and words to avoid
+### Words that steer this correctly
+
+The wrong words invite the wrong move, so prefer these:
 
 | Say | Not | Because |
 |---|---|---|
-| engrave the plate, declare the contract | "define an API", "flatten the interface" | An API can be *extracted from* existing code, which is exactly wrapping scaffolding. Engraving requires the shape to be visible first. Flattening is an *outcome* of engraving, not the discipline that produces it. |
-| field sketch, scaffolding | "prototype", "v1", "the current API" | Those imply something to extend. A sketch is something to supersede. |
-| struck print, derived copy | "consumer of the API" | A print has authority only through its plate; it must not consult the sketch. |
-| re-engrave the plate | "patch the print" | Fixing a derived copy leaves the source wrong. |
+| declare the contract, legislate the shape | "define an API", "flatten the interface" | An API can be *extracted from* existing code, which wraps exploration instead of replacing it. Declaring requires the shape to be visible first, and flattening is an *outcome* of declaring, not the discipline that earns it. |
+| exploratory, provisional | "prototype", "v1", "the current API" | Those imply something to extend. Exploration is something to supersede. |
+| derive from the normative module | "consumer of the API" | A dependent has authority only through the normative module, and must not consult the exploratory version. |
+| amend the normative module | "patch the caller" | Fixing a derived copy leaves the source wrong. |
+
+### In-world name
+
+The Cartographers faction already runs this ladder, so the repository uses its
+vocabulary in lore and prose: exploratory code is a **Field Sketch**, normative
+code is an **Engraved Plate**, and a dependent is a **struck print**. See
+`library/fragments/cartographers/field-sketch.json` and
+`library/fragments/cartographers/engraved-plate.json`. The ladder's existing
+tiers line up directly: a sketch carries `field note` standing, a plate carries
+`canon`. The lore is the mnemonic; the engineering rule above is the authority.
 
 Full worked example: `docs/design/map-geometry-spec.md`.
 
