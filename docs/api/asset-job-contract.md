@@ -31,7 +31,7 @@ only where `Status` is `n.a.`.
 | C10 | Suspend and resume either work or refuse with a typed code; the capability is discoverable before asking; the refusal names the alternative and is never reported as success. | m | Y | `suspend`, `resume_suspended`, `capabilities()`; suspend tests | No provider can checkpoint, so refusal is the delivered behaviour. |
 | C11 | Preemption restarts the step, and the restart is visible in the attempt count. | m | Y | `test_preemption_evicts_and_requeues_the_step` | |
 | C12 | Only a strictly higher priority may evict; equal priorities never evict each other. | m | Y | `test_preemption_requires_strictly_higher_priority`, `test_equal_priority_jobs_cannot_ping_pong` | |
-| C13 | Evictions per job are bounded; cooldown, rolling window and reciprocity bound churn; no pair of jobs can restart each other indefinitely. | m | Y | policy tests | Pinned on single-step jobs only; see G3. |
+| C13 | Evictions per job are bounded; cooldown, rolling window and reciprocity bound churn; no pair of jobs can restart each other indefinitely. | m | Y | policy tests; multi-step eviction test | |
 | C14 | A settled job writes exactly one manifest with template identity and hash, per-step state and attempts, artifact hashes, and provider identity. | m | Y | `manifest.py`; `test_sample_job_completes_with_manifest` | |
 | C15 | State changes are observable as events with a stable type; a refusal carries a machine-readable code. | m | Y | `scheduler.py` `_emit`; event assertions | |
 | C16 | Providers receive an injected transport; no step executes a shell command; behaviour is testable without a GPU or network. | m | Y | `comfy.py`, `providers.py`; ComfyUI transport tests | |
@@ -76,8 +76,8 @@ Delivery exposes two kinds of failure, and they are not interchangeable.
 
 - **G1 (C3):** dependents are not resolved on failure.
 - **G2:** `step.retry` has no test, so its behaviour is unverified.
-- **G3 (C13):** preemption is tested on single-step jobs only; multi-step
-  eviction is exercised but not pinned.
+- ~~G3 (C13):~~ resolved in `test(asset-jobs): pin multi-step preemption`. A job
+  with two concurrent steps requeues both, and both complete on the retry.
 - **G5 (C22–C26):** the pending-asset model is specified but not implemented.
   There is one failure kind, no missing channel, and nothing correlating demand.
 - ~~G4 (C17–C20):~~ resolved in `feat(asset-jobs): gate regeneration behind an

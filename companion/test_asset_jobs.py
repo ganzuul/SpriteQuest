@@ -615,6 +615,69 @@ class SchedulerTests(unittest.TestCase):
         self.assertIn("io.spritequest.asset.step.preempted", types)
         self.assertIn("io.spritequest.asset.job.preemption-accepted", types)
 
+    def test_preemption_evicts_every_running_step_of_a_job(self):
+        """C13 on a job with concurrent work: all running steps requeue, not one."""
+
+        scheduler = self.scheduler(
+            providers={"mock-cpu": MockProvider("mock-cpu", kind="cpu", delay=0.3)},
+            pools=[
+                ResourcePool(
+                    "cpu",
+                    "local-cpu",
+                    amounts={"amount.worker.vcpu": 8},
+                    attributes={"attr.worker.kind": ("cpu",)},
+                    capacity=2,
+                ),
+                ResourcePool(
+                    "gpu-image",
+                    "local-gpu",
+                    amounts={"amount.worker.gpu": 1, "amount.worker.vram_gb": 24},
+                    attributes={
+                        "attr.worker.model": ("moss-image-sft",),
+                        "attr.worker.swap_group": ("image",),
+                    },
+                    swap_group="image",
+                ),
+            ],
+        )
+        template = parse_job_template(
+            {
+                "name": "two-handed",
+                "specificationVersion": "jobtemplate-2023-09",
+                "steps": [
+                    {
+                        "name": name,
+                        "hostRequirements": {
+                            "amounts": [{"name": "amount.worker.vcpu", "min": 4}],
+                            "attributes": [{"name": "attr.worker.kind", "anyOf": ["cpu"]}],
+                        },
+                        "script": {"actions": {"onRun": {"command": "provider:mock-cpu"}}},
+                    }
+                    for name in ("left", "right")
+                ],
+            }
+        )
+        target = scheduler.submit(template, priority=Priority.BACKGROUND, job_id="pair")
+        scheduler.start()
+        scheduler.wait_for_event("step.started", job_id="pair", step="left", timeout=2.0)
+        scheduler.wait_for_event("step.started", job_id="pair", step="right", timeout=2.0)
+        critical = scheduler.submit(one_step_template(), priority=Priority.CRITICAL, job_id="critical")
+        outcome = scheduler.preempt(target.id, by_job_id=critical.id, reason="critical")
+        self.assertTrue(outcome.ok, outcome.message)
+        self.assertEqual(sorted(outcome.details["steps"]), ["left", "right"])
+        scheduler.wait("pair", timeout=20.0)
+        scheduler.wait("critical", timeout=20.0)
+        self.assertEqual(target.state, JobState.COMPLETED)
+        self.assertEqual(target.step("left").attempt, 2)
+        self.assertEqual(target.step("right").attempt, 2)
+        preempted = [
+            event["data"]["step"]
+            for event in scheduler.events()
+            if event["type"] == "io.spritequest.asset.step.preempted"
+            and event["data"].get("byJob") == "critical"
+        ]
+        self.assertEqual(sorted(preempted), ["left", "right"])
+
     def test_eviction_budget_promotes_the_target(self):
         policy = PreemptionPolicy(max_evictions_per_job=1, cooldown_seconds=0.0)
         scheduler = self.slow_scheduler(delay=0.25, policy=policy)
