@@ -1,0 +1,1388 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spritequest.local/contracts/companion.schemas.json",
+  "title": "SpriteQuest companion v1 schemas",
+  "description": "Normative wire schemas for the proposed companion HTTP API v1. The Python implementation in companion/schemas.py must be checked against these definitions. Status: proposed; not yet enforced.",
+  "$defs": {
+    "JsonValue": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/JsonValue"
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          }
+        }
+      ]
+    },
+    "WorldId": {
+      "type": "string",
+      "description": "One of the worlds registered in companion/worldpack.json. The enum is regenerated when the pack changes.",
+      "enum": [
+        "shared",
+        "scaffolded-kingdom",
+        "neighboring-kingdom",
+        "quill-realm",
+        "obsidian-wyrm",
+        "wizard-tower",
+        "customs-house",
+        "space-vampires",
+        "grey-wind",
+        "cartographers",
+        "unwritten-atlas"
+      ]
+    },
+    "EntityId": {
+      "type": "string",
+      "pattern": "^(npc|prop|fragment)/[a-z0-9][a-z0-9._-]*$",
+      "description": "npc/<slug>, prop/<slug>, or fragment/<slug>."
+    },
+    "RoleState": {
+      "type": "string",
+      "enum": [
+        "unassigned",
+        "drafted",
+        "written",
+        "restored"
+      ]
+    },
+    "Actor": {
+      "type": "string",
+      "enum": [
+        "model",
+        "gate",
+        "human",
+        "game"
+      ]
+    },
+    "EventKind": {
+      "type": "string",
+      "enum": [
+        "entity.seeded",
+        "role.authored",
+        "grudge.changed",
+        "standing.granted",
+        "heal",
+        "gate.verdict",
+        "speak",
+        "demand",
+        "fragment.synthesized",
+        "fragment.curated",
+        "fragment.criticized",
+        "domain.saturated"
+      ]
+    },
+    "GateVerdict": {
+      "type": "string",
+      "enum": [
+        "pass",
+        "refuse",
+        "unevaluated"
+      ]
+    },
+    "HelpDisposition": {
+      "type": "string",
+      "enum": [
+        "helps",
+        "refuses",
+        "unreliable"
+      ]
+    },
+    "ErrorCode": {
+      "type": "string",
+      "enum": [
+        "INVALID_REQUEST",
+        "MISSING_FIELD",
+        "SCHEMA_VIOLATION",
+        "EVENT_REFUSED",
+        "SEQ_CONFLICT",
+        "UNKNOWN_ROUTE",
+        "NOT_FOUND",
+        "PAYLOAD_TOO_LARGE",
+        "UNSUPPORTED_MEDIA_TYPE",
+        "UNAUTHORIZED",
+        "FORBIDDEN_ORIGIN",
+        "INTERNAL",
+        "UNAVAILABLE"
+      ]
+    },
+    "Error": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "error"
+      ],
+      "properties": {
+        "error": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "code",
+            "message"
+          ],
+          "properties": {
+            "code": {
+              "$ref": "#/$defs/ErrorCode"
+            },
+            "message": {
+              "type": "string",
+              "minLength": 1
+            },
+            "details": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/JsonValue"
+              }
+            },
+            "requestId": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "Gate": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "rule",
+        "verdict"
+      ],
+      "properties": {
+        "rule": {
+          "type": "string",
+          "minLength": 1
+        },
+        "verdict": {
+          "$ref": "#/$defs/GateVerdict"
+        },
+        "checks": {
+          "type": "array",
+          "maxItems": 256,
+          "items": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "EventRecord": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "seq",
+        "kind",
+        "entity",
+        "actor"
+      ],
+      "properties": {
+        "seq": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "kind": {
+          "$ref": "#/$defs/EventKind"
+        },
+        "entity": {
+          "$ref": "#/$defs/EntityId"
+        },
+        "actor": {
+          "$ref": "#/$defs/Actor"
+        },
+        "data": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          }
+        },
+        "gate": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/Gate"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "provenance": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          }
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "actor"
+            ],
+            "properties": {
+              "actor": {
+                "const": "model"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "provenance"
+            ],
+            "properties": {
+              "provenance": {
+                "minProperties": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "const": "role.authored"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "gate"
+            ],
+            "properties": {
+              "gate": {
+                "$ref": "#/$defs/Gate"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "const": "grudge.changed"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "grudge"
+                ],
+                "properties": {
+                  "grudge": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              }
+            },
+            "required": [
+              "data"
+            ]
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "const": "entity.seeded"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "world_id",
+                  "aspirations"
+                ],
+                "properties": {
+                  "world_id": {
+                    "$ref": "#/$defs/WorldId"
+                  }
+                }
+              }
+            },
+            "required": [
+              "data"
+            ]
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "enum": [
+                  "role.authored",
+                  "heal"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "state"
+                ],
+                "properties": {
+                  "state": {
+                    "$ref": "#/$defs/RoleState"
+                  }
+                }
+              }
+            },
+            "required": [
+              "data"
+            ]
+          }
+        }
+      ]
+    },
+    "EventInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "entity",
+        "actor"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "seq": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "kind": {
+          "$ref": "#/$defs/EventKind"
+        },
+        "entity": {
+          "$ref": "#/$defs/EntityId"
+        },
+        "actor": {
+          "$ref": "#/$defs/Actor"
+        },
+        "data": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          }
+        },
+        "gate": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/Gate"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "provenance": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "actor"
+            ],
+            "properties": {
+              "actor": {
+                "const": "model"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "provenance"
+            ],
+            "properties": {
+              "provenance": {
+                "minProperties": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "const": "role.authored"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "gate"
+            ],
+            "properties": {
+              "gate": {
+                "$ref": "#/$defs/Gate"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "const": "grudge.changed"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "grudge"
+                ],
+                "properties": {
+                  "grudge": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              }
+            },
+            "required": [
+              "data"
+            ]
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "const": "entity.seeded"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "world_id",
+                  "aspirations"
+                ],
+                "properties": {
+                  "world_id": {
+                    "$ref": "#/$defs/WorldId"
+                  }
+                }
+              }
+            },
+            "required": [
+              "data"
+            ]
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "enum": [
+                  "role.authored",
+                  "heal"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "state"
+                ],
+                "properties": {
+                  "state": {
+                    "$ref": "#/$defs/RoleState"
+                  }
+                }
+              }
+            },
+            "required": [
+              "data"
+            ]
+          }
+        }
+      ]
+    },
+    "Receipt": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "seq",
+            "kind",
+            "entity",
+            "status"
+          ],
+          "properties": {
+            "seq": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "kind": {
+              "$ref": "#/$defs/EventKind"
+            },
+            "entity": {
+              "$ref": "#/$defs/EntityId"
+            },
+            "status": {
+              "const": "written"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "status"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "status": {
+              "const": "already-written"
+            }
+          }
+        }
+      ]
+    },
+    "FoldedRosterMember": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "entity",
+        "name",
+        "world_id",
+        "role",
+        "grudge",
+        "disposition",
+        "can_help",
+        "line",
+        "aspirations",
+        "lines_written"
+      ],
+      "properties": {
+        "entity": {
+          "$ref": "#/$defs/EntityId"
+        },
+        "name": {
+          "type": "string"
+        },
+        "world_id": {
+          "$ref": "#/$defs/WorldId"
+        },
+        "role": {
+          "$ref": "#/$defs/RoleState"
+        },
+        "grudge": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "disposition": {
+          "$ref": "#/$defs/HelpDisposition"
+        },
+        "can_help": {
+          "type": "boolean"
+        },
+        "line": {
+          "type": "string"
+        },
+        "aspirations": {
+          "type": "string"
+        },
+        "lines_written": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "RefusedRosterMember": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "entity",
+        "name",
+        "fold",
+        "line",
+        "disposition",
+        "can_help",
+        "lines_written"
+      ],
+      "properties": {
+        "entity": {
+          "$ref": "#/$defs/EntityId"
+        },
+        "name": {
+          "type": "string"
+        },
+        "fold": {
+          "type": "string",
+          "minLength": 1
+        },
+        "line": {
+          "type": "string"
+        },
+        "disposition": {
+          "const": "unevaluated"
+        },
+        "can_help": {
+          "const": false
+        },
+        "lines_written": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "RosterMember": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/FoldedRosterMember"
+        },
+        {
+          "$ref": "#/$defs/RefusedRosterMember"
+        }
+      ]
+    },
+    "Roster": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "count",
+        "members"
+      ],
+      "properties": {
+        "count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "members": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RosterMember"
+          }
+        }
+      }
+    },
+    "Guidance": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "guidance",
+        "count"
+      ],
+      "properties": {
+        "guidance": {
+          "type": "string"
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "LedgerPage": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "count",
+        "returned",
+        "events",
+        "next_seq"
+      ],
+      "properties": {
+        "count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "returned": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "events": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/EventRecord"
+          }
+        },
+        "next_seq": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "AppendRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "events"
+      ],
+      "properties": {
+        "events": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1000,
+          "items": {
+            "$ref": "#/$defs/EventInput"
+          }
+        }
+      }
+    },
+    "AppendResponse": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "appended",
+        "receipts",
+        "lines"
+      ],
+      "properties": {
+        "appended": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "receipts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Receipt"
+          }
+        },
+        "lines": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "SceneZoneContext": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "scene_id",
+        "zone_id",
+        "zone_name",
+        "substrate_material",
+        "acoustic_reverb",
+        "elevation",
+        "is_interior"
+      ],
+      "properties": {
+        "scene_id": {
+          "type": "string"
+        },
+        "zone_id": {
+          "type": "string"
+        },
+        "zone_name": {
+          "type": "string"
+        },
+        "substrate_material": {
+          "type": "string"
+        },
+        "acoustic_reverb": {
+          "type": "string"
+        },
+        "elevation": {
+          "type": "number"
+        },
+        "is_interior": {
+          "type": "boolean"
+        }
+      }
+    },
+    "CoherenceConflict": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "conflict_id",
+        "kind",
+        "severity",
+        "description",
+        "proposed_fragment_id",
+        "proposed_detail",
+        "proposed_facts"
+      ],
+      "properties": {
+        "conflict_id": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "cross_domain_anomaly",
+            "substrate_overload",
+            "underdetermined_slab"
+          ]
+        },
+        "severity": {
+          "type": "string",
+          "enum": [
+            "high",
+            "moderate"
+          ]
+        },
+        "description": {
+          "type": "string"
+        },
+        "proposed_fragment_id": {
+          "type": "string"
+        },
+        "proposed_detail": {
+          "type": "string"
+        },
+        "proposed_facts": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          }
+        }
+      }
+    },
+    "Saturation": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "recipe_archetype",
+        "canon_count",
+        "pending_field_notes",
+        "curated_count",
+        "criticized_count",
+        "saturation_score",
+        "saturation_threshold",
+        "saturation_locked",
+        "max_pending_field_notes"
+      ],
+      "properties": {
+        "recipe_archetype": {
+          "type": "string"
+        },
+        "canon_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "pending_field_notes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "curated_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "criticized_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "saturation_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "saturation_threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "saturation_locked": {
+          "type": "boolean"
+        },
+        "max_pending_field_notes": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "SurveyRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "prop_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scene_id": {
+          "type": "string",
+          "default": "customs-house"
+        },
+        "asset": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          }
+        }
+      }
+    },
+    "SurveyResponse": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "ok",
+        "prop_id",
+        "zone_context",
+        "conflicts",
+        "synthesized",
+        "saturation"
+      ],
+      "properties": {
+        "ok": {
+          "const": true
+        },
+        "prop_id": {
+          "type": "string"
+        },
+        "zone_context": {
+          "$ref": "#/$defs/SceneZoneContext"
+        },
+        "conflicts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CoherenceConflict"
+          }
+        },
+        "synthesized": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "saturation": {
+          "$ref": "#/$defs/Saturation"
+        }
+      }
+    },
+    "CartographerEntry": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "maturity": {
+          "type": "string",
+          "enum": [
+            "field_note",
+            "curated",
+            "criticized",
+            "canon"
+          ]
+        },
+        "recipe_archetype": {
+          "type": "string"
+        },
+        "warrant_id": {
+          "type": "string"
+        },
+        "standing_tier": {
+          "type": "string"
+        },
+        "standing_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "criticism_constraint": {
+          "type": "string"
+        }
+      }
+    },
+    "CartographerStatus": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "ok",
+        "total_entries",
+        "counts",
+        "active_criticisms",
+        "parsimony_config"
+      ],
+      "properties": {
+        "ok": {
+          "const": true
+        },
+        "total_entries": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "counts": {
+          "type": "object",
+          "required": [
+            "field_note",
+            "curated",
+            "criticized",
+            "canon"
+          ],
+          "properties": {
+            "field_note": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "curated": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "criticized": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "canon": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "active_criticisms": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "parsimony_config": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          }
+        }
+      }
+    },
+    "CartographerLedger": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "ok",
+        "entries",
+        "warrants",
+        "parsimony_config"
+      ],
+      "properties": {
+        "ok": {
+          "const": true
+        },
+        "entries": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/CartographerEntry"
+          }
+        },
+        "warrants": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "parsimony_config": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          }
+        }
+      }
+    },
+    "CurateRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fragment_id"
+      ],
+      "properties": {
+        "fragment_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "detail": {
+          "type": "string"
+        }
+      }
+    },
+    "CurateResponse": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "ok",
+        "fragment_id",
+        "warrant_id",
+        "maturity",
+        "standing_score",
+        "entry"
+      ],
+      "properties": {
+        "ok": {
+          "const": true
+        },
+        "fragment_id": {
+          "type": "string"
+        },
+        "warrant_id": {
+          "type": "string"
+        },
+        "maturity": {
+          "const": "curated"
+        },
+        "standing_score": {
+          "type": "number"
+        },
+        "entry": {
+          "$ref": "#/$defs/CartographerEntry"
+        }
+      }
+    },
+    "CriticizeRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fragment_id"
+      ],
+      "properties": {
+        "fragment_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "constraint": {
+          "type": "string"
+        }
+      }
+    },
+    "CriticizeResponse": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "ok",
+        "fragment_id",
+        "maturity",
+        "standing_score",
+        "constraint",
+        "entry"
+      ],
+      "properties": {
+        "ok": {
+          "const": true
+        },
+        "fragment_id": {
+          "type": "string"
+        },
+        "maturity": {
+          "const": "criticized"
+        },
+        "standing_score": {
+          "type": "number"
+        },
+        "constraint": {
+          "type": "string"
+        },
+        "entry": {
+          "$ref": "#/$defs/CartographerEntry"
+        }
+      }
+    },
+    "Health": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "ok",
+        "status",
+        "service",
+        "api",
+        "eventSchema"
+      ],
+      "properties": {
+        "ok": {
+          "const": true
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "ready",
+            "degraded"
+          ]
+        },
+        "service": {
+          "const": "spritequest-companion"
+        },
+        "api": {
+          "const": "v1"
+        },
+        "eventSchema": {
+          "const": 1
+        },
+        "state": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "path": {
+              "type": "string"
+            },
+            "lines": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    },
+    "Capabilities": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "service",
+        "api",
+        "eventSchema",
+        "features",
+        "limits",
+        "routes"
+      ],
+      "properties": {
+        "service": {
+          "const": "spritequest-companion"
+        },
+        "api": {
+          "const": "v1"
+        },
+        "eventSchema": {
+          "const": 1
+        },
+        "features": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "ledger",
+              "guidance",
+              "cartographers"
+            ]
+          }
+        },
+        "limits": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "maxBodyBytes",
+            "maxBatchEvents",
+            "maxLedgerPage"
+          ],
+          "properties": {
+            "maxBodyBytes": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "maxBatchEvents": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "maxLedgerPage": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "routes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "method",
+              "path",
+              "tier"
+            ],
+            "properties": {
+              "method": {
+                "type": "string",
+                "enum": [
+                  "GET",
+                  "POST"
+                ]
+              },
+              "path": {
+                "type": "string"
+              },
+              "tier": {
+                "type": "string",
+                "enum": [
+                  "stable",
+                  "provisional",
+                  "experimental"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

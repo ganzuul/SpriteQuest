@@ -28,6 +28,7 @@ For common settings, see [familiar node settings](operators-manual.md#familiar-n
 
 - [Developer guide](developer-guide.md) — architecture, rendering, local setup, checks, and contribution guidance.
 - [Development commands](development.md) — build and verification commands, including documentation capture tools.
+- [API and contracts](api/README.md) — proposed node plugin and companion HTTP contracts, the interface inventory, and the versioning policy.
 - [Documentation media](media.md) — screenshot and animation inventory and how to reproduce the captures.
 
 Screenshots use synthetic story material on the real local editor. The research and superpowers directories retain historical working records; use the user guides above for current operation.

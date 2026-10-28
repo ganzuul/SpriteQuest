@@ -1,0 +1,539 @@
+openapi: 3.1.0
+info:
+  title: SpriteQuest Companion API
+  version: 1.0.0
+  summary: Proposed v1 contract for the Hollis ledger and Cartographer service.
+  description: |
+    **Status: proposed, not implemented.** The current service exposes
+    unversioned routes and no machine-readable contract. This document defines
+    the target v1 surface.
+
+    The log is the authority; the roster is a fold of it. A state change is an
+    event, and an event that cannot be trusted is refused with its reason.
+
+    Normative resource schemas live in
+    [`companion.schemas.json`](./companion.schemas.json). This document does not
+    duplicate them.
+  license:
+    name: MIT
+    url: https://github.com/ganzuul/SpriteQuest/blob/main/LICENSE
+  contact:
+    name: SpriteQuest
+    url: https://github.com/ganzuul/SpriteQuest
+servers:
+  - url: http://127.0.0.1:8788/v1
+    description: Local loopback deployment.
+security:
+  - bearerAuth: []
+  - {}
+tags:
+  - name: discovery
+    description: Liveness and contract discovery.
+  - name: ledger
+    description: Stable append-only ledger and its projections.
+  - name: cartographers
+    description: Provisional fragment audit, curation, and criticism.
+paths:
+  /health:
+    get:
+      tags: [discovery]
+      operationId: getHealth
+      summary: Liveness and state summary
+      description: |
+        Returns service readiness and bounded state metadata. `state` is
+        optional and may be redacted by configuration.
+      security:
+        - {}
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Service status.
+          content:
+            application/json:
+              schema:
+                $ref: "./companion.schemas.json#/$defs/Health"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+      x-tier: stable
+
+  /capabilities:
+    get:
+      tags: [discovery]
+      operationId: getCapabilities
+      summary: Contract version, features, and limits
+      description: |
+        A client reads this before assuming an optional feature. An absent
+        feature means unsupported.
+      security:
+        - {}
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Capability document.
+          content:
+            application/json:
+              schema:
+                $ref: "./companion.schemas.json#/$defs/Capabilities"
+        "500":
+          $ref: "#/components/responses/Internal"
+      x-tier: stable
+
+  /roster:
+    get:
+      tags: [ledger]
+      operationId: getRoster
+      summary: Every character, folded from the log
+      description: |
+        A refusal is a line, not a crash. A member whose fold fails is returned
+        with `fold`, `line`, `disposition: "unevaluated"`, and `can_help: false`.
+      security:
+        - {}
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Folded roster.
+          content:
+            application/json:
+              schema:
+                $ref: "./companion.schemas.json#/$defs/Roster"
+        "500":
+          $ref: "#/components/responses/Internal"
+      x-tier: stable
+
+  /guidance:
+    get:
+      tags: [ledger]
+      operationId: getGuidance
+      summary: The roster as one injectable text block
+      description: |
+        Every line is a fold. The service does not infer; a refused fold becomes
+        an explanatory line rather than an error.
+      security:
+        - {}
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Guidance block.
+          content:
+            application/json:
+              schema:
+                $ref: "./companion.schemas.json#/$defs/Guidance"
+        "500":
+          $ref: "#/components/responses/Internal"
+      x-tier: stable
+
+  /ledger:
+    get:
+      tags: [ledger]
+      operationId: getLedger
+      summary: The append-only log
+      description: |
+        `count` is the total number of lines in the log. `returned` is the size
+        of this page. `since_seq` is exclusive.
+      security:
+        - {}
+        - bearerAuth: []
+      parameters:
+        - name: since_seq
+          in: query
+          required: false
+          description: Return events with `seq` greater than this value.
+          schema:
+            type: integer
+            minimum: -1
+            default: -1
+        - name: limit
+          in: query
+          required: false
+          description: Page size, capped by capabilities.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 200
+        - name: entity
+          in: query
+          required: false
+          description: Exact resource identifier filter.
+          schema:
+            $ref: "./companion.schemas.json#/$defs/EntityId"
+      responses:
+        "200":
+          description: A page of events.
+          content:
+            application/json:
+              schema:
+                $ref: "./companion.schemas.json#/$defs/LedgerPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/Internal"
+      x-tier: stable
+
+  /events:
+    post:
+      tags: [ledger]
+      operationId: appendEvents
+      summary: Append one accepted event or a batch
+      description: |
+        The target contract is atomic: if any item is refused, no item in the
+        batch is appended. A repeated identity returns a receipt with
+        `status: "already-written"` and does not append.
+
+        New clients SHOULD send `{ "events": [...] }`. A single event object or a
+        bare array is accepted for compatibility with the current service.
+      security:
+        - {}
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: "./companion.schemas.json#/$defs/AppendRequest"
+                - $ref: "./companion.schemas.json#/$defs/EventInput"
+                - type: array
+                  minItems: 1
+                  maxItems: 1000
+                  items:
+                    $ref: "./companion.schemas.json#/$defs/EventInput"
+            examples:
+              batch:
+                summary: Batch append
+                value:
+                  events:
+                    - id: outbox-01J8Z6
+                      kind: grudge.changed
+                      entity: npc/hollis
+                      actor: game
+                      data:
+                        grudge: 0.4
+                      provenance:
+                        source: review/publish
+              single:
+                summary: Compatibility single event
+                value:
+                  kind: role.authored
+                  entity: npc/pell-the-underwritten
+                  actor: human
+                  data:
+                    state: written
+                    text: Sworn Searcher of the Gap
+                  gate:
+                    rule: human_authorial_curation
+                    verdict: pass
+                  provenance:
+                    source: review/publish
+      responses:
+        "200":
+          description: Append receipts.
+          content:
+            application/json:
+              schema:
+                $ref: "./companion.schemas.json#/$defs/AppendResponse"
+        "400":
+          description: The request is malformed or an event is refused.
+          content:
+            application/json:
+              schema:
+                $ref: "./companion.schemas.json#/$defs/Error"
+              examples:
+                refused:
+                  value:
+                    error:
+                      code: EVENT_REFUSED
+                      message: role.authored must carry a gate verdict
+                      details:
+                        index: 0
+                        field: gate
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/ForbiddenOrigin"
+        "409":
+          description: A supplied sequence would collide with the log.
+          content:
+            application/json:
+              schema:
+                $ref: "./companion.schemas.json#/$defs/Error"
+              examples:
+                conflict:
+                  value:
+                    error:
+                      code: SEQ_CONFLICT
+                      message: seq 4 is already written; the log does not rewind
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "500":
+          $ref: "#/components/responses/Internal"
+      x-tier: stable
+
+  /cartographers/status:
+    get:
+      tags: [cartographers]
+      operationId: getCartographerStatus
+      summary: Fragment maturity counts and active criticisms
+      security:
+        - {}
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Cartographer status.
+          content:
+            application/json:
+              schema:
+                $ref: "./companion.schemas.json#/$defs/CartographerStatus"
+        "500":
+          $ref: "#/components/responses/Internal"
+      x-tier: provisional
+
+  /cartographers/ledger:
+    get:
+      tags: [cartographers]
+      operationId: getCartographerLedger
+      summary: Fragment entries and warrants
+      security:
+        - {}
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Cartographer ledger.
+          content:
+            application/json:
+              schema:
+                $ref: "./companion.schemas.json#/$defs/CartographerLedger"
+        "500":
+          $ref: "#/components/responses/Internal"
+      x-tier: provisional
+
+  /cartographers/survey:
+    post:
+      tags: [cartographers]
+      operationId: surveyProp
+      summary: Audit a prop against a scene zone
+      description: |
+        This is a write: a coherence conflict may mint a provisional fragment and
+        append a `fragment.synthesized` event. A minted fragment is not canon
+        until a human curates it.
+      security:
+        - {}
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./companion.schemas.json#/$defs/SurveyRequest"
+      responses:
+        "200":
+          description: Audit result.
+          content:
+            application/json:
+              schema:
+                $ref: "./companion.schemas.json#/$defs/SurveyResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/ForbiddenOrigin"
+        "500":
+          $ref: "#/components/responses/Internal"
+      x-tier: provisional
+
+  /cartographers/curate:
+    post:
+      tags: [cartographers]
+      operationId: curateFragment
+      summary: Grant a human warrant to a fragment
+      description: |
+        Appends `fragment.curated` with actor `human`. A model may not call this
+        as an authority-bearing action; the event records a human decision.
+      security:
+        - {}
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./companion.schemas.json#/$defs/CurateRequest"
+      responses:
+        "200":
+          description: Curation result.
+          content:
+            application/json:
+              schema:
+                $ref: "./companion.schemas.json#/$defs/CurateResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/ForbiddenOrigin"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/Internal"
+      x-tier: provisional
+
+  /cartographers/criticize:
+    post:
+      tags: [cartographers]
+      operationId: criticizeFragment
+      summary: Record a human criticism tombstone
+      description: |
+        Appends `fragment.criticized` with actor `human`. The constraint becomes
+        active criticism evidence in `/cartographers/status`.
+      security:
+        - {}
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./companion.schemas.json#/$defs/CriticizeRequest"
+      responses:
+        "200":
+          description: Criticism result.
+          content:
+            application/json:
+              schema:
+                $ref: "./companion.schemas.json#/$defs/CriticizeResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/ForbiddenOrigin"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/Internal"
+      x-tier: provisional
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: Optional on loopback; required for a non-loopback deployment.
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      description: |
+        Stable identity for a write. If an event body also carries `id`, the two
+        values must match.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 200
+
+  headers:
+    Deprecation:
+      description: Marks a deprecated route or field.
+      schema:
+        type: string
+        enum: ["true"]
+    Sunset:
+      description: HTTP date after which the deprecated item may be removed.
+      schema:
+        type: string
+        format: date-time
+
+  responses:
+    BadRequest:
+      description: The request is malformed or violates a schema.
+      content:
+        application/json:
+          schema:
+            $ref: "./companion.schemas.json#/$defs/Error"
+    Unauthorized:
+      description: A bearer token is required or invalid.
+      content:
+        application/json:
+          schema:
+            $ref: "./companion.schemas.json#/$defs/Error"
+    ForbiddenOrigin:
+      description: The request origin is not allowlisted for a write.
+      content:
+        application/json:
+          schema:
+            $ref: "./companion.schemas.json#/$defs/Error"
+    NotFound:
+      description: The named resource does not exist.
+      content:
+        application/json:
+          schema:
+            $ref: "./companion.schemas.json#/$defs/Error"
+    PayloadTooLarge:
+      description: The body or batch exceeds the advertised limit.
+      content:
+        application/json:
+          schema:
+            $ref: "./companion.schemas.json#/$defs/Error"
+    UnsupportedMediaType:
+      description: A request body is not JSON.
+      content:
+        application/json:
+          schema:
+            $ref: "./companion.schemas.json#/$defs/Error"
+    Internal:
+      description: Unexpected service fault.
+      content:
+        application/json:
+          schema:
+            $ref: "./companion.schemas.json#/$defs/Error"
+    Unavailable:
+      description: Storage is not writable or the service is shutting down.
+      content:
+        application/json:
+          schema:
+            $ref: "./companion.schemas.json#/$defs/Error"
+
+x-contract:
+  status: proposed
+  api: v1
+  eventSchema: 1
+  excluded:
+    - /forge/pipeline
+    - /forge/pipeline/3d
+    - /forge/waterfall
+    - /forge/waterfall/status
+    - /forge/waterfall/clear
+    - /forge/waterfall/save
+    - /forge/asset/clear
+    - /forge/asset/save
+    - /forge/compile
+    - /forge/workflow/snapshot
+    - /renders/*
+    - /library/*
+    - /companion/web/*
+    - /viewer
+    - /preview
+  notes: |
+    Forge and static routes are experimental or content, not part of v1. They
+    must not be advertised in /capabilities.

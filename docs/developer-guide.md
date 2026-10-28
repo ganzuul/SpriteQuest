@@ -21,7 +21,7 @@ The [unified workflow guide](unified-workflows.md#read-the-graph-as-one-generati
 
 ## Reuse the source
 
-The current [package.json](../package.json) is `private: true` and has no published SDK exports. Direct imports are source integration points in this checkout, not a promised stable npm API. Pin a tested Git revision in your project and record it alongside your copied or vendored source. On updates, compare the implementations and contracts and rerun your integration checks.
+The current [package.json](../package.json) is `private: true` and has no published SDK exports. Direct imports are source integration points in this checkout, not a promised stable npm API. Pin a tested Git revision in your project and record it alongside your copied or vendored source. On updates, compare the implementations and contracts and rerun your integration checks. The proposed [API and contracts](api/README.md) are specification-only; they do not add package exports.
 
 | What you want | Start with | What your application supplies |
 | --- | --- | --- |
@@ -124,7 +124,7 @@ See the [full measurements, limits, and paired reproduction commands](research/2
 
 ## Add a node
 
-There is no external plug-in registration API for arbitrary workflow nodes. Adding a built-in operation is a source change across its contract, engine, and discovery presentation.
+There is no external plug-in registration API in `0.27.3`. The proposed v1 contract is [Node plugin API v1](api/node-plugin-api.md); until it is implemented, adding a built-in operation is a source change across its contract, engine, and discovery presentation.
 
 1. Define the smallest deterministic engine or injected service boundary in [operations/](../src/workflow/operations/). Use bounded plain inputs, return a Result failure on invalid input, and keep host side effects in an explicit host adapter. [compose.js](../src/workflow/operations/compose.js) and its [tests](../tests/workflow-compose.test.mjs) are a small example.
 2. Add the descriptor/defaults/controls and named ports in [catalog.js](../src/workflow/catalog.js) or the appropriate operation-family descriptor module. Declare phase, model role, request capability/bound, terminal behavior, root restrictions, and skipped-input behavior accurately. Add a matching `.d.ts` contract where the family exposes typed source APIs.

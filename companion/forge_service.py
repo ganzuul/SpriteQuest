@@ -50,7 +50,6 @@ import io
 import struct
 import numpy as np
 from PIL import Image
-from companion.terrain_mesh import rasterize_stl_depth
 try:
     from companion.image_to_3d import process_ruin_pipeline, RUIN_SPECS
     HAVE_IMAGE_TO_3D = True
@@ -853,8 +852,25 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
 
                     out_depth_path = REPO_ROOT / "renders" / "primitives" / f"{primitive_id}-depth.png"
                     depth_h = height if height != 1024 else 512
-                    depth_img = rasterize_stl_depth(stl_path, width=width, height=depth_h, prefer_source_mesh=True, side_by_side=True)
-                    depth_img.save(out_depth_path)
+
+                    source_glb = REPO_ROOT / "library" / "mesh" / f"{primitive_id}-source.glb"
+                    if not source_glb.is_file():
+                        alt_cand = REPO_ROOT / "library" / "mesh" / (f"{primitive_id[5:]}-source.glb" if primitive_id.startswith("prop-") else f"prop-{primitive_id}-source.glb")
+                        if alt_cand.is_file():
+                            source_glb = alt_cand
+
+                    depth_mesh = source_glb if source_glb.is_file() else stl_path
+                    try:
+                        from companion.comfy_depth import render_depth_artifact
+                        render_depth_artifact(depth_mesh, out_depth_path, width=width, height=depth_h)
+                    except Exception as depth_exc:
+                        # Keep the previous artifact when ComfyUI is unavailable, but never invent one.
+                        if not out_depth_path.is_file():
+                            self._send(503, {"error": "depth_render_unavailable", "reason": str(depth_exc)})
+                            return
+                        sys.stderr.write(f"[forge_service] Depth render fell back to existing artifact: {depth_exc}\n")
+                    with Image.open(out_depth_path) as depth_image:
+                        depth_pixels = np.asarray(depth_image.convert("L"))
 
                     # Mirror to alias (prop- prefix)
                     alt_id = primitive_id[5:] if primitive_id.startswith("prop-") else f"prop-{primitive_id}"
@@ -862,12 +878,6 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
                         shutil.copy2(out_depth_path, REPO_ROOT / "renders" / "primitives" / f"{alt_id}-depth.png")
                     except Exception:
                         pass
-
-                    source_glb = REPO_ROOT / "library" / "mesh" / f"{primitive_id}-source.glb"
-                    if not source_glb.is_file():
-                        alt_cand = REPO_ROOT / "library" / "mesh" / (f"{primitive_id[5:]}-source.glb" if primitive_id.startswith("prop-") else f"prop-{primitive_id}-source.glb")
-                        if alt_cand.is_file():
-                            source_glb = alt_cand
 
                     num_tri = 0
                     if source_glb.is_file():
@@ -927,13 +937,13 @@ def make_handler(ledger: Ledger, cartographers_ledger: CartographersLedger | Non
                         "collage_url": collage_url or f"renders/primitives/{primitive_id}-collage.png",
                         "collider_url": collider_url or f"library/mesh/{primitive_id}-collider.glb",
                         "mesh_glb": mesh_glb_url or f"library/mesh/{primitive_id}-lowpoly.glb",
-                        "solid_coverage_px": int(np.count_nonzero(np.array(depth_img))),
+                        "solid_coverage_px": int(np.count_nonzero(depth_pixels)),
                         "lattice_workflow": "asset-forge.lattice.json",
                         "target_node": "rasterize-depth-template",
                         "lattice_run_id": lattice_run_id,
                         "lattice_status": "settled",
                         "status": "ready_for_diffusion_conditioning",
-                        "message": f"Successfully rasterized side-by-side Top-Down & 3/4th Ortho depth template from {'2D-reconstructed' if reconstructed_from_2d else 'solid'} STL for {primitive_id}.",
+                        "message": f"Successfully rendered side-by-side Top-Down & 3/4th depth template via ComfyUI from {'2D-reconstructed' if reconstructed_from_2d else 'solid'} STL for {primitive_id}.",
                     })
                 except Exception as exc:
                     self._send(400, {"error": "3d_pipeline_failure", "reason": str(exc)})

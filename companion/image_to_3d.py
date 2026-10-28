@@ -19,6 +19,8 @@ to game-ready 3D assets:
      compound collision pieces via CoACD -> (`<id>-collider.glb`).
   6. 5-Cell Review Collage: Five-cell inspection row (`renders/primitives/<id>-collage.png`):
      [ 2D Sprite ] [ Source 3D ] [ Low-Poly LOD ] [ CoACD Collider ] [ Cuts in Colour ]
+  7. Offline Workflow Export: `--export-workflow` snapshots the Hunyuan3D-2.1 ComfyUI
+     API graph and its prepared sprite input without queuing a generation.
 
 QWEN.md / Stagecraft Compliance:
   - Clean error handling, deterministic geometry, pure Python + NumPy + Trimesh + Pillow + CoACD.
@@ -32,6 +34,7 @@ import io
 import json
 import math
 import os
+import re
 import shutil
 import struct
 import sys
@@ -55,6 +58,9 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from scipy import ndimage
 import trimesh
+
+from companion.comfy_models import resolve
+from companion.render_sheets import COMFY_WORKFLOWS_DIR, save_workflow_snapshot
 
 STL_DIR = REPO_ROOT / "library" / "stl_primitives"
 MESH_DIR = REPO_ROOT / "library" / "mesh"
@@ -309,12 +315,90 @@ def reconstruct_3d_from_image(
 # 2b. Hunyuan3D-2.1 Volumetric Model Reconstruction via ComfyUI
 # ---------------------------------------------------------------------------
 
+DEFAULT_HUNYUAN_STEPS = 15
+DEFAULT_HUNYUAN_CFG = 5.0
+DEFAULT_HUNYUAN_OCTREE = 256
+DEFAULT_HUNYUAN_RESOLUTION = 4096
+DEFAULT_HUNYUAN_SEED = 42
+
+
+def prepare_hunyuan_sprite(sprite_path: Path | str) -> Image.Image:
+    """Crop a sprite to its alpha bounds and centre it on a square white canvas."""
+    with Image.open(Path(sprite_path)) as source:
+        im = source.convert("RGBA")
+    alpha = im.getchannel("A")
+    bbox = alpha.getbbox() or (0, 0, im.width, im.height)
+    cropped = im.crop(bbox)
+    side = max(cropped.width, cropped.height)
+    canvas = Image.new("RGB", (side, side), (255, 255, 255))
+    canvas.paste(cropped, ((side - cropped.width) // 2, (side - cropped.height) // 2), cropped)
+    return canvas
+
+
+def build_hunyuan_3d_workflow(
+    image_name: str,
+    ckpt_name: str,
+    steps: int = DEFAULT_HUNYUAN_STEPS,
+    cfg: float = DEFAULT_HUNYUAN_CFG,
+    octree: int = DEFAULT_HUNYUAN_OCTREE,
+    resolution: int = DEFAULT_HUNYUAN_RESOLUTION,
+    seed: int = DEFAULT_HUNYUAN_SEED,
+    prefix: str = "3d/hunyuan",
+    snapshot_name: str | Path | None = None,
+) -> dict:
+    """
+    Construct the ComfyUI API graph that reconstructs one mesh from one sprite.
+
+    The graph is deterministic for a given sprite and parameter set, so it can be
+    exported as a snapshot and imported into ComfyUI without running a render.
+    """
+    if steps <= 0:
+        raise ValueError("Hunyuan3D steps must be positive")
+    if resolution <= 0:
+        raise ValueError("Hunyuan3D latent resolution must be positive")
+    if octree <= 0:
+        raise ValueError("Hunyuan3D octree resolution must be positive")
+
+    workflow = {
+        "1": {"class_type": "ImageOnlyCheckpointLoader", "inputs": {"ckpt_name": ckpt_name}},
+        "2": {"class_type": "LoadImage", "inputs": {"image": image_name}},
+        "3": {"class_type": "ModelSamplingAuraFlow", "inputs": {"model": ["1", 0], "shift": 1.0}},
+        "13": {"class_type": "CLIPVisionEncode", "inputs": {"clip_vision": ["1", 1], "image": ["2", 0], "crop": "center"}},
+        "6": {"class_type": "Hunyuan3Dv2Conditioning", "inputs": {"clip_vision_output": ["13", 0]}},
+        "4": {"class_type": "EmptyLatentHunyuan3Dv2", "inputs": {"resolution": resolution, "batch_size": 1}},
+        "7": {
+            "class_type": "KSampler",
+            "inputs": {
+                "model": ["3", 0],
+                "seed": seed,
+                "steps": steps,
+                "cfg": cfg,
+                "sampler_name": "euler",
+                "scheduler": "normal",
+                "positive": ["6", 0],
+                "negative": ["6", 1],
+                "latent_image": ["4", 0],
+                "denoise": 1.0,
+            },
+        },
+        "8": {
+            "class_type": "VAEDecodeHunyuan3D",
+            "inputs": {"samples": ["7", 0], "vae": ["1", 2], "num_chunks": 8000, "octree_resolution": octree},
+        },
+        "9": {"class_type": "VoxelToMesh", "inputs": {"voxel": ["8", 0], "algorithm": "surface net", "threshold": 0.6}},
+        "10": {"class_type": "SaveGLB", "inputs": {"mesh": ["9", 0], "filename_prefix": prefix}},
+    }
+    if snapshot_name is not None:
+        save_workflow_snapshot(workflow, snapshot_name)
+    return workflow
+
+
 def generate_hunyuan_3d(
     sprite_path: Path | str,
     target_extents: tuple[float, float, float] = (2.0, 2.0, 2.0),
-    steps: int = 15,
-    cfg: float = 5.0,
-    octree: int = 256,
+    steps: int = DEFAULT_HUNYUAN_STEPS,
+    cfg: float = DEFAULT_HUNYUAN_CFG,
+    octree: int = DEFAULT_HUNYUAN_OCTREE,
     timeout: float = 180.0,
     server: str | None = None,
 ) -> tuple[trimesh.Trimesh, str] | None:
@@ -357,13 +441,7 @@ def generate_hunyuan_3d(
 
     # 2. Prepare square white canvas with centered, cropped sprite
     try:
-        im = Image.open(s_path).convert("RGBA")
-        alpha = im.getchannel("A")
-        bbox = alpha.getbbox() or (0, 0, im.width, im.height)
-        cropped = im.crop(bbox)
-        side = max(cropped.width, cropped.height)
-        canvas = Image.new("RGB", (side, side), (255, 255, 255))
-        canvas.paste(cropped, ((side - cropped.width) // 2, (side - cropped.height) // 2), cropped)
+        canvas = prepare_hunyuan_sprite(s_path)
 
         in_filename = f"hunyuan_{s_path.stem}_{uuid.uuid4().hex[:6]}.png"
         COMFY_INPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -375,18 +453,14 @@ def generate_hunyuan_3d(
 
     # 3. Assemble Hunyuan3D-2.1 graph
     run_id = uuid.uuid4().hex[:8]
-    workflow = {
-        "1": {"class_type": "ImageOnlyCheckpointLoader", "inputs": {"ckpt_name": ckpt}},
-        "2": {"class_type": "LoadImage", "inputs": {"image": in_filename}},
-        "3": {"class_type": "ModelSamplingAuraFlow", "inputs": {"model": ["1", 0], "shift": 1.0}},
-        "13": {"class_type": "CLIPVisionEncode", "inputs": {"clip_vision": ["1", 1], "image": ["2", 0], "crop": "center"}},
-        "6": {"class_type": "Hunyuan3Dv2Conditioning", "inputs": {"clip_vision_output": ["13", 0]}},
-        "4": {"class_type": "EmptyLatentHunyuan3Dv2", "inputs": {"resolution": 4096, "batch_size": 1}},
-        "7": {"class_type": "KSampler", "inputs": {"model": ["3", 0], "seed": 42, "steps": steps, "cfg": cfg, "sampler_name": "euler", "scheduler": "normal", "positive": ["6", 0], "negative": ["6", 1], "latent_image": ["4", 0], "denoise": 1.0}},
-        "8": {"class_type": "VAEDecodeHunyuan3D", "inputs": {"samples": ["7", 0], "vae": ["1", 2], "num_chunks": 8000, "octree_resolution": octree}},
-        "9": {"class_type": "VoxelToMesh", "inputs": {"voxel": ["8", 0], "algorithm": "surface net", "threshold": 0.6}},
-        "10": {"class_type": "SaveGLB", "inputs": {"mesh": ["9", 0], "filename_prefix": f"3d/hunyuan_{s_path.stem}/{run_id}"}},
-    }
+    workflow = build_hunyuan_3d_workflow(
+        image_name=in_filename,
+        ckpt_name=ckpt,
+        steps=steps,
+        cfg=cfg,
+        octree=octree,
+        prefix=f"3d/hunyuan_{s_path.stem}/{run_id}",
+    )
 
     # 4. Queue workflow
     try:
@@ -898,14 +972,14 @@ def process_ruin_pipeline(
     except Exception:
         pass
 
-    # 7. Rasterize authentic side-by-side Top-Down & 3/4th Ortho depth map directly from binary STL
+    # 7. Dual-view depth map rendered by ComfyUI's Render Mesh (workflow template)
     depth_path = RENDERS_DIR / f"{asset_id}-depth.png"
     try:
-        from companion.terrain_mesh import rasterize_stl_depth
-        depth_img = rasterize_stl_depth(stl_path, width=1024, height=512, prefer_source_mesh=False, side_by_side=True)
-        depth_img.save(depth_path)
+        from companion.comfy_depth import render_depth_artifact
+
+        render_depth_artifact(source_glb_path, depth_path, width=1024, height=512)
     except Exception as e:
-        print(f"[3D Pipeline] Failed to rasterize depth map for {asset_id}: {e}", file=sys.stderr)
+        print(f"[3D Pipeline] Failed to render depth map for {asset_id}: {e}", file=sys.stderr)
 
     # 8. Synchronize alternative alias (e.g. prop-relic-cairn <-> relic-cairn)
     alt_id = asset_id[5:] if asset_id.startswith("prop-") else f"prop-{asset_id}"
@@ -997,6 +1071,94 @@ RUIN_SPECS: dict[str, dict[str, Any]] = {
 }
 
 
+def resolve_asset_sprite(asset_id_or_path: str | Path) -> tuple[Path, str]:
+    """Resolve an asset ID or sprite path to a sprite file and a stable asset ID."""
+    candidate = Path(asset_id_or_path)
+    if candidate.is_file():
+        return candidate, candidate.stem
+
+    key = str(asset_id_or_path)
+    spec = RUIN_SPECS.get(key)
+    if spec is not None:
+        sprite_path = REPO_ROOT / str(spec["sprite_path"])
+        if not sprite_path.is_file():
+            raise FileNotFoundError(f"Sprite not found for asset {key!r}: {sprite_path}")
+        return sprite_path, key
+
+    sprite_path = REPO_ROOT / "library" / "sprites" / f"{key}.png"
+    if sprite_path.is_file():
+        return sprite_path, key
+
+    known = ", ".join(sorted(RUIN_SPECS)) or "none"
+    raise FileNotFoundError(
+        f"No sprite for {key!r}: pass an existing image path, or one of {{{known}}}"
+    )
+
+
+def export_hunyuan_workflow(
+    asset_id_or_path: str | Path = "relic-cairn",
+    workflow_path: str | Path | None = None,
+    comfy_input_dir: str | Path = COMFY_INPUT_DIR,
+    steps: int = DEFAULT_HUNYUAN_STEPS,
+    cfg: float = DEFAULT_HUNYUAN_CFG,
+    octree: int = DEFAULT_HUNYUAN_OCTREE,
+    resolution: int = DEFAULT_HUNYUAN_RESOLUTION,
+    seed: int = DEFAULT_HUNYUAN_SEED,
+    ckpt_name: str | None = None,
+    server: str | None = None,
+    asset_id: str | None = None,
+) -> dict:
+    """
+    Export a Hunyuan3D-2.1 ComfyUI API workflow and its prepared sprite input.
+
+    Writes the graph to ``workflows/comfyui/hunyuan_<asset>.json`` and a
+    deterministic square white-canvas sprite to the ComfyUI input directory so
+    the LoadImage node resolves. Never contacts ComfyUI for a generation; model
+    auto-selection still consults a running server when one is reachable.
+    ``asset_id`` names the snapshot when the source is an arbitrary image path.
+    """
+    sprite_path, resolved_id = resolve_asset_sprite(asset_id_or_path)
+    asset_id = asset_id or resolved_id
+    safe_asset_id = re.sub(r"[^a-zA-Z0-9_-]+", "_", asset_id)
+
+    ckpt_name = ckpt_name or resolve("hunyuan_ckpt", server)
+    if "hunyuan" not in ckpt_name.lower():
+        raise ValueError(f"Hunyuan3D workflow export requires a Hunyuan3D checkpoint, got {ckpt_name!r}")
+
+    input_dir = Path(comfy_input_dir)
+    input_dir.mkdir(parents=True, exist_ok=True)
+    input_name = f"spritequest_{safe_asset_id}_hunyuan_input.png"
+    input_path = input_dir / input_name
+    prepare_hunyuan_sprite(sprite_path).save(input_path, format="PNG")
+    if not input_path.is_file():
+        raise RuntimeError(f"Failed to write ComfyUI sprite input: {input_path}")
+
+    if workflow_path is None:
+        workflow_path = COMFY_WORKFLOWS_DIR / f"hunyuan_{safe_asset_id}.json"
+    workflow_path = Path(workflow_path)
+
+    workflow = build_hunyuan_3d_workflow(
+        image_name=input_name,
+        ckpt_name=ckpt_name,
+        steps=steps,
+        cfg=cfg,
+        octree=octree,
+        resolution=resolution,
+        seed=seed,
+        prefix=f"spritequest/hunyuan3d/{safe_asset_id}",
+        snapshot_name=workflow_path,
+    )
+    return {
+        "asset_id": asset_id,
+        "sprite_path": str(sprite_path),
+        "workflow_path": str(workflow_path),
+        "input_image": str(input_path),
+        "input_name": input_name,
+        "ckpt_name": ckpt_name,
+        "node_count": len(workflow),
+    }
+
+
 def build_all_outdoor_ruins() -> list[dict[str, Any]]:
     """Batch-process all defined outdoor ruin assets from 2D sprites to 3D STLs & Colliders."""
     results = []
@@ -1032,7 +1194,71 @@ def main() -> None:
     ap.add_argument("--id", default="custom-ruin", help="Asset ID when passing --image")
     ap.add_argument("--fragment", default="grey-wind/named-ruins", help="Fragment ID for STL header")
     ap.add_argument("--dims", nargs=3, type=float, default=[4.0, 4.0, 6.0], help="Target extents (W D H) in metres")
+    ap.add_argument(
+        "--export-workflow",
+        action="store_true",
+        help="Export a Hunyuan3D-2.1 ComfyUI API workflow and prepared sprite input without running it",
+    )
+    ap.add_argument(
+        "--workflow-out",
+        help="Workflow JSON path (default: workflows/comfyui/hunyuan_<asset>.json)",
+    )
+    ap.add_argument(
+        "--comfy-input",
+        default=str(COMFY_INPUT_DIR),
+        help=f"ComfyUI input directory for the prepared sprite (default: {COMFY_INPUT_DIR})",
+    )
+    ap.add_argument("--ckpt", help="Override the Hunyuan3D checkpoint filename")
+    ap.add_argument("--server", default=COMFY_SERVER_DEFAULT, help=f"ComfyUI server URL (default: {COMFY_SERVER_DEFAULT})")
+    ap.add_argument(
+        "--steps",
+        type=int,
+        default=DEFAULT_HUNYUAN_STEPS,
+        help=f"Sampling steps for the exported graph (default: {DEFAULT_HUNYUAN_STEPS})",
+    )
+    ap.add_argument("--cfg", type=float, default=DEFAULT_HUNYUAN_CFG, help=f"KSampler CFG for the exported graph (default: {DEFAULT_HUNYUAN_CFG})")
+    ap.add_argument("--octree", type=int, default=DEFAULT_HUNYUAN_OCTREE, help=f"Mesh octree resolution for the exported graph (default: {DEFAULT_HUNYUAN_OCTREE})")
+    ap.add_argument(
+        "--resolution",
+        type=int,
+        default=DEFAULT_HUNYUAN_RESOLUTION,
+        help=f"Empty latent resolution for the exported graph (default: {DEFAULT_HUNYUAN_RESOLUTION})",
+    )
+    ap.add_argument("--seed", type=int, default=DEFAULT_HUNYUAN_SEED, help=f"KSampler seed for the exported graph (default: {DEFAULT_HUNYUAN_SEED})")
     args = ap.parse_args()
+
+    if args.export_workflow:
+        if args.image:
+            targets: list[tuple[str, str | None]] = [
+                (args.image, None if args.id == "custom-ruin" else args.id)
+            ]
+        elif args.asset:
+            targets = [(args.asset, None)]
+        elif args.id != "custom-ruin":
+            targets = [(args.id, None)]
+        else:
+            targets = [(key, None) for key in RUIN_SPECS]
+        if args.workflow_out and len(targets) > 1:
+            ap.error("--workflow-out requires a single --asset/--image target")
+
+        exported = [
+            export_hunyuan_workflow(
+                target,
+                workflow_path=Path(args.workflow_out) if args.workflow_out else None,
+                comfy_input_dir=args.comfy_input,
+                steps=args.steps,
+                cfg=args.cfg,
+                octree=args.octree,
+                resolution=args.resolution,
+                seed=args.seed,
+                ckpt_name=args.ckpt,
+                server=args.server,
+                asset_id=target_id,
+            )
+            for target, target_id in targets
+        ]
+        print(json.dumps(exported[0] if len(exported) == 1 else exported, indent=2))
+        return
 
     if args.all_ruins or (not args.asset and not args.image):
         res = build_all_outdoor_ruins()

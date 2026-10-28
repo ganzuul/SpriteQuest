@@ -12,12 +12,13 @@ from __future__ import annotations
 import json
 import math
 import struct
+import tempfile
 import unittest
 from pathlib import Path
 
 try:
     import numpy as np
-    from PIL import Image
+    from PIL import Image, ImageDraw
     import trimesh
     HAVE_3D_DEPS = True
 except ImportError:
@@ -36,6 +37,9 @@ if HAVE_3D_DEPS:
         decompose_coacd_colliders,
         export_binary_stl,
         export_collider_glb,
+        build_hunyuan_3d_workflow,
+        export_hunyuan_workflow,
+        prepare_hunyuan_sprite,
         process_ruin_pipeline,
         RUIN_SPECS,
     )
@@ -46,6 +50,9 @@ else:
     decompose_coacd_colliders = None
     export_binary_stl = None
     export_collider_glb = None
+    build_hunyuan_3d_workflow = None
+    export_hunyuan_workflow = None
+    prepare_hunyuan_sprite = None
     process_ruin_pipeline = None
     RUIN_SPECS = {}
 
@@ -138,6 +145,136 @@ class TestImageTo3DRuinPipeline(unittest.TestCase):
             prim = STLPrimitive.load_stl(stl_p)
             self.assertGreater(prim.triangle_count, 100, f"STL {key} should have substantial 3D geometry")
             self.assertGreater(prim.dimensions[0], 0.5)
+
+
+class TestHunyuanWorkflowExport(unittest.TestCase):
+    """Test offline export of the Hunyuan3D-2.1 ComfyUI graph and sprite input."""
+
+    @staticmethod
+    def _write_sprite(root: Path) -> Path:
+        sprite_path = root / "test-sprite.png"
+        image = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
+        ImageDraw.Draw(image).rectangle([16, 24, 47, 47], fill=(180, 160, 120, 255))
+        image.save(sprite_path)
+        return sprite_path
+
+    @unittest.skipUnless(HAVE_3D_DEPS, "trimesh / 3D deps not installed in current Python environment")
+    def test_build_hunyuan_workflow_exposes_sampling_parameters(self):
+        workflow = build_hunyuan_3d_workflow(
+            image_name="spritequest_test_hunyuan_input.png",
+            ckpt_name="hunyuan_3d_v2.1-fp16.safetensors",
+            steps=9,
+            cfg=4.5,
+            octree=192,
+            resolution=2048,
+            seed=1234,
+            prefix="spritequest/hunyuan3d/test",
+        )
+
+        self.assertEqual(workflow["1"]["class_type"], "ImageOnlyCheckpointLoader")
+        self.assertEqual(workflow["1"]["inputs"]["ckpt_name"], "hunyuan_3d_v2.1-fp16.safetensors")
+        self.assertEqual(workflow["2"]["inputs"]["image"], "spritequest_test_hunyuan_input.png")
+        self.assertEqual(workflow["4"]["inputs"]["resolution"], 2048)
+        self.assertEqual(workflow["7"]["inputs"]["steps"], 9)
+        self.assertEqual(workflow["7"]["inputs"]["cfg"], 4.5)
+        self.assertEqual(workflow["7"]["inputs"]["seed"], 1234)
+        self.assertEqual(workflow["8"]["inputs"]["octree_resolution"], 192)
+        self.assertEqual(workflow["9"]["class_type"], "VoxelToMesh")
+        self.assertEqual(workflow["10"]["class_type"], "SaveGLB")
+        self.assertEqual(workflow["10"]["inputs"]["filename_prefix"], "spritequest/hunyuan3d/test")
+
+    @unittest.skipUnless(HAVE_3D_DEPS, "trimesh / 3D deps not installed in current Python environment")
+    def test_export_hunyuan_workflow_writes_snapshot_and_square_input(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            sprite_path = self._write_sprite(root)
+            result = export_hunyuan_workflow(
+                sprite_path,
+                workflow_path=root / "hunyuan_test.json",
+                comfy_input_dir=root / "input",
+                steps=11,
+                cfg=4.0,
+                octree=128,
+                resolution=1024,
+                seed=99,
+                ckpt_name="hunyuan_3d_v2.1-fp16.safetensors",
+            )
+
+            workflow = json.loads(Path(result["workflow_path"]).read_text(encoding="utf-8"))
+            self.assertEqual(result["asset_id"], "test-sprite")
+            self.assertEqual(result["input_name"], "spritequest_test-sprite_hunyuan_input.png")
+            self.assertEqual(workflow["2"]["inputs"]["image"], result["input_name"])
+            self.assertEqual(workflow["7"]["inputs"]["seed"], 99)
+            self.assertEqual(workflow["7"]["inputs"]["steps"], 11)
+            self.assertEqual(workflow["4"]["inputs"]["resolution"], 1024)
+            self.assertEqual(workflow["8"]["inputs"]["octree_resolution"], 128)
+            self.assertEqual(result["node_count"], len(workflow))
+
+            with Image.open(result["input_image"]) as prepared:
+                self.assertEqual(prepared.mode, "RGB")
+                self.assertEqual(prepared.size, (32, 32))
+                self.assertEqual(prepared.getpixel((0, 0)), (255, 255, 255))
+
+    @unittest.skipUnless(HAVE_3D_DEPS, "trimesh / 3D deps not installed in current Python environment")
+    def test_export_hunyuan_workflow_accepts_asset_id_override(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            sprite_path = self._write_sprite(root)
+            result = export_hunyuan_workflow(
+                sprite_path,
+                workflow_path=root / "hunyuan_custom-ruin.json",
+                comfy_input_dir=root / "input",
+                ckpt_name="hunyuan_3d_v2.1-fp16.safetensors",
+                asset_id="custom-ruin",
+            )
+
+            self.assertEqual(result["asset_id"], "custom-ruin")
+            self.assertEqual(result["input_name"], "spritequest_custom-ruin_hunyuan_input.png")
+            workflow = json.loads(Path(result["workflow_path"]).read_text(encoding="utf-8"))
+            self.assertEqual(workflow["10"]["inputs"]["filename_prefix"], "spritequest/hunyuan3d/custom-ruin")
+
+    @unittest.skipUnless(HAVE_3D_DEPS, "trimesh / 3D deps not installed in current Python environment")
+    def test_export_hunyuan_workflow_resolves_asset_id_from_specs(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            result = export_hunyuan_workflow(
+                "relic-cairn",
+                workflow_path=root / "hunyuan_relic-cairn.json",
+                comfy_input_dir=root / "input",
+                ckpt_name="hunyuan_3d_v2.1-fp16.safetensors",
+            )
+
+            self.assertEqual(result["asset_id"], "relic-cairn")
+            workflow = json.loads(Path(result["workflow_path"]).read_text(encoding="utf-8"))
+            self.assertEqual(
+                workflow["10"]["inputs"]["filename_prefix"],
+                "spritequest/hunyuan3d/relic-cairn",
+            )
+
+    @unittest.skipUnless(HAVE_3D_DEPS, "trimesh / 3D deps not installed in current Python environment")
+    def test_export_hunyuan_workflow_rejects_non_hunyuan_checkpoint(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            sprite_path = self._write_sprite(root)
+            with self.assertRaisesRegex(ValueError, "requires a Hunyuan3D"):
+                export_hunyuan_workflow(
+                    sprite_path,
+                    workflow_path=root / "hunyuan_test.json",
+                    comfy_input_dir=root / "input",
+                    ckpt_name="flux2-vae.safetensors",
+                )
+
+    @unittest.skipUnless(HAVE_3D_DEPS, "trimesh / 3D deps not installed in current Python environment")
+    def test_export_hunyuan_workflow_rejects_unknown_sprite(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            with self.assertRaisesRegex(FileNotFoundError, "No sprite"):
+                export_hunyuan_workflow(
+                    "no-such-asset",
+                    workflow_path=root / "hunyuan_test.json",
+                    comfy_input_dir=root / "input",
+                    ckpt_name="hunyuan_3d_v2.1-fp16.safetensors",
+                )
 
 
 class TestLatticePromptRefinementForRuins(unittest.TestCase):

@@ -356,11 +356,11 @@ def sync_asset_waterfall(
                 collider_pieces = [loaded_coll]
 
         # -------------------------------------------------------------------------
-        # STAGE 7: Dual-View Depth Map Rasterization (from Full-Res STL)
+        # STAGE 7: Dual-View Depth Map (ComfyUI Render Mesh workflow)
         # -------------------------------------------------------------------------
-        _set_progress(primitive_id, 7, "Dual-View Depth Map Rasterization", "Rasterizing Top-Down and 3/4th Ortho depth from full-res STL...", 78)
+        _set_progress(primitive_id, 7, "Dual-View Depth Map Render", "Rendering top-down and 3/4 depth views through ComfyUI...", 78)
         depth_png_path = RENDERS_DIR / f"{primitive_id}-depth.png"
-        curr_depth_hash = _text_sha256(f"{stl_bytes_hash}:sbs=1024x512:yaw=45:pitch=30")
+        curr_depth_hash = _text_sha256(f"{_file_sha256(source_glb_path)}:depth=1024x512:template=mesh_depth")
         has_existing_depth = depth_png_path.is_file()
 
         if not entry.get("depth_hash") and has_existing_depth and not force and not mesh_outdated:
@@ -374,15 +374,13 @@ def sync_asset_waterfall(
         )
 
         if depth_outdated:
-            stages_executed.append("Stage 7: Dual-View Depth Map Rasterization (Top-Down & 3/4th Ortho)")
-            from companion.terrain_mesh import rasterize_stl_depth
-            # Directly from full-resolution STL format per requirement
-            depth_img = rasterize_stl_depth(stl_path, width=1024, height=512, prefer_source_mesh=False, side_by_side=True)
-            depth_png_path.parent.mkdir(parents=True, exist_ok=True)
-            depth_img.save(depth_png_path)
+            stages_executed.append("Stage 7: Dual-View Depth Map Render (Top-Down & 3/4th)")
+            from companion.comfy_depth import render_depth_artifact
+
+            render_depth_artifact(source_glb_path, depth_png_path, width=1024, height=512)
             entry["depth_hash"] = curr_depth_hash
         else:
-            stages_skipped.append("Stage 7: Dual-View Depth Map Rasterization (cached)")
+            stages_skipped.append("Stage 7: Dual-View Depth Map Render (cached)")
 
         # -------------------------------------------------------------------------
         # STAGE 8: Consolidated 3-Cell & Info-Line Sprite Sheet Composition

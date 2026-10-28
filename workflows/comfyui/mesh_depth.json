@@ -1,0 +1,119 @@
+{
+  "1": {
+    "class_type": "Load3DAdvanced",
+    "inputs": {
+      "model_file": "{{MESH_FILE}}",
+      "viewport_state": {},
+      "width": "{{WIDTH}}",
+      "height": "{{HEIGHT}}"
+    }
+  },
+  "2": {
+    "class_type": "Get3DComponents",
+    "inputs": {
+      "model_3d": [
+        "1",
+        0
+      ]
+    }
+  },
+  "3": {
+    "class_type": "CreateCameraInfo",
+    "inputs": {
+      "mode": "orbit",
+      "mode.yaw": -35.0,
+      "mode.pitch": 30.0,
+      "mode.distance": "{{DISTANCE}}",
+      "target_x": "{{TARGET_X}}",
+      "target_y": "{{TARGET_Y}}",
+      "target_z": "{{TARGET_Z}}",
+      "roll": 0.0,
+      "fov": "{{FOV}}",
+      "zoom": 1.0,
+      "camera_type": "perspective"
+    }
+  },
+  "4": {
+    "class_type": "RenderMesh",
+    "inputs": {
+      "mesh": [
+        "9",
+        0
+      ],
+      "mode": "depth",
+      "width": "{{WIDTH}}",
+      "height": "{{HEIGHT}}",
+      "background": "#000000",
+      "camera_info": [
+        "3",
+        0
+      ]
+    }
+  },
+  "5": {
+    "class_type": "SaveImage",
+    "inputs": {
+      "images": [
+        "4",
+        0
+      ],
+      "filename_prefix": "{{PREFIX}}/three_quarter"
+    }
+  },
+  "6": {
+    "class_type": "CreateCameraInfo",
+    "inputs": {
+      "mode": "orbit",
+      "mode.yaw": 0.0,
+      "mode.pitch": 89.0,
+      "mode.distance": "{{DISTANCE}}",
+      "target_x": "{{TARGET_X}}",
+      "target_y": "{{TARGET_Y}}",
+      "target_z": "{{TARGET_Z}}",
+      "roll": 0.0,
+      "fov": "{{FOV}}",
+      "zoom": 1.0,
+      "camera_type": "perspective"
+    }
+  },
+  "7": {
+    "class_type": "RenderMesh",
+    "inputs": {
+      "mesh": [
+        "9",
+        0
+      ],
+      "mode": "depth",
+      "width": "{{WIDTH}}",
+      "height": "{{HEIGHT}}",
+      "background": "#000000",
+      "camera_info": [
+        "6",
+        0
+      ]
+    }
+  },
+  "8": {
+    "class_type": "SaveImage",
+    "inputs": {
+      "images": [
+        "7",
+        0
+      ],
+      "filename_prefix": "{{PREFIX}}/topdown"
+    }
+  },
+  "9": {
+    "class_type": "RotateMesh",
+    "inputs": {
+      "mesh": [
+        "2",
+        0
+      ],
+      "mode": "euler_xyz",
+      "mode.angle_x": -90.0,
+      "mode.angle_y": 0.0,
+      "mode.angle_z": 0.0
+    }
+  }
+}
